@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "claude-manager-kanban": {
-      "command": "C:\\Users\\milosz.swiatek\\AppData\\Local\\ClaudeCodeManager\\current\\MCP\\ClaudeManager.McpServer.exe",
-      "args": []
-    }
-  }
-}
