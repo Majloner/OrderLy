@@ -281,31 +281,31 @@ review each diff before `db:push`. No data migration. Rollback = drop the added 
 
 #### Automated
 
-- [x] 1.1 Project linked & authenticated (`supabase link` + `supabase projects list` succeed)
-- [x] 1.2 `npm run db:push` applies the tenancy migration cleanly to hosted
-- [x] 1.3 `npx supabase migration list` shows the migration as applied
-- [x] 1.4 RLS enabled on `companies` and `profiles` (`relrowsecurity = true`)
-- [x] 1.5 Helper functions exist and are `SECURITY DEFINER`
-- [x] 1.6 `npm run lint` passes
+- [x] 1.1 Project linked & authenticated (`supabase link` + `supabase projects list` succeed) — 316d63b
+- [x] 1.2 `npm run db:push` applies the tenancy migration cleanly to hosted — 316d63b
+- [x] 1.3 `npx supabase migration list` shows the migration as applied — 316d63b
+- [x] 1.4 RLS enabled on `companies` and `profiles` (`relrowsecurity = true`) — 316d63b
+- [x] 1.5 Helper functions exist and are `SECURITY DEFINER` — 316d63b
+- [x] 1.6 `npm run lint` passes — 316d63b
 
 #### Manual
 
-- [x] 1.7 Owner-A JWT sees only company A `companies`/`profiles` rows
-- [x] 1.8 No JWT context → zero rows (default-deny holds)
+- [x] 1.7 Owner-A JWT sees only company A `companies`/`profiles` rows — 316d63b
+- [x] 1.8 No JWT context → zero rows (default-deny holds) — 316d63b
 
 ### Phase 2: Minimal domain tables + anonymous read
 
 #### Automated
 
-- [ ] 2.1 `npm run db:push` applies cleanly; RLS enabled on `tables`, `menu_items`
-- [ ] 2.2 Anon request returns only `is_available` menu_items and `is_active` tables
-- [ ] 2.3 Anon INSERT/UPDATE rejected by RLS
-- [ ] 2.4 `npm run lint` passes
+- [x] 2.1 `npm run db:push` applies cleanly; RLS enabled on `tables`, `menu_items`
+- [x] 2.2 Anon request returns only `is_available` menu_items and `is_active` tables
+- [x] 2.3 Anon INSERT/UPDATE rejected by RLS
+- [x] 2.4 `npm run lint` passes
 
 #### Manual
 
-- [ ] 2.5 Anon read of active tables + available menu items succeeds with expected shape
-- [ ] 2.6 Anon write fails; `is_available = false` items hidden from anon
+- [x] 2.5 Anon read of active tables + available menu items succeeds with expected shape
+- [x] 2.6 Anon write fails; `is_available = false` items hidden from anon
 
 ### Phase 3: Seed + isolation verification
 
