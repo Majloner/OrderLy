@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Mail, Lock, UserPlus } from "lucide-react";
+import { Mail, Lock, UserPlus, Store, User } from "lucide-react";
 import { FormField } from "@/components/auth/FormField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
@@ -12,15 +12,26 @@ interface Props {
 }
 
 export default function SignUpForm({ serverError }: Props) {
+  const [companyName, setCompanyName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{
+    companyName?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
 
   function validate() {
     const next: typeof errors = {};
+
+    if (!companyName.trim()) {
+      next.companyName = "Venue name is required";
+    }
 
     if (!email.trim()) {
       next.email = "Email is required";
@@ -64,6 +75,32 @@ export default function SignUpForm({ serverError }: Props) {
 
   return (
     <form method="POST" action="/api/auth/signup" className="space-y-4" onSubmit={handleSubmit} noValidate>
+      <FormField
+        id="company_name"
+        name="company_name"
+        label="Venue name"
+        value={companyName}
+        onChange={(v) => {
+          setCompanyName(v);
+          clearError("companyName");
+        }}
+        placeholder="e.g. Bistro Roma"
+        error={errors.companyName}
+        icon={<Store className="size-4" />}
+      />
+
+      <FormField
+        id="full_name"
+        name="full_name"
+        label="Full name (optional)"
+        value={fullName}
+        onChange={(v) => {
+          setFullName(v);
+        }}
+        placeholder="Jan Kowalski"
+        icon={<User className="size-4" />}
+      />
+
       <FormField
         id="email"
         type="email"

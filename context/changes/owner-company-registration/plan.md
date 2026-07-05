@@ -239,26 +239,26 @@ the updated endpoint/form to the production Worker (the DB trigger is already li
 
 #### Automated
 
-- [x] 1.1 `npm run db:push` applies the trigger migration cleanly
-- [x] 1.2 Trigger `on_auth_user_created` + `handle_new_user` exist; function is `SECURITY DEFINER`
-- [x] 1.3 Sim (rolled back): with `company_name` → 1 company + 1 owner profile; without → neither
-- [x] 1.4 `npm run lint` passes
+- [x] 1.1 `npm run db:push` applies the trigger migration cleanly — 002261d
+- [x] 1.2 Trigger `on_auth_user_created` + `handle_new_user` exist; function is `SECURITY DEFINER` — 002261d
+- [x] 1.3 Sim (rolled back): with `company_name` → 1 company + 1 owner profile; without → neither — 002261d
+- [x] 1.4 `npm run lint` passes — 002261d
 
 #### Manual
 
-- [x] 1.5 Email confirmations are OFF on the hosted project
+- [x] 1.5 Email confirmations are OFF on the hosted project — 002261d
 
 ### Phase 2: Registration flow (endpoint + form)
 
 #### Automated
 
-- [ ] 2.1 `npx astro sync` + `npm run build` pass
-- [ ] 2.2 `npm run lint` passes
+- [x] 2.1 `npx astro sync` + `npm run build` pass
+- [x] 2.2 `npm run lint` passes
 
 #### Manual
 
-- [ ] 2.3 UI registration with venue name → `/dashboard` authed; company + owner profile exist; locals populated
-- [ ] 2.4 Duplicate email → clear error; empty venue name → rejected before signup
+- [x] 2.3 UI registration with venue name → `/dashboard` authed; company + owner profile exist; locals populated
+- [x] 2.4 Duplicate email → clear error; empty venue name → rejected before signup
 
 ### Phase 3: Venue profile settings (FR-002)
 
