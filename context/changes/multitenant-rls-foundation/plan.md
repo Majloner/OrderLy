@@ -311,22 +311,22 @@ review each diff before `db:push`. No data migration. Rollback = drop the added 
 
 #### Automated
 
-- [x] 3.1 `npm run test:rls` exits 0 with all isolation assertions passing
-- [x] 3.2 Test fails loudly when a policy is temporarily loosened
-- [x] 3.3 Fixtures rolled back — no residual test companies remain
+- [x] 3.1 `npm run test:rls` exits 0 with all isolation assertions passing — 4792c1b
+- [x] 3.2 Test fails loudly when a policy is temporarily loosened — 4792c1b
+- [x] 3.3 Fixtures rolled back — no residual test companies remain — 4792c1b
 
 #### Manual
 
-- [x] 3.4 Test output enumerates guardrail assertions and all pass
+- [x] 3.4 Test output enumerates guardrail assertions and all pass — 4792c1b
 
 ### Phase 4: App integration (Locals + middleware)
 
 #### Automated
 
-- [ ] 4.1 `npx astro sync` + `npm run build` pass with new `Locals` typing
-- [ ] 4.2 `npm run lint` passes
+- [x] 4.1 `npx astro sync` + `npm run build` pass with new `Locals` typing
+- [x] 4.2 `npm run lint` passes
 
 #### Manual
 
-- [ ] 4.3 Seeded owner: `locals.company_id` + `locals.role` populated
-- [ ] 4.4 Anonymous request leaves both null and renders without error
+- [x] 4.3 Seeded owner: `locals.company_id` + `locals.role` populated
+- [x] 4.4 Anonymous request leaves both null and renders without error
