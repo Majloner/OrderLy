@@ -297,27 +297,27 @@ review each diff before `db:push`. No data migration. Rollback = drop the added 
 
 #### Automated
 
-- [x] 2.1 `npm run db:push` applies cleanly; RLS enabled on `tables`, `menu_items`
-- [x] 2.2 Anon request returns only `is_available` menu_items and `is_active` tables
-- [x] 2.3 Anon INSERT/UPDATE rejected by RLS
-- [x] 2.4 `npm run lint` passes
+- [x] 2.1 `npm run db:push` applies cleanly; RLS enabled on `tables`, `menu_items` — 638d640
+- [x] 2.2 Anon request returns only `is_available` menu_items and `is_active` tables — 638d640
+- [x] 2.3 Anon INSERT/UPDATE rejected by RLS — 638d640
+- [x] 2.4 `npm run lint` passes — 638d640
 
 #### Manual
 
-- [x] 2.5 Anon read of active tables + available menu items succeeds with expected shape
-- [x] 2.6 Anon write fails; `is_available = false` items hidden from anon
+- [x] 2.5 Anon read of active tables + available menu items succeeds with expected shape — 638d640
+- [x] 2.6 Anon write fails; `is_available = false` items hidden from anon — 638d640
 
 ### Phase 3: Seed + isolation verification
 
 #### Automated
 
-- [ ] 3.1 `npm run test:rls` exits 0 with all isolation assertions passing
-- [ ] 3.2 Test fails loudly when a policy is temporarily loosened
-- [ ] 3.3 Fixtures rolled back — no residual test companies remain
+- [x] 3.1 `npm run test:rls` exits 0 with all isolation assertions passing
+- [x] 3.2 Test fails loudly when a policy is temporarily loosened
+- [x] 3.3 Fixtures rolled back — no residual test companies remain
 
 #### Manual
 
-- [ ] 3.4 Test output enumerates guardrail assertions and all pass
+- [x] 3.4 Test output enumerates guardrail assertions and all pass
 
 ### Phase 4: App integration (Locals + middleware)
 
