@@ -323,10 +323,10 @@ review each diff before `db:push`. No data migration. Rollback = drop the added 
 
 #### Automated
 
-- [x] 4.1 `npx astro sync` + `npm run build` pass with new `Locals` typing
-- [x] 4.2 `npm run lint` passes
+- [x] 4.1 `npx astro sync` + `npm run build` pass with new `Locals` typing — 294415e
+- [x] 4.2 `npm run lint` passes — 294415e
 
 #### Manual
 
-- [x] 4.3 Seeded owner: `locals.company_id` + `locals.role` populated
-- [x] 4.4 Anonymous request leaves both null and renders without error
+- [x] 4.3 Seeded owner: `locals.company_id` + `locals.role` populated — 294415e
+- [x] 4.4 Anonymous request leaves both null and renders without error — 294415e
