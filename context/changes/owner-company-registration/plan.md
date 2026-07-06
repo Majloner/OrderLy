@@ -252,22 +252,22 @@ the updated endpoint/form to the production Worker (the DB trigger is already li
 
 #### Automated
 
-- [x] 2.1 `npx astro sync` + `npm run build` pass
-- [x] 2.2 `npm run lint` passes
+- [x] 2.1 `npx astro sync` + `npm run build` pass — e09b12d
+- [x] 2.2 `npm run lint` passes — e09b12d
 
 #### Manual
 
-- [x] 2.3 UI registration with venue name → `/dashboard` authed; company + owner profile exist; locals populated
-- [x] 2.4 Duplicate email → clear error; empty venue name → rejected before signup
+- [x] 2.3 UI registration with venue name → `/dashboard` authed; company + owner profile exist; locals populated — e09b12d
+- [x] 2.4 Duplicate email → clear error; empty venue name → rejected before signup — e09b12d
 
 ### Phase 3: Venue profile settings (FR-002)
 
 #### Automated
 
-- [ ] 3.1 `npm run build` passes
-- [ ] 3.2 `npm run lint` passes
+- [x] 3.1 `npm run build` passes
+- [x] 3.2 `npm run lint` passes
 
 #### Manual
 
-- [ ] 3.3 Owner edits name/address/opening hours on `/settings` → persists
-- [ ] 3.4 Anonymous/non-owner cannot access `/settings`; cross-company update blocked by RLS
+- [x] 3.3 Owner edits name/address/opening hours on `/settings` → persists
+- [x] 3.4 Anonymous/non-owner cannot access `/settings`; cross-company update blocked by RLS
