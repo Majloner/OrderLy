@@ -264,10 +264,10 @@ the updated endpoint/form to the production Worker (the DB trigger is already li
 
 #### Automated
 
-- [x] 3.1 `npm run build` passes
-- [x] 3.2 `npm run lint` passes
+- [x] 3.1 `npm run build` passes — c037d91
+- [x] 3.2 `npm run lint` passes — c037d91
 
 #### Manual
 
-- [x] 3.3 Owner edits name/address/opening hours on `/settings` → persists
-- [x] 3.4 Anonymous/non-owner cannot access `/settings`; cross-company update blocked by RLS
+- [x] 3.3 Owner edits name/address/opening hours on `/settings` → persists — c037d91
+- [x] 3.4 Anonymous/non-owner cannot access `/settings`; cross-company update blocked by RLS — c037d91
