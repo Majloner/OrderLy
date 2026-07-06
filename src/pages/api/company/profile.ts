@@ -16,12 +16,12 @@ export const POST: APIRoute = async (context) => {
   const openingHours = ((form.get("opening_hours") as string) || "").trim();
 
   if (!name) {
-    return context.redirect(`/settings?error=${encodeURIComponent("Venue name is required")}`);
+    return context.redirect(`/settings?error=${encodeURIComponent("Nazwa lokalu jest wymagana")}`);
   }
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return context.redirect(`/settings?error=${encodeURIComponent("Supabase is not configured")}`);
+    return context.redirect(`/settings?error=${encodeURIComponent("Supabase nie jest skonfigurowany")}`);
   }
 
   const { error } = await supabase

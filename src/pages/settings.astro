@@ -26,32 +26,34 @@ const inputClass =
   "mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-white placeholder-white/30 focus:border-purple-300 focus:outline-none";
 ---
 
-<Layout title="Venue settings">
+<Layout title="Ustawienia lokalu">
   <div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
     <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
       <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-2xl font-bold text-transparent">
-        Venue settings
+        Ustawienia lokalu
       </h1>
 
       {
         isOwner ? (
           <div>
-            {success && <p class="mb-4 rounded-lg bg-green-500/20 px-3 py-2 text-sm text-green-100">Profile saved.</p>}
+            {success && (
+              <p class="mb-4 rounded-lg bg-green-500/20 px-3 py-2 text-sm text-green-100">Zapisano zmiany.</p>
+            )}
             {error && <p class="mb-4 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{error}</p>}
 
             <form method="POST" action="/api/company/profile" class="space-y-4">
               <label class="block text-sm text-blue-100/80">
-                Venue name
+                Nazwa lokalu
                 <input
                   class:list={inputClass}
                   name="name"
                   value={company?.name ?? ""}
-                  placeholder="Bistro Roma"
+                  placeholder="np. Bistro Roma"
                   required
                 />
               </label>
               <label class="block text-sm text-blue-100/80">
-                Address
+                Adres
                 <input
                   class:list={inputClass}
                   name="address"
@@ -60,28 +62,28 @@ const inputClass =
                 />
               </label>
               <label class="block text-sm text-blue-100/80">
-                Opening hours
+                Godziny otwarcia
                 <input
                   class:list={inputClass}
                   name="opening_hours"
                   value={company?.opening_hours ?? ""}
-                  placeholder="Mon–Sun 10:00–22:00"
+                  placeholder="Pon–Nd 10:00–22:00"
                 />
               </label>
               <button
                 type="submit"
                 class="w-full rounded-lg bg-gradient-to-r from-blue-500/80 to-purple-500/80 px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
               >
-                Save
+                Zapisz
               </button>
             </form>
           </div>
         ) : (
-          <p class="text-sm text-blue-100/70">Only the venue owner can edit these settings.</p>
+          <p class="text-sm text-blue-100/70">Tylko właściciel lokalu może edytować te ustawienia.</p>
         )
       }
 
-      <a href="/dashboard" class="mt-4 inline-block text-sm text-purple-300 hover:underline">← Back to dashboard</a>
+      <a href="/dashboard" class="mt-4 inline-block text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
     </div>
   </div>
 </Layout>

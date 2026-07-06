@@ -10,11 +10,11 @@ export const POST: APIRoute = async (context) => {
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
-    return context.redirect(`/auth/signup?error=${encodeURIComponent("Supabase is not configured")}`);
+    return context.redirect(`/auth/signup?error=${encodeURIComponent("Supabase nie jest skonfigurowany")}`);
   }
 
   if (!companyName) {
-    return context.redirect(`/auth/signup?error=${encodeURIComponent("Venue name is required")}`);
+    return context.redirect(`/auth/signup?error=${encodeURIComponent("Nazwa lokalu jest wymagana")}`);
   }
 
   // company_name/full_name land in raw_user_meta_data; the handle_new_user
@@ -26,7 +26,8 @@ export const POST: APIRoute = async (context) => {
   });
 
   if (error) {
-    return context.redirect(`/auth/signup?error=${encodeURIComponent(error.message)}`);
+    const message = /already registered/i.test(error.message) ? "Ten e-mail jest już zarejestrowany." : error.message;
+    return context.redirect(`/auth/signup?error=${encodeURIComponent(message)}`);
   }
 
   // With email confirmations off, an existing/obfuscated email can return no
@@ -34,7 +35,7 @@ export const POST: APIRoute = async (context) => {
   // the dashboard when a real session was actually established.
   if (!data.session) {
     return context.redirect(
-      `/auth/signup?error=${encodeURIComponent("Could not create the account. This email may already be in use.")}`,
+      `/auth/signup?error=${encodeURIComponent("Nie udało się utworzyć konta. Ten e-mail może być już zajęty.")}`,
     );
   }
 
