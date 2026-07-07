@@ -1,10 +1,10 @@
 ---
 change_id: owner-company-registration
 title: Owner company registration
-status: implemented
+status: archived
 created: 2026-07-04
-updated: 2026-07-06
-archived_at: null
+updated: 2026-07-07
+archived_at: 2026-07-07T07:58:28Z
 ---
 
 ## Notes

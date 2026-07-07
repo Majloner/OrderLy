@@ -3,7 +3,7 @@ project: OrderLY
 version: 1
 status: draft
 created: 2026-07-01
-updated: 2026-07-06
+updated: 2026-07-07
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -39,7 +39,7 @@ więc sekwencjonowana tak wcześnie, jak pozwolą zależności (menu + stoliki +
 | ID    | Change ID                  | Outcome (użytkownik może …)                                            | Prerequisites    | PRD refs                     | Status   |
 | ----- | -------------------------- | --------------------------------------------------------------------- | ---------------- | ---------------------------- | -------- |
 | F-01  | multitenant-rls-foundation | (fundament) izolacja firm `company_id` + RLS i model ról personelu     | —                | Access Control, NFR-iso      | done     |
-| S-01  | owner-company-registration | właściciel rejestruje firmę, loguje się i edytuje profil lokalu        | F-01             | US-02, FR-001, FR-002        | proposed |
+| S-01  | owner-company-registration | właściciel rejestruje firmę, loguje się i edytuje profil lokalu        | F-01             | US-02, FR-001, FR-002        | done     |
 | S-02  | staff-accounts-roles       | właściciel tworzy konta personelu i nadaje role (kelner/kuchnia)       | S-01             | FR-003                       | proposed |
 | S-03  | menu-items-management      | właściciel buduje menu — pozycje, kategorie, tagi alergenów            | S-01             | US-02, FR-004, FR-006        | proposed |
 | S-04  | menu-item-photos           | właściciel dodaje zdjęcia pozycji z generowaniem miniatur              | S-03             | US-02, FR-005                | proposed |
@@ -102,7 +102,7 @@ Fundamenty poniżej zakładają obecność tych warstw i ich NIE odbudowują.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Pierwszy realny tenant — jeśli wiązanie konta właściciela z `company_id` jest słabe, każdy kolejny slice dziedziczy lukę izolacji. Sekwencjonowany zaraz po F-01.
-- **Status:** proposed
+- **Status:** done
 
 ### S-02: Konta personelu i role
 
@@ -268,3 +268,4 @@ Fundamenty poniżej zakładają obecność tych warstw i ich NIE odbudowują.
 (Pusta przy pierwszym generowaniu. `/10x-archive` dopisze tu wpis i przełączy `Status` na `done`, gdy zmiana o pasującym Change ID zostanie zarchiwizowana.)
 
 - **F-01: (fundament) każda tabela domenowa nosi `company_id`, polityki RLS wymuszają izolację per firma, a role personelu (właściciel/kelner/kuchnia) są reprezentowane na bazie istniejącego Supabase Auth.** — Archived 2026-07-06 → `context/archive/2026-07-04-multitenant-rls-foundation/`. Lesson: —.
+- **S-01: właściciel rejestruje konto firmy, loguje się i edytuje profil lokalu (nazwa, adres, godziny otwarcia).** — Archived 2026-07-07 → `context/archive/2026-07-04-owner-company-registration/`. Lesson: —.
