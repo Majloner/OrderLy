@@ -3,7 +3,7 @@ change_id: menu-items-management
 title: Menu items management
 status: implementing
 created: 2026-07-08
-updated: 2026-07-08
+updated: 2026-07-14
 ---
 
 ## Notes

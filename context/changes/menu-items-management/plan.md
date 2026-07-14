@@ -385,23 +385,23 @@ Backfill domyślnych kategorii jest idempotentny (`WHERE NOT EXISTS`).
 
 #### Automated
 
-- [x] 1.1 Migracja aplikuje się czysto na hosted: `npx supabase db push`
-- [x] 1.2 Test izolacji przechodzi: `npm run test:rls`
-- [x] 1.3 Build przechodzi: `npm run build`
+- [x] 1.1 Migracja aplikuje się czysto na hosted: `npx supabase db push` — 6ed4de8
+- [x] 1.2 Test izolacji przechodzi: `npm run test:rls` — 6ed4de8
+- [x] 1.3 Build przechodzi: `npm run build` — 6ed4de8
 
 #### Manual
 
-- [x] 1.4 Przegląd diffu migracji przed `db push` — statementy zgodne z planem
-- [x] 1.5 Nowa rejestracja tworzy firmę z 4 domyślnymi kategoriami; istniejące firmy mają backfill
+- [x] 1.4 Przegląd diffu migracji przed `db push` — statementy zgodne z planem — 6ed4de8
+- [x] 1.5 Nowa rejestracja tworzy firmę z 4 domyślnymi kategoriami; istniejące firmy mają backfill — 6ed4de8
 
 ### Phase 2: Warstwa API (zod + JSON) i setup Vitest
 
 #### Automated
 
-- [ ] 2.1 Testy jednostkowe przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Build przechodzi: `npm run build`
-- [ ] 2.4 Typecheck przechodzi: `npm run typecheck`
+- [x] 2.1 Testy jednostkowe przechodzą: `npm test`
+- [x] 2.2 Lint przechodzi: `npm run lint`
+- [x] 2.3 Build przechodzi: `npm run build`
+- [x] 2.4 Typecheck przechodzi: `npm run typecheck`
 
 #### Manual
 
