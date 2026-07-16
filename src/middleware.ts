@@ -1,7 +1,10 @@
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard", "/settings"];
+const PROTECTED_ROUTES = ["/dashboard", "/settings", "/menu"];
+// Menu management is owner-only (PRD Access Control); waiter/kitchen land back
+// on the dashboard. RLS enforces this on the data layer regardless.
+const OWNER_ROUTES = ["/menu"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createClient(context.request.headers, context.cookies);
@@ -35,6 +38,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (PROTECTED_ROUTES.some((route) => context.url.pathname.startsWith(route))) {
     if (!context.locals.user) {
       return context.redirect("/auth/signin");
+    }
+  }
+
+  if (OWNER_ROUTES.some((route) => context.url.pathname.startsWith(route))) {
+    if (context.locals.role !== "owner") {
+      return context.redirect("/dashboard");
     }
   }
 

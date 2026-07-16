@@ -5,6 +5,12 @@ export const AVAILABILITY = ["available", "unavailable", "sold_out"] as const;
 
 export type MenuItemAvailability = (typeof AVAILABILITY)[number];
 
+export const AVAILABILITY_LABELS: Record<MenuItemAvailability, string> = {
+  available: "Dostępne",
+  unavailable: "Niedostępne",
+  sold_out: "Wyprzedane",
+};
+
 // The 14 EU allergens (Regulation 1169/2011); slugs match the public.allergen enum.
 export const ALLERGENS = [
   "gluten",
