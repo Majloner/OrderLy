@@ -33,14 +33,22 @@ export function useMenu() {
   const [menu, setMenu] = useState<MenuPayload | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Throws on failure so a mutation's follow-up refetch surfaces as an action
+  // error (banner) instead of discarding the already-rendered menu.
   const refetch = useCallback(async () => {
-    try {
-      const data = await callMenuApi<MenuPayload>("GET", "/api/menu");
-      setMenu(data);
-      setLoadError(null);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Nie udało się pobrać menu");
-    }
+    const data = await callMenuApi<MenuPayload>("GET", "/api/menu");
+    setMenu(data);
+    setLoadError(null);
+  }, []);
+
+  // Retry path for the initial-load error panel (menu still null).
+  const reload = useCallback(() => {
+    setLoadError(null);
+    callMenuApi<MenuPayload>("GET", "/api/menu")
+      .then(setMenu)
+      .catch((error: unknown) => {
+        setLoadError(error instanceof Error ? error.message : "Nie udało się pobrać menu");
+      });
   }, []);
 
   // Initial load; setState happens in the promise callbacks (async), and the
@@ -64,5 +72,5 @@ export function useMenu() {
     };
   }, []);
 
-  return { menu, setMenu, loadError, refetch };
+  return { menu, setMenu, loadError, refetch, reload };
 }

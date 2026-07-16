@@ -1,6 +1,6 @@
 import type { APIContext } from "astro";
 import type { ZodType } from "zod";
-import { createClient } from "@/lib/supabase";
+import type { createClient } from "@/lib/supabase";
 
 type SupabaseServerClient = NonNullable<ReturnType<typeof createClient>>;
 
@@ -42,12 +42,22 @@ export function guardMenuRequest(
     return { error: jsonError("Konto nie jest przypisane do żadnej firmy", 403) };
   }
 
-  const supabase = createClient(context.request.headers, context.cookies);
+  // Reuse the per-request client middleware already built (see src/middleware.ts).
+  const supabase = context.locals.supabase;
   if (!supabase) {
     return { error: jsonError("Supabase nie jest skonfigurowany", 500) };
   }
 
   return { supabase, companyId: company_id };
+}
+
+// Confirm a category belongs to the caller's company before an item references
+// it. The SELECT is RLS-scoped to current_company_id(), so a category from
+// another tenant reads as absent — FK validation alone would bypass RLS and let
+// an owner point an item at another company's category.
+export async function categoryExistsInCompany(supabase: SupabaseServerClient, categoryId: string): Promise<boolean> {
+  const { data } = await supabase.from("menu_categories").select("id").eq("id", categoryId).maybeSingle();
+  return data !== null;
 }
 
 export async function parseBody<T>(

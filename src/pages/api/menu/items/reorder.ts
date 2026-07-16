@@ -17,16 +17,10 @@ export const PUT: APIRoute = async (context) => {
     return body.error;
   }
 
-  const results = await Promise.all(
-    body.input.map((id, index) =>
-      guard.supabase
-        .from("menu_items")
-        .update({ sort_order: index + 1 })
-        .eq("id", id),
-    ),
-  );
-
-  if (results.some((result) => result.error)) {
+  // One atomic statement (sort_order = position in the array) instead of N
+  // per-row UPDATEs — no partial-failure corruption, no Worker subrequest fan-out.
+  const { error } = await guard.supabase.rpc("reorder_menu_items", { item_ids: body.input });
+  if (error) {
     return jsonError("Nie udało się zapisać kolejności pozycji", 500);
   }
 

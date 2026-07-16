@@ -6,12 +6,20 @@ const PROTECTED_ROUTES = ["/dashboard", "/settings", "/menu"];
 // on the dashboard. RLS enforces this on the data layer regardless.
 const OWNER_ROUTES = ["/menu"];
 
+// Match a route exactly or as a path prefix (`/menu` matches `/menu` and
+// `/menu/x`, but not `/menus` — that would silently gate a future public
+// client-menu page).
+function matchesRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createClient(context.request.headers, context.cookies);
 
   context.locals.user = null;
   context.locals.company_id = null;
   context.locals.role = null;
+  context.locals.supabase = supabase;
 
   if (supabase) {
     const {
@@ -35,13 +43,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  if (PROTECTED_ROUTES.some((route) => context.url.pathname.startsWith(route))) {
+  if (PROTECTED_ROUTES.some((route) => matchesRoute(context.url.pathname, route))) {
     if (!context.locals.user) {
       return context.redirect("/auth/signin");
     }
   }
 
-  if (OWNER_ROUTES.some((route) => context.url.pathname.startsWith(route))) {
+  if (OWNER_ROUTES.some((route) => matchesRoute(context.url.pathname, route))) {
     if (context.locals.role !== "owner") {
       return context.redirect("/dashboard");
     }

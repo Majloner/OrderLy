@@ -1,6 +1,13 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
-import { guardMenuRequest, isUniqueViolation, jsonData, jsonError, parseBody } from "@/lib/api";
+import {
+  categoryExistsInCompany,
+  guardMenuRequest,
+  isUniqueViolation,
+  jsonData,
+  jsonError,
+  parseBody,
+} from "@/lib/api";
 import { menuItemInputSchema } from "@/lib/schemas/menu";
 
 export const prerender = false;
@@ -21,6 +28,11 @@ export const PUT: APIRoute = async (context) => {
   const body = await parseBody(context, menuItemInputSchema);
   if ("error" in body) {
     return body.error;
+  }
+
+  // Reject a category_id that isn't in the caller's company (RLS-bypassing FK).
+  if (body.input.category_id && !(await categoryExistsInCompany(guard.supabase, body.input.category_id))) {
+    return jsonError("Nie znaleziono wskazanej kategorii", 400);
   }
 
   const { data, error } = await guard.supabase

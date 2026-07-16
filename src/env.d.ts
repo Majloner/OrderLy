@@ -3,5 +3,6 @@ declare namespace App {
     user: import("@supabase/supabase-js").User | null;
     company_id: string | null;
     role: "owner" | "waiter" | "kitchen" | null;
+    supabase: ReturnType<typeof import("@/lib/supabase").createClient>;
   }
 }

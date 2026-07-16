@@ -1,7 +1,8 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 
-const { user } = Astro.locals;
+const { user, role } = Astro.locals;
+const isOwner = role === "owner";
 ---
 
 <Layout title="Panel">
@@ -15,12 +16,16 @@ const { user } = Astro.locals;
       </p>
       <p class="mt-2 text-sm text-blue-100/50">Ta strona jest tylko dla zalogowanych.</p>
       <div class="mt-6 flex justify-center gap-3">
-        <a
-          href="/menu"
-          class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
-        >
-          Menu
-        </a>
+        {
+          isOwner && (
+            <a
+              href="/menu"
+              class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+            >
+              Menu
+            </a>
+          )
+        }
         <a
           href="/settings"
           class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"

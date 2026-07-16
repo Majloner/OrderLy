@@ -1,5 +1,12 @@
 import type { APIRoute } from "astro";
-import { guardMenuRequest, isUniqueViolation, jsonData, jsonError, parseBody } from "@/lib/api";
+import {
+  categoryExistsInCompany,
+  guardMenuRequest,
+  isUniqueViolation,
+  jsonData,
+  jsonError,
+  parseBody,
+} from "@/lib/api";
 import { menuItemInputSchema } from "@/lib/schemas/menu";
 import type { MenuItem } from "@/types";
 
@@ -16,17 +23,12 @@ export const POST: APIRoute = async (context) => {
     return body.error;
   }
 
-  // Append at the end of the target section (a category or "Bez kategorii").
-  let lastQuery = guard.supabase
-    .from("menu_items")
-    .select("sort_order")
-    .is("archived_at", null)
-    .order("sort_order", { ascending: false })
-    .limit(1);
-  lastQuery = body.input.category_id
-    ? lastQuery.eq("category_id", body.input.category_id)
-    : lastQuery.is("category_id", null);
-  const { data: last } = await lastQuery.maybeSingle<{ sort_order: number }>();
+  // A cross-tenant category_id would slip past RLS via FK validation, so verify
+  // ownership before the insert. sort_order is assigned by a BEFORE INSERT
+  // trigger (append at end of section) — no read-then-write race here.
+  if (body.input.category_id && !(await categoryExistsInCompany(guard.supabase, body.input.category_id))) {
+    return jsonError("Nie znaleziono wskazanej kategorii", 400);
+  }
 
   const { data, error } = await guard.supabase
     .from("menu_items")
@@ -38,7 +40,6 @@ export const POST: APIRoute = async (context) => {
       category_id: body.input.category_id,
       availability: body.input.availability,
       allergens: body.input.allergens,
-      sort_order: (last?.sort_order ?? 0) + 1,
     })
     .select("*")
     .single<MenuItem>();

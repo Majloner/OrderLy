@@ -16,20 +16,13 @@ export const POST: APIRoute = async (context) => {
     return body.error;
   }
 
-  // Append at the end; drag&drop reorder owns the final ordering.
-  const { data: last } = await guard.supabase
-    .from("menu_categories")
-    .select("sort_order")
-    .order("sort_order", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ sort_order: number }>();
-
+  // sort_order is assigned by a BEFORE INSERT trigger (append at end); drag&drop
+  // reorder owns the final ordering afterwards.
   const { data, error } = await guard.supabase
     .from("menu_categories")
     .insert({
       company_id: guard.companyId,
       name: body.input.name,
-      sort_order: (last?.sort_order ?? 0) + 1,
     })
     .select("*")
     .single<MenuCategory>();

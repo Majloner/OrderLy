@@ -23,7 +23,7 @@ import { MenuItemDialog } from "./MenuItemDialog";
 type ConfirmState = { type: "archive-item"; item: MenuItem } | { type: "delete-category"; category: MenuCategory };
 
 export default function MenuManager() {
-  const { menu, setMenu, loadError, refetch } = useMenu();
+  const { menu, setMenu, loadError, refetch, reload } = useMenu();
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -35,23 +35,29 @@ export default function MenuManager() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  if (loadError) {
-    return (
-      <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-6 text-red-100">
-        <p>{loadError}</p>
-        <Button type="button" variant="outline" className="mt-4" onClick={() => void refetch()}>
-          Spróbuj ponownie
-        </Button>
-      </div>
-    );
-  }
-
+  // Full-screen error only when there is nothing to show yet (initial load).
+  // A failed refetch after a successful mutation surfaces as actionError below,
+  // keeping the already-rendered menu on screen.
   if (!menu) {
+    if (loadError) {
+      return (
+        <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-6 text-red-100">
+          <p>{loadError}</p>
+          <Button type="button" variant="outline" className="mt-4" onClick={reload}>
+            Spróbuj ponownie
+          </Button>
+        </div>
+      );
+    }
     return <p className="text-white/60">Ładowanie menu…</p>;
   }
 
-  const itemsFor = (categoryId: string | null) => menu.items.filter((item) => item.category_id === categoryId);
-  const uncategorized = itemsFor(null);
+  const categoryIds = new Set(menu.categories.map((category) => category.id));
+  const itemsFor = (categoryId: string) => menu.items.filter((item) => item.category_id === categoryId);
+  // "Bez kategorii" also catches items whose category_id no longer resolves to a
+  // known category (e.g. a category deleted between GET /api/menu's two reads),
+  // so they never silently vanish from the management view.
+  const uncategorized = menu.items.filter((item) => item.category_id === null || !categoryIds.has(item.category_id));
 
   const openCreateCategory = () => {
     setEditedCategory(null);
