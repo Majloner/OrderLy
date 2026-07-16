@@ -1,9 +1,10 @@
 ---
 change_id: menu-items-management
 title: Menu items management
-status: impl_reviewed
+status: archived
 created: 2026-07-08
 updated: 2026-07-17
+archived_at: 2026-07-16T23:13:11Z
 ---
 
 ## Notes
