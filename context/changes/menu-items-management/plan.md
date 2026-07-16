@@ -405,22 +405,22 @@ Backfill domyślnych kategorii jest idempotentny (`WHERE NOT EXISTS`).
 
 #### Manual
 
-- [x] 2.5 Smoke test endpointów: 401/403/pełny cykl CRUD/archiwizacja znika z `GET /api/menu`
+- [x] 2.5 Smoke test endpointów: 401/403/pełny cykl CRUD/archiwizacja znika z `GET /api/menu` — 2ba736a
 
 ### Phase 3: UI `/menu` — lista, dialogi, drag&drop
 
 #### Automated
 
-- [x] 3.1 Lint przechodzi: `npm run lint`
-- [x] 3.2 Build przechodzi: `npm run build`
-- [x] 3.3 Testy jednostkowe nadal przechodzą: `npm test`
-- [x] 3.4 Typecheck przechodzi: `npm run typecheck`
+- [x] 3.1 Lint przechodzi: `npm run lint` — 2ba736a
+- [x] 3.2 Build przechodzi: `npm run build` — 2ba736a
+- [x] 3.3 Testy jednostkowe nadal przechodzą: `npm test` — 2ba736a
+- [x] 3.4 Typecheck przechodzi: `npm run typecheck` — 2ba736a
 
 #### Manual
 
-- [x] 3.5 Pełny przebieg CRUD właściciela bez przeładowania strony
-- [x] 3.6 Drag&drop kategorii i pozycji trwały po odświeżeniu
-- [x] 3.7 Usunięcie kategorii przenosi pozycje do „Bez kategorii"
-- [x] 3.8 Duplikat nazwy → czytelny błąd PL
-- [x] 3.9 Waiter: brak dostępu do `/menu` i 403 na zapisie
-- [x] 3.10 Widok responsywny na mobile
+- [x] 3.5 Pełny przebieg CRUD właściciela bez przeładowania strony — 2ba736a
+- [x] 3.6 Drag&drop kategorii i pozycji trwały po odświeżeniu — 2ba736a
+- [x] 3.7 Usunięcie kategorii przenosi pozycje do „Bez kategorii" — 2ba736a
+- [x] 3.8 Duplikat nazwy → czytelny błąd PL — 2ba736a
+- [x] 3.9 Waiter: brak dostępu do `/menu` i 403 na zapisie — 2ba736a
+- [x] 3.10 Widok responsywny na mobile — 2ba736a
