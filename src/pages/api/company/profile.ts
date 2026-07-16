@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-import { createClient } from "@/lib/supabase";
 
 export const POST: APIRoute = async (context) => {
   const { user, company_id, role } = context.locals;
@@ -19,7 +18,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect(`/settings?error=${encodeURIComponent("Nazwa lokalu jest wymagana")}`);
   }
 
-  const supabase = createClient(context.request.headers, context.cookies);
+  const supabase = context.locals.supabase;
   if (!supabase) {
     return context.redirect(`/settings?error=${encodeURIComponent("Supabase nie jest skonfigurowany")}`);
   }

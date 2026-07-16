@@ -119,4 +119,10 @@ describe("reorderSchema", () => {
     const result = reorderSchema.safeParse(["not-a-uuid"]);
     expect(result.success).toBe(false);
   });
+
+  it("rejects a list over the 500-id cap", () => {
+    const id = "9f3c2a10-6d4e-4b8a-9c1d-2e5f7a8b9c0d";
+    const result = reorderSchema.safeParse(Array.from({ length: 501 }, () => id));
+    expect(result.success).toBe(false);
+  });
 });

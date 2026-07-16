@@ -48,7 +48,8 @@ export const menuItemInputSchema = z.object({
 
 export const reorderSchema = z
   .array(z.uuid("Nieprawidłowy identyfikator"), "Wymagana lista identyfikatorów")
-  .min(1, "Lista identyfikatorów nie może być pusta");
+  .min(1, "Lista identyfikatorów nie może być pusta")
+  .max(500, "Zbyt wiele identyfikatorów");
 
 export type MenuCategoryInput = z.output<typeof menuCategoryInputSchema>;
 export type MenuItemInput = z.output<typeof menuItemInputSchema>;

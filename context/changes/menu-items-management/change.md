@@ -1,9 +1,9 @@
 ---
 change_id: menu-items-management
 title: Menu items management
-status: implemented
+status: impl_reviewed
 created: 2026-07-08
-updated: 2026-07-16
+updated: 2026-07-17
 ---
 
 ## Notes
