@@ -1,0 +1,89 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { createClient } from "@/lib/supabase";
+
+// Authentication is enforced by middleware (PROTECTED_ROUTES includes /settings),
+// so `user` is guaranteed here. We only resolve owner + company context to render
+// the form. (No top-level `return` in frontmatter — it trips an eslint/astro bug.)
+const { company_id, role } = Astro.locals;
+const isOwner = role === "owner" && Boolean(company_id);
+
+const supabase = createClient(Astro.request.headers, Astro.cookies);
+let company: { name: string; address: string | null; opening_hours: string | null } | null = null;
+if (isOwner && supabase && company_id) {
+  const { data } = await supabase
+    .from("companies")
+    .select("name, address, opening_hours")
+    .eq("id", company_id)
+    .maybeSingle<{ name: string; address: string | null; opening_hours: string | null }>();
+  company = data;
+}
+
+const error = Astro.url.searchParams.get("error");
+const success = Astro.url.searchParams.get("success");
+
+const inputClass =
+  "mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-white placeholder-white/30 focus:border-purple-300 focus:outline-none";
+---
+
+<Layout title="Ustawienia lokalu">
+  <div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
+      <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-2xl font-bold text-transparent">
+        Ustawienia lokalu
+      </h1>
+
+      {
+        isOwner ? (
+          <div>
+            {success && (
+              <p class="mb-4 rounded-lg bg-green-500/20 px-3 py-2 text-sm text-green-100">Zapisano zmiany.</p>
+            )}
+            {error && <p class="mb-4 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{error}</p>}
+
+            <form method="POST" action="/api/company/profile" class="space-y-4">
+              <label class="block text-sm text-blue-100/80">
+                Nazwa lokalu
+                <input
+                  class:list={inputClass}
+                  name="name"
+                  value={company?.name ?? ""}
+                  placeholder="np. Bistro Roma"
+                  required
+                />
+              </label>
+              <label class="block text-sm text-blue-100/80">
+                Adres
+                <input
+                  class:list={inputClass}
+                  name="address"
+                  value={company?.address ?? ""}
+                  placeholder="ul. Przykładowa 1"
+                />
+              </label>
+              <label class="block text-sm text-blue-100/80">
+                Godziny otwarcia
+                <input
+                  class:list={inputClass}
+                  name="opening_hours"
+                  value={company?.opening_hours ?? ""}
+                  placeholder="Pon–Nd 10:00–22:00"
+                />
+              </label>
+              <button
+                type="submit"
+                class="w-full rounded-lg bg-gradient-to-r from-blue-500/80 to-purple-500/80 px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+              >
+                Zapisz
+              </button>
+            </form>
+          </div>
+        ) : (
+          <p class="text-sm text-blue-100/70">Tylko właściciel lokalu może edytować te ustawienia.</p>
+        )
+      }
+
+      <a href="/dashboard" class="mt-4 inline-block text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
+    </div>
+  </div>
+</Layout>

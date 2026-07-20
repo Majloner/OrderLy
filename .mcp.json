@@ -1,8 +1,12 @@
 {
   "mcpServers": {
-    "claude-manager-kanban": {
-      "command": "C:\\Users\\milosz.swiatek\\AppData\\Local\\ClaudeCodeManager\\current\\MCP\\ClaudeManager.McpServer.exe",
-      "args": []
+    "cloudflare": {
+      "type": "http",
+      "url": "https://mcp.cloudflare.com/mcp"
+    },
+    "linear-server": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp"
     }
   }
 }
