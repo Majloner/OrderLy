@@ -13,7 +13,9 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  adapter: cloudflare(),
+  // No astro:assets usage in the app, so skip the Cloudflare Images binding the
+  // adapter otherwise auto-enables (and tries to provision on deploy).
+  adapter: cloudflare({ imageService: "passthrough" }),
   env: {
     schema: {
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
