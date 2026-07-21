@@ -346,23 +346,23 @@ kolumn czy polityk. `on conflict do nothing` na buckecie czyni insert idempotent
 
 #### Automated
 
-- [x] 1.1 Migracja aplikuje się czysto na hosted: `npx supabase db push`
-- [x] 1.2 Test izolacji przechodzi: `npm run test:rls`
-- [x] 1.3 Build przechodzi: `npm run build`
+- [x] 1.1 Migracja aplikuje się czysto na hosted: `npx supabase db push` — 302c280
+- [x] 1.2 Test izolacji przechodzi: `npm run test:rls` — 302c280
+- [x] 1.3 Build przechodzi: `npm run build` — 302c280
 
 #### Manual
 
-- [x] 1.4 Przegląd diffu migracji przed `db push` — bucket public, brak anon SELECT
-- [x] 1.5 W Supabase Studio: bucket `menu-photos` publiczny; polityki na `storage.objects` widoczne
+- [x] 1.4 Przegląd diffu migracji przed `db push` — bucket public, brak anon SELECT — 302c280
+- [x] 1.5 W Supabase Studio: bucket `menu-photos` publiczny; polityki na `storage.objects` widoczne — 302c280
 
 ### Phase 2: API — signed upload URL + pole zdjęcia + „usuń zdjęcie"
 
 #### Automated
 
-- [ ] 2.1 Testy jednostkowe przechodzą: `npm test`
-- [ ] 2.2 Lint przechodzi: `npm run lint`
-- [ ] 2.3 Build przechodzi: `npm run build`
-- [ ] 2.4 Typecheck przechodzi: `npm run typecheck`
+- [x] 2.1 Testy jednostkowe przechodzą: `npm test`
+- [x] 2.2 Lint przechodzi: `npm run lint`
+- [x] 2.3 Build przechodzi: `npm run build`
+- [x] 2.4 Typecheck przechodzi: `npm run typecheck`
 
 #### Manual
 

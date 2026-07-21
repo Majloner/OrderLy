@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { menuCategoryInputSchema, menuItemInputSchema, reorderSchema } from "@/lib/schemas/menu";
+import {
+  MAX_FULL_PHOTO_BYTES,
+  MAX_THUMB_PHOTO_BYTES,
+  menuCategoryInputSchema,
+  menuItemInputSchema,
+  photoUploadRequestSchema,
+  reorderSchema,
+} from "@/lib/schemas/menu";
 
 const validItem = {
   name: "Pierogi ruskie",
@@ -124,5 +131,31 @@ describe("reorderSchema", () => {
     const id = "9f3c2a10-6d4e-4b8a-9c1d-2e5f7a8b9c0d";
     const result = reorderSchema.safeParse(Array.from({ length: 501 }, () => id));
     expect(result.success).toBe(false);
+  });
+});
+
+describe("photoUploadRequestSchema", () => {
+  const validRequest = { contentType: "image/webp", fullSize: 500_000, thumbSize: 40_000 };
+
+  it("accepts a valid WebP upload request", () => {
+    expect(photoUploadRequestSchema.safeParse(validRequest).success).toBe(true);
+  });
+
+  it("rejects a non-WebP content type", () => {
+    expect(photoUploadRequestSchema.safeParse({ ...validRequest, contentType: "image/png" }).success).toBe(false);
+  });
+
+  it("rejects a full image over the size cap", () => {
+    const result = photoUploadRequestSchema.safeParse({ ...validRequest, fullSize: MAX_FULL_PHOTO_BYTES + 1 });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a thumbnail over the size cap", () => {
+    const result = photoUploadRequestSchema.safeParse({ ...validRequest, thumbSize: MAX_THUMB_PHOTO_BYTES + 1 });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a non-positive size", () => {
+    expect(photoUploadRequestSchema.safeParse({ ...validRequest, fullSize: 0 }).success).toBe(false);
   });
 });

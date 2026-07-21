@@ -60,6 +60,14 @@ export async function categoryExistsInCompany(supabase: SupabaseServerClient, ca
   return data !== null;
 }
 
+// Confirm a menu item belongs to the caller's company before minting a photo
+// upload URL / attaching a photo. RLS-scoped SELECT, so a foreign item reads as
+// absent — prevents creating orphan objects under the owner's prefix.
+export async function itemExistsInCompany(supabase: SupabaseServerClient, itemId: string): Promise<boolean> {
+  const { data } = await supabase.from("menu_items").select("id").eq("id", itemId).maybeSingle();
+  return data !== null;
+}
+
 export async function parseBody<T>(
   context: APIContext,
   schema: ZodType<T>,
