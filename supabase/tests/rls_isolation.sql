@@ -1,10 +1,12 @@
--- RLS isolation test (F-01 guardrail, extended in S-03). Seeds two companies
--- with owners, a waiter, menu categories and menu items, then asserts, per
--- simulated JWT context, that staff see only their own company, that menu
--- writes are owner-only (waiter denied), that anonymous callers read only
--- visible rows (available/sold_out, non-archived) and cannot write, and that
--- an orphan (profile-less) authenticated user sees nothing. Everything runs
--- inside a transaction and is ROLLED BACK — no fixtures persist.
+-- RLS isolation test (F-01 guardrail, extended in S-03 and S-04). Seeds two
+-- companies with owners, a waiter, menu categories and menu items, then
+-- asserts, per simulated JWT context, that staff see only their own company,
+-- that menu writes are owner-only (waiter denied), that anonymous callers read
+-- only visible rows (available/sold_out, non-archived) and cannot write, that
+-- an orphan (profile-less) authenticated user sees nothing, and that
+-- menu-photos Storage writes are owner-only and scoped to the caller's company
+-- prefix. Everything runs inside a transaction and is ROLLED BACK — no fixtures
+-- persist.
 --
 -- Assertions raise an exception on failure, which aborts the transaction and
 -- makes `supabase db query` exit non-zero. A clean run ends with the rollback
@@ -187,6 +189,47 @@ begin
   select count(*) into co from public.companies;
   if co <> 0 then raise exception 'FAIL orphan: profile-less user saw % companies, expected 0', co; end if;
   raise notice 'OK orphan authenticated user sees nothing (default-deny)';
+end $$;
+reset role;
+
+-- --- Assertion 7: Storage menu-photos writes are owner-only + company-scoped --
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare n int; leaked boolean := false;
+begin
+  -- owner A can write under own company prefix
+  insert into storage.objects (bucket_id, name)
+    values ('menu-photos', 'a1111111-1111-1111-1111-111111111111/itemx/full.webp');
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL storage owner write: INSERT affected %, expected 1', n; end if;
+
+  -- owner A cannot write under company B prefix (FK-bypass would break tenancy)
+  begin
+    insert into storage.objects (bucket_id, name)
+      values ('menu-photos', 'b2222222-2222-2222-2222-222222222222/itemy/full.webp');
+    leaked := true;
+  exception when others then leaked := false;
+  end;
+  if leaked then raise exception 'FAIL storage cross-tenant: owner A wrote under Firma B prefix'; end if;
+  raise notice 'OK owner A writes menu-photos only under own company prefix';
+end $$;
+reset role;
+
+-- --- Assertion 8: waiter cannot write Storage menu-photos ------------------
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"dddddddd-dddd-dddd-dddd-dddddddddddd","role":"authenticated"}';
+do $$
+declare leaked boolean := false;
+begin
+  begin
+    insert into storage.objects (bucket_id, name)
+      values ('menu-photos', 'a1111111-1111-1111-1111-111111111111/itemz/full.webp');
+    leaked := true;
+  exception when others then leaked := false;
+  end;
+  if leaked then raise exception 'FAIL storage waiter write: INSERT succeeded (should be denied)'; end if;
+  raise notice 'OK waiter A cannot write menu-photos';
 end $$;
 reset role;
 

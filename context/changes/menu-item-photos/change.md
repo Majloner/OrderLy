@@ -1,7 +1,7 @@
 ---
 change_id: menu-item-photos
 title: Menu item photos
-status: planned
+status: implementing
 created: 2026-07-21
 updated: 2026-07-21
 ---
