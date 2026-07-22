@@ -359,31 +359,31 @@ kolumn czy polityk. `on conflict do nothing` na buckecie czyni insert idempotent
 
 #### Automated
 
-- [x] 2.1 Testy jednostkowe przechodzą: `npm test`
-- [x] 2.2 Lint przechodzi: `npm run lint`
-- [x] 2.3 Build przechodzi: `npm run build`
-- [x] 2.4 Typecheck przechodzi: `npm run typecheck`
+- [x] 2.1 Testy jednostkowe przechodzą: `npm test` — 809256e
+- [x] 2.2 Lint przechodzi: `npm run lint` — 809256e
+- [x] 2.3 Build przechodzi: `npm run build` — 809256e
+- [x] 2.4 Typecheck przechodzi: `npm run typecheck` — 809256e
 
 #### Manual
 
-- [ ] 2.5 Smoke `POST .../photo-url`: 401 bez sesji, 403 nie-owner, tokeny dla ownera, 400 dla złego content-type
-- [ ] 2.6 Upload przez signed URL tworzy obiekt pod `{company_id}/{id}/...`; PUT zapisuje `photo_path`+`photo_updated_at`; `photo_path: null` czyści i kasuje obiekty
+- [x] 2.5 Smoke `POST .../photo-url`: 401 bez sesji, 403 nie-owner, tokeny dla ownera, 400 dla złego content-type
+- [x] 2.6 Upload przez signed URL tworzy obiekt pod `{company_id}/{id}/...`; PUT zapisuje `photo_path`+`photo_updated_at`; `photo_path: null` czyści i kasuje obiekty
 
 ### Phase 3: UI `/menu` — resize w kliencie, picker+podgląd, miniatura
 
 #### Automated
 
-- [ ] 3.1 Lint przechodzi: `npm run lint`
-- [ ] 3.2 Build przechodzi: `npm run build`
-- [ ] 3.3 Testy jednostkowe nadal przechodzą: `npm test`
-- [ ] 3.4 Typecheck przechodzi: `npm run typecheck`
+- [x] 3.1 Lint przechodzi: `npm run lint`
+- [x] 3.2 Build przechodzi: `npm run build`
+- [x] 3.3 Testy jednostkowe nadal przechodzą: `npm test`
+- [x] 3.4 Typecheck przechodzi: `npm run typecheck`
 
 #### Manual
 
-- [ ] 3.5 Dodanie zdjęcia: podgląd w dialogu, miniatura na liście bez przeładowania
-- [ ] 3.6 Zdjęcie z telefonu w poprawnej orientacji (EXIF)
-- [ ] 3.7 Podmiana zdjęcia natychmiast odświeża miniaturę (cache-bust)
-- [ ] 3.8 Usunięcie zdjęcia znika z listy i kasuje obiekty
-- [ ] 3.9 Duże zdjęcie nie zawiesza karty na mobile; progres widoczny
-- [ ] 3.10 Nie-owner nie dostaje uploadu (403)
-- [ ] 3.11 Widok responsywny na mobile
+- [x] 3.5 Dodanie zdjęcia: podgląd w dialogu, miniatura na liście bez przeładowania
+- [x] 3.6 Zdjęcie z telefonu w poprawnej orientacji (EXIF)
+- [x] 3.7 Podmiana zdjęcia natychmiast odświeża miniaturę (cache-bust)
+- [x] 3.8 Usunięcie zdjęcia znika z listy i kasuje obiekty
+- [x] 3.9 Duże zdjęcie nie zawiesza karty na mobile; progres widoczny
+- [x] 3.10 Nie-owner nie dostaje uploadu (403)
+- [x] 3.11 Widok responsywny na mobile

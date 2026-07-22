@@ -51,8 +51,8 @@ export const reorderSchema = z
   .min(1, "Lista identyfikatorów nie może być pusta")
   .max(500, "Zbyt wiele identyfikatorów");
 
-// Photo upload budget. Thumbnails/full images are produced client-side as WebP
-// (no server transforms), so we validate the declared format + size at mint.
+// Declared format/size for a photo upload request; the WebP blobs are produced
+// client-side, validated here before the server mints signed upload URLs.
 export const MAX_FULL_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB
 export const MAX_THUMB_PHOTO_BYTES = 300 * 1024; // 300 KB
 
@@ -72,4 +72,3 @@ export const photoUploadRequestSchema = z.object({
 
 export type MenuCategoryInput = z.output<typeof menuCategoryInputSchema>;
 export type MenuItemInput = z.output<typeof menuItemInputSchema>;
-export type PhotoUploadRequest = z.output<typeof photoUploadRequestSchema>;

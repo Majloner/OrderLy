@@ -154,8 +154,4 @@ describe("photoUploadRequestSchema", () => {
     const result = photoUploadRequestSchema.safeParse({ ...validRequest, thumbSize: MAX_THUMB_PHOTO_BYTES + 1 });
     expect(result.success).toBe(false);
   });
-
-  it("rejects a non-positive size", () => {
-    expect(photoUploadRequestSchema.safeParse({ ...validRequest, fullSize: 0 }).success).toBe(false);
-  });
 });

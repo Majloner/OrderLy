@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ImageIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { publicPhotoUrl, resizeForUpload } from "@/lib/images";
 import { menuItemInputSchema, type MenuItemInput } from "@/lib/schemas/menu";
 import {
   ALLERGEN_LABELS,
@@ -27,13 +29,18 @@ import {
 
 const NO_CATEGORY = "none";
 
+// What to do with the item's photo on save. Resize happens on submit, so the
+// blobs are only produced when the user actually saves a newly picked image.
+export type PhotoIntent = { kind: "keep" } | { kind: "remove" } | { kind: "upload"; full: Blob; thumb: Blob };
+
 interface MenuItemDialogProps {
   open: boolean;
   item: MenuItem | null;
   categories: MenuCategory[];
   defaultCategoryId: string | null;
+  supabaseUrl: string;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (input: MenuItemInput) => Promise<void>;
+  onSubmit: (input: MenuItemInput, photo: PhotoIntent) => Promise<void>;
 }
 
 export function MenuItemDialog({
@@ -41,6 +48,7 @@ export function MenuItemDialog({
   item,
   categories,
   defaultCategoryId,
+  supabaseUrl,
   onOpenChange,
   onSubmit,
 }: MenuItemDialogProps) {
@@ -57,6 +65,7 @@ export function MenuItemDialog({
           item={item}
           categories={categories}
           defaultCategoryId={defaultCategoryId}
+          supabaseUrl={supabaseUrl}
           onSubmit={onSubmit}
           onDone={() => {
             onOpenChange(false);
@@ -71,11 +80,12 @@ interface MenuItemFormProps {
   item: MenuItem | null;
   categories: MenuCategory[];
   defaultCategoryId: string | null;
-  onSubmit: (input: MenuItemInput) => Promise<void>;
+  supabaseUrl: string;
+  onSubmit: (input: MenuItemInput, photo: PhotoIntent) => Promise<void>;
   onDone: () => void;
 }
 
-function MenuItemForm({ item, categories, defaultCategoryId, onSubmit, onDone }: MenuItemFormProps) {
+function MenuItemForm({ item, categories, defaultCategoryId, supabaseUrl, onSubmit, onDone }: MenuItemFormProps) {
   const [name, setName] = useState(item?.name ?? "");
   const [description, setDescription] = useState(item?.description ?? "");
   const [price, setPrice] = useState(item ? String(item.price).replace(".", ",") : "");
@@ -84,8 +94,26 @@ function MenuItemForm({ item, categories, defaultCategoryId, onSubmit, onDone }:
   );
   const [availability, setAvailability] = useState<MenuItemAvailability>(item?.availability ?? "available");
   const [allergens, setAllergens] = useState<Allergen[]>(item?.allergens ?? []);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Local object URL for a freshly picked file; revoked when it changes/unmounts.
+  const pickedPreview = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
+  useEffect(() => {
+    return () => {
+      if (pickedPreview) {
+        URL.revokeObjectURL(pickedPreview);
+      }
+    };
+  }, [pickedPreview]);
+
+  const existingPhotoUrl =
+    item?.photo_path && !photoRemoved
+      ? publicPhotoUrl(supabaseUrl, item.photo_path, "thumb", item.photo_updated_at)
+      : null;
+  const previewUrl = pickedPreview ?? existingPhotoUrl;
 
   const toggleAllergen = (allergen: Allergen, checked: boolean) => {
     setAllergens((previous) => (checked ? [...previous, allergen] : previous.filter((a) => a !== allergen)));
@@ -108,7 +136,14 @@ function MenuItemForm({ item, categories, defaultCategoryId, onSubmit, onDone }:
     setSaving(true);
     setError(null);
     try {
-      await onSubmit(parsed.data);
+      let photo: PhotoIntent = { kind: "keep" };
+      if (photoFile) {
+        const { full, thumb } = await resizeForUpload(photoFile);
+        photo = { kind: "upload", full, thumb };
+      } else if (photoRemoved && item?.photo_path) {
+        photo = { kind: "remove" };
+      }
+      await onSubmit(parsed.data, photo);
       onDone();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Nie udało się zapisać pozycji");
@@ -142,6 +177,45 @@ function MenuItemForm({ item, categories, defaultCategoryId, onSubmit, onDone }:
           placeholder="Krótki opis pozycji"
           rows={2}
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="item-photo">Zdjęcie (opcjonalne)</Label>
+        <div className="flex items-center gap-3">
+          {previewUrl ? (
+            <img src={previewUrl} alt="" className="size-16 shrink-0 rounded-md object-cover" />
+          ) : (
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/30">
+              <ImageIcon className="size-6" />
+            </div>
+          )}
+          <div className="flex flex-col gap-2">
+            <Input
+              id="item-photo"
+              type="file"
+              accept="image/*"
+              className="text-sm"
+              onChange={(event) => {
+                setPhotoFile(event.target.files?.[0] ?? null);
+                setPhotoRemoved(false);
+              }}
+            />
+            {previewUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-fit text-white/60 hover:text-red-300"
+                onClick={() => {
+                  setPhotoFile(null);
+                  setPhotoRemoved(true);
+                }}
+              >
+                <Trash2 className="size-4" /> Usuń zdjęcie
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
