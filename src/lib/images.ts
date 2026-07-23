@@ -15,13 +15,14 @@ export interface ResizedPhoto {
 // Produce a full-size and a thumbnail WebP from a picked image file. The library
 // is dynamically imported so it never weighs on the public menu-browsing bundle;
 // it handles EXIF orientation and runs off the main thread via a web worker.
-export async function resizeForUpload(file: File): Promise<ResizedPhoto> {
+export async function resizeForUpload(file: File, signal?: AbortSignal): Promise<ResizedPhoto> {
   const { default: imageCompression } = await import("browser-image-compression");
   const common = {
     fileType: "image/webp",
     initialQuality: WEBP_QUALITY,
     useWebWorker: true,
     preserveExif: false, // orientation is baked in during canvas resize
+    signal,
   } as const;
 
   const [full, thumb] = await Promise.all([
@@ -34,11 +35,11 @@ export async function resizeForUpload(file: File): Promise<ResizedPhoto> {
 // Upload a blob to an absolute Supabase signed upload URL (token in the URL).
 // Mirrors storage-js uploadToSignedUrl's multipart body so no client SDK/key is
 // needed; bytes go straight to Storage, bypassing the Worker.
-export async function putSignedBlob(signedUrl: string, blob: Blob): Promise<void> {
+export async function putSignedBlob(signedUrl: string, blob: Blob, signal?: AbortSignal): Promise<void> {
   const form = new FormData();
   form.append("cacheControl", "3600");
   form.append("", blob, "photo.webp");
-  const response = await fetch(signedUrl, { method: "PUT", headers: { "x-upsert": "true" }, body: form });
+  const response = await fetch(signedUrl, { method: "PUT", headers: { "x-upsert": "true" }, body: form, signal });
   if (!response.ok) {
     throw new Error(`Nie udało się przesłać zdjęcia (${response.status})`);
   }

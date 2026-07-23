@@ -232,6 +232,9 @@ begin
   raise notice 'OK waiter A cannot write menu-photos';
 end $$;
 reset role;
+-- Note: waiter DELETE denial is not asserted via SQL — storage.protect_delete()
+-- blocks direct DELETE from storage.objects for ALL roles (deletes go through
+-- the Storage API, where the owner-only DELETE policy mirrors INSERT, above).
 
 rollback;
 

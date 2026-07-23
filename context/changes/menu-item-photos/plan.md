@@ -8,6 +8,24 @@ a oryginał + miniatura trafiają do **publicznego bucketu Supabase Storage** pr
 wystawiany przez owner-guarded route Astro. Na wierszu `menu_items` przechowujemy `photo_path` (referencja)
 i `photo_updated_at` (cache-bust). Priorytet: $0 / free tier — bez płatnych transformów obrazów.
 
+## Implementation Deviations (post-hoc)
+
+> Added during `/10x-impl-review`. The Phase 2/3 "Changes Required" text below describes the
+> originally-planned upload mechanism, which changed during implementation. Authoritative record:
+> commit `880e882` and `context/foundation/lessons.md`.
+
+- **Storage auth**: Supabase Storage does not honor the user JWT for RLS in this project, so signing
+  upload URLs and removing objects moved to a **server-side service-role client** (`src/lib/storage.ts`),
+  authorized by the endpoint (owner guard + `itemExistsInCompany` + server-built path). This supersedes
+  the plan's "Out of scope: service-role client" line and the user-token/`uploadToSignedUrl` approach.
+- **Photo mechanism**: `photo_path` is NOT carried through `menuItemInputSchema`/`items` routes; a
+  dedicated `POST/PUT/DELETE /api/menu/items/[id]/photo(-url)` route owns it, and `photoUploadRequestSchema`
+  validates the mint request. The browser PUTs blobs via a raw `putSignedBlob`.
+- **Bucket enforcement**: migration `20260722100000` adds `file_size_limit` + `allowed_mime_types` to the
+  bucket (real server-side upload constraint; the zod caps alone are advisory).
+- **Dev tooling**: `resolve.dedupe: ["react","react-dom"]` added to `astro.config.mjs` to fix a dev-server
+  duplicate-React error (unrelated to S-04 feature scope).
+
 ## Current State Analysis
 
 - **`menu_items` (S-03) nie ma kolumny zdjęcia** — rozszerzamy przez ALTER (konwencja „nigdy nie

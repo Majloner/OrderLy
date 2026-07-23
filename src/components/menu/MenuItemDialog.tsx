@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ImageIcon, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,7 +40,7 @@ interface MenuItemDialogProps {
   defaultCategoryId: string | null;
   supabaseUrl: string;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (input: MenuItemInput, photo: PhotoIntent) => Promise<void>;
+  onSubmit: (input: MenuItemInput, photo: PhotoIntent, signal: AbortSignal) => Promise<void>;
 }
 
 export function MenuItemDialog({
@@ -81,7 +81,7 @@ interface MenuItemFormProps {
   categories: MenuCategory[];
   defaultCategoryId: string | null;
   supabaseUrl: string;
-  onSubmit: (input: MenuItemInput, photo: PhotoIntent) => Promise<void>;
+  onSubmit: (input: MenuItemInput, photo: PhotoIntent, signal: AbortSignal) => Promise<void>;
   onDone: () => void;
 }
 
@@ -98,6 +98,8 @@ function MenuItemForm({ item, categories, defaultCategoryId, supabaseUrl, onSubm
   const [photoRemoved, setPhotoRemoved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [phase, setPhase] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Local object URL for a freshly picked file; revoked when it changes/unmounts.
   const pickedPreview = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile]);
@@ -133,21 +135,30 @@ function MenuItemForm({ item, categories, defaultCategoryId, supabaseUrl, onSubm
       setError(parsed.error.issues[0]?.message ?? "Nieprawidłowe dane");
       return;
     }
+    const controller = new AbortController();
+    abortRef.current = controller;
     setSaving(true);
     setError(null);
     try {
       let photo: PhotoIntent = { kind: "keep" };
       if (photoFile) {
-        const { full, thumb } = await resizeForUpload(photoFile);
+        setPhase("Przetwarzanie zdjęcia…");
+        const { full, thumb } = await resizeForUpload(photoFile, controller.signal);
         photo = { kind: "upload", full, thumb };
+        setPhase("Wysyłanie zdjęcia…");
       } else if (photoRemoved && item?.photo_path) {
         photo = { kind: "remove" };
       }
-      await onSubmit(parsed.data, photo);
+      await onSubmit(parsed.data, photo, controller.signal);
       onDone();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Nie udało się zapisać pozycji");
+      const aborted =
+        controller.signal.aborted || (submitError instanceof DOMException && submitError.name === "AbortError");
+      setError(
+        aborted ? "Anulowano." : submitError instanceof Error ? submitError.message : "Nie udało się zapisać pozycji",
+      );
       setSaving(false);
+      setPhase(null);
     }
   };
 
@@ -292,11 +303,21 @@ function MenuItemForm({ item, categories, defaultCategoryId, supabaseUrl, onSubm
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onDone}>
-          Anuluj
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            if (saving) {
+              abortRef.current?.abort();
+            } else {
+              onDone();
+            }
+          }}
+        >
+          {saving ? "Przerwij" : "Anuluj"}
         </Button>
         <Button type="submit" disabled={saving}>
-          {saving ? "Zapisywanie…" : "Zapisz"}
+          {saving ? (phase ?? "Zapisywanie…") : "Zapisz"}
         </Button>
       </DialogFooter>
     </form>

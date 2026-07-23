@@ -99,28 +99,36 @@ export default function MenuManager({ supabaseUrl }: { supabaseUrl: string }) {
 
   // Save the row first (POST returns the new id needed for the photo path),
   // then run the photo intent, then a single refetch reflects both.
-  const saveItem = async (input: MenuItemInput, photo: PhotoIntent) => {
+  const saveItem = async (input: MenuItemInput, photo: PhotoIntent, signal?: AbortSignal) => {
     const saved = editedItem
-      ? await callMenuApi<MenuItem>("PUT", `/api/menu/items/${editedItem.id}`, input)
-      : await callMenuApi<MenuItem>("POST", "/api/menu/items", input);
+      ? await callMenuApi<MenuItem>("PUT", `/api/menu/items/${editedItem.id}`, input, signal)
+      : await callMenuApi<MenuItem>("POST", "/api/menu/items", input, signal);
     if (photo.kind === "upload") {
-      await uploadItemPhoto(saved.id, photo.full, photo.thumb);
+      await uploadItemPhoto(saved.id, photo.full, photo.thumb, signal);
     } else if (photo.kind === "remove") {
-      await callMenuApi("DELETE", `/api/menu/items/${saved.id}/photo`);
+      await callMenuApi("DELETE", `/api/menu/items/${saved.id}/photo`, undefined, signal);
     }
     await refetch();
   };
 
   // Server mints signed upload URLs (service role) after authorizing the request;
-  // the browser PUTs both blobs straight to Storage, then links the row.
-  const uploadItemPhoto = async (itemId: string, full: Blob, thumb: Blob) => {
-    const urls = await callMenuApi<SignedUploadResponse>("POST", `/api/menu/items/${itemId}/photo-url`, {
-      contentType: "image/webp",
-      fullSize: full.size,
-      thumbSize: thumb.size,
-    });
-    await Promise.all([putSignedBlob(urls.full.signedUrl, full), putSignedBlob(urls.thumb.signedUrl, thumb)]);
-    await callMenuApi("PUT", `/api/menu/items/${itemId}/photo`);
+  // the browser PUTs both blobs straight to Storage, then links the row. The
+  // AbortSignal lets the dialog cancel an in-flight save.
+  const uploadItemPhoto = async (itemId: string, full: Blob, thumb: Blob, signal?: AbortSignal) => {
+    const urls = await callMenuApi<SignedUploadResponse>(
+      "POST",
+      `/api/menu/items/${itemId}/photo-url`,
+      { contentType: "image/webp", fullSize: full.size, thumbSize: thumb.size },
+      signal,
+    );
+    await Promise.all([
+      putSignedBlob(urls.full.signedUrl, full, signal),
+      putSignedBlob(urls.thumb.signedUrl, thumb, signal),
+    ]);
+    // If the attach below fails after the blobs land, the objects are orphaned
+    // only transiently: the path is deterministic ({company}/{item}) and mint
+    // uses upsert, so the next save overwrites rather than accumulating.
+    await callMenuApi("PUT", `/api/menu/items/${itemId}/photo`, undefined, signal);
   };
 
   const handleConfirm = async () => {

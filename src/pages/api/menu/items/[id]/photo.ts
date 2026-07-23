@@ -39,8 +39,8 @@ export const PUT: APIRoute = async (context) => {
   return jsonData(data[0] as MenuItem);
 };
 
-// Clear an item's photo reference. The Storage objects are removed by the
-// browser client (which holds the owner session); this only nulls the row.
+// Clear an item's photo: null the row reference, then best-effort remove the
+// Storage objects server-side with the service role (see removePhotoObjects).
 export const DELETE: APIRoute = async (context) => {
   const guard = guardMenuRequest(context, { write: true });
   if ("error" in guard) {
