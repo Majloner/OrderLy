@@ -3,7 +3,7 @@ change_id: room-layout-tables
 title: Room layout and tables
 status: implementing
 created: 2026-07-23
-updated: 2026-07-27
+updated: 2026-07-28
 ---
 
 ## Notes

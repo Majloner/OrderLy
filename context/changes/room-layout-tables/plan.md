@@ -678,23 +678,23 @@ praktyczne ryzyko jest niskie.
 
 #### Automated
 
-- [x] 1.1 Migracja aplikuje się czysto: `npm run db:push`
-- [x] 1.2 Test izolacji przechodzi (w tym nowe asercje zapisu): `npm run test:rls`
-- [x] 1.3 Typy i lint bez regresji: `npm run typecheck` oraz `npm run lint`
+- [x] 1.1 Migracja aplikuje się czysto: `npm run db:push` — 864304a
+- [x] 1.2 Test izolacji przechodzi (w tym nowe asercje zapisu): `npm run test:rls` — 864304a
+- [x] 1.3 Typy i lint bez regresji: `npm run typecheck` oraz `npm run lint` — 864304a
 
 #### Manual
 
-- [x] 1.4 `public.tables` ma `room_id NOT NULL`, `pos_x`, `pos_y`, `shape`, a każdy wiersz wskazuje na salę swojej firmy
-- [x] 1.5 Polityki na `tables` to dokładnie select_staff / insert_owner / update_owner / anon_read_active — bez delete
-- [x] 1.6 Rejestracja nowej firmy zakłada salę „Sala główna"
+- [x] 1.4 `public.tables` ma `room_id NOT NULL`, `pos_x`, `pos_y`, `shape`, a każdy wiersz wskazuje na salę swojej firmy — 864304a
+- [x] 1.5 Polityki na `tables` to dokładnie select_staff / insert_owner / update_owner / anon_read_active — bez delete — 864304a
+- [x] 1.6 Rejestracja nowej firmy zakłada salę „Sala główna" — 864304a
 
 ### Phase 2: API, typy i schematy
 
 #### Automated
 
-- [ ] 2.1 Testy jednostkowe przechodzą: `npm run test`
-- [ ] 2.2 Typy przechodzą: `npm run typecheck`
-- [ ] 2.3 Lint przechodzi: `npm run lint`
+- [x] 2.1 Testy jednostkowe przechodzą: `npm run test`
+- [x] 2.2 Typy przechodzą: `npm run typecheck`
+- [x] 2.3 Lint przechodzi: `npm run lint`
 
 #### Manual
 
