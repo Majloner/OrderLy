@@ -711,30 +711,30 @@ already runs at `src/middleware.ts:34-38`.
 
 #### Manual
 
-- [x] 2.5 `POST /api/staff` as owner creates an account the new user can sign in with
-- [x] 2.6 Duplicate email returns 409 and leaves no orphaned `auth.users` row
-- [x] 2.7 `POST /api/staff` as a waiter returns 403
-- [x] 2.8 `PUT /api/staff/<own-user-id>` changing the owner's own role returns 403
-- [x] 2.9 `PUT /api/staff/<id>` deactivate then reactivate round-trips
-- [x] 2.10 A deactivated staff member's API calls return no data
+- [x] 2.5 `POST /api/staff` as owner creates an account the new user can sign in with — ad278e7
+- [x] 2.6 Duplicate email returns 409 and leaves no orphaned `auth.users` row — ad278e7
+- [x] 2.7 `POST /api/staff` as a waiter returns 403 — ad278e7
+- [x] 2.8 `PUT /api/staff/<own-user-id>` changing the owner's own role returns 403 — ad278e7
+- [x] 2.9 `PUT /api/staff/<id>` deactivate then reactivate round-trips — ad278e7
+- [x] 2.10 A deactivated staff member's API calls return no data — ad278e7
 
 ### Phase 3: Staff Panel UI & Wiring
 
 #### Automated
 
-- [x] 3.1 Type checking passes: `npm run typecheck`
-- [x] 3.2 Linting passes: `npm run lint`
-- [x] 3.3 Unit tests pass: `npm run test`
-- [x] 3.4 Production build succeeds: `npm run build`
+- [x] 3.1 Type checking passes: `npm run typecheck` — ad278e7
+- [x] 3.2 Linting passes: `npm run lint` — ad278e7
+- [x] 3.3 Unit tests pass: `npm run test` — ad278e7
+- [x] 3.4 Production build succeeds: `npm run build` — ad278e7
 
 #### Manual
 
-- [x] 3.5 Owner sees the "Pracownicy" pill on `/dashboard`; a waiter does not
-- [x] 3.6 A waiter navigating directly to `/staff` is redirected to `/dashboard`
-- [x] 3.7 A signed-out visitor navigating to `/staff` is redirected to `/auth/signin`
-- [x] 3.8 Creating a waiter from the UI succeeds and the account signs in correctly scoped
-- [x] 3.9 Editing role and full name persists after reload
-- [x] 3.10 Deactivating signs the member out on their next request
-- [x] 3.11 Reactivating restores access
-- [x] 3.12 The owner's own row has role and deactivation controls disabled
-- [x] 3.13 Layout holds at mobile width
+- [x] 3.5 Owner sees the "Pracownicy" pill on `/dashboard`; a waiter does not — ad278e7
+- [x] 3.6 A waiter navigating directly to `/staff` is redirected to `/dashboard` — ad278e7
+- [x] 3.7 A signed-out visitor navigating to `/staff` is redirected to `/auth/signin` — ad278e7
+- [x] 3.8 Creating a waiter from the UI succeeds and the account signs in correctly scoped — ad278e7
+- [x] 3.9 Editing role and full name persists after reload — ad278e7
+- [x] 3.10 Deactivating signs the member out on their next request — ad278e7
+- [x] 3.11 Reactivating restores access — ad278e7
+- [x] 3.12 The owner's own row has role and deactivation controls disabled — ad278e7
+- [x] 3.13 Layout holds at mobile width — ad278e7
