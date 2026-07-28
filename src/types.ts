@@ -80,3 +80,52 @@ export interface MenuPayload {
   categories: MenuCategory[];
   items: MenuItem[];
 }
+
+// ---------------------------------------------------------------------------
+// Room layout model (S-06). Mirrors the DB shape from
+// supabase/migrations/20260727120000_room_layout_tables.sql.
+// ---------------------------------------------------------------------------
+
+export const TABLE_SHAPES = ["square", "circle", "rectangle"] as const;
+
+export type TableShape = (typeof TABLE_SHAPES)[number];
+
+export const TABLE_SHAPE_LABELS: Record<TableShape, string> = {
+  square: "Kwadratowy",
+  circle: "Okrągły",
+  rectangle: "Prostokątny",
+};
+
+export interface Room {
+  id: string;
+  company_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+// Named RoomTable rather than Table to avoid colliding with a future shadcn
+// `table` component; the DB relation is public.tables.
+export interface RoomTable {
+  id: string;
+  company_id: string;
+  room_id: string;
+  // Primary identifier of a table within the company (FR-010), unique per company.
+  number: number;
+  label: string | null;
+  shape: TableShape;
+  // Logical canvas coordinates (see src/lib/room-geometry.ts), NOT rendered
+  // pixels — the canvas scales the logical space to its container.
+  pos_x: number;
+  pos_y: number;
+  // Deactivation is the only lifecycle control: a table is never deleted, so
+  // the permanent QR code from S-07 stays valid (FR-009).
+  is_active: boolean;
+  created_at: string;
+}
+
+// Single payload served by GET /api/room.
+export interface RoomLayoutPayload {
+  rooms: Room[];
+  tables: RoomTable[];
+}

@@ -1,10 +1,11 @@
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard", "/settings", "/menu"];
-// Menu management is owner-only (PRD Access Control); waiter/kitchen land back
-// on the dashboard. RLS enforces this on the data layer regardless.
-const OWNER_ROUTES = ["/menu"];
+const PROTECTED_ROUTES = ["/dashboard", "/settings", "/menu", "/room"];
+// Menu management and the room layout are owner-only (PRD Access Control);
+// waiter/kitchen land back on the dashboard. RLS enforces this on the data
+// layer regardless.
+const OWNER_ROUTES = ["/menu", "/room"];
 
 // Match a route exactly or as a path prefix (`/menu` matches `/menu` and
 // `/menu/x`, but not `/menus` — that would silently gate a future public
