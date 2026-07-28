@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { applyDragDelta, clampPosition, computeScale, LOGICAL_CANVAS, SHAPE_FOOTPRINTS } from "@/lib/room-geometry";
+import {
+  applyDragDelta,
+  applyObjectDragDelta,
+  clampObjectCenter,
+  clampPosition,
+  computeScale,
+  LOGICAL_CANVAS,
+  rotatedFootprint,
+  SHAPE_FOOTPRINTS,
+} from "@/lib/room-geometry";
 
 describe("clampPosition", () => {
   it("leaves an in-bounds position untouched", () => {
@@ -86,5 +95,119 @@ describe("applyDragDelta", () => {
 
   it("treats a non-positive scale as 1 rather than dividing by zero", () => {
     expect(applyDragDelta(start, { x: 10, y: 10 }, 0, "square")).toEqual({ pos_x: 110, pos_y: 110 });
+  });
+});
+
+// A long thin wall is the shape that makes rotation worth having, and the shape
+// every off-by-one in this maths shows up on first.
+const WALL = { width: 400, height: 20 };
+
+describe("rotatedFootprint", () => {
+  it("leaves an unrotated footprint untouched", () => {
+    expect(rotatedFootprint(WALL, 0)).toEqual(WALL);
+  });
+
+  // The floating-point trap: cos(90°) is 6.1e-17, not 0, so a naive ceil() would
+  // report 21 instead of 20 here — and then clamping would be wrong by a pixel at
+  // every quarter turn.
+  it("swaps the axes at a quarter turn, exactly", () => {
+    expect(rotatedFootprint(WALL, 90)).toEqual({ width: 20, height: 400 });
+    expect(rotatedFootprint(WALL, 270)).toEqual({ width: 20, height: 400 });
+  });
+
+  it("is identical at 180 degrees and at 0", () => {
+    expect(rotatedFootprint(WALL, 180)).toEqual(rotatedFootprint(WALL, 0));
+  });
+
+  it("grows both axes at 45 degrees", () => {
+    // 400·cos45 + 20·sin45 = 296.98, rounded up.
+    expect(rotatedFootprint(WALL, 45)).toEqual({ width: 297, height: 297 });
+  });
+
+  it("normalizes negative and over-360 angles", () => {
+    expect(rotatedFootprint(WALL, -90)).toEqual({ width: 20, height: 400 });
+    expect(rotatedFootprint(WALL, 450)).toEqual({ width: 20, height: 400 });
+  });
+
+  it("rounds up rather than down, so the box never under-reports", () => {
+    const square = rotatedFootprint({ width: 100, height: 100 }, 45);
+    // 100·√2 = 141.42
+    expect(square).toEqual({ width: 142, height: 142 });
+  });
+});
+
+describe("clampObjectCenter", () => {
+  it("leaves an in-bounds centre untouched", () => {
+    expect(clampObjectCenter({ pos_x: 600, pos_y: 400 }, WALL, 0)).toEqual({ pos_x: 600, pos_y: 400 });
+  });
+
+  it("stops the centre half a footprint from the left edge", () => {
+    const result = clampObjectCenter({ pos_x: 0, pos_y: 400 }, WALL, 0);
+    expect(result.pos_x).toBe(WALL.width / 2);
+  });
+
+  it("stops the centre half a footprint from the right edge", () => {
+    const result = clampObjectCenter({ pos_x: 9999, pos_y: 400 }, WALL, 0);
+    expect(result.pos_x).toBe(LOGICAL_CANVAS.width - WALL.width / 2);
+  });
+
+  // The whole point of centre anchoring: rotated 90° the wall is only 20px wide,
+  // so it may sit far closer to the edge than it could unrotated.
+  it("lets a quarter-turned wall reach much closer to the edge", () => {
+    const upright = clampObjectCenter({ pos_x: 0, pos_y: 400 }, WALL, 90);
+    const flat = clampObjectCenter({ pos_x: 0, pos_y: 400 }, WALL, 0);
+    expect(upright.pos_x).toBe(10);
+    expect(upright.pos_x).toBeLessThan(flat.pos_x);
+  });
+
+  // Reachable, not hypothetical: a full-width wall at 45° spans ~863px, taller
+  // than the 800px canvas, so no centre keeps it inside on the y axis.
+  it("centres an object whose rotated box is larger than the canvas", () => {
+    const result = clampObjectCenter({ pos_x: 0, pos_y: 0 }, { width: 1200, height: 20 }, 45);
+    expect(result.pos_y).toBe(LOGICAL_CANVAS.height / 2);
+  });
+
+  it("never returns a negative coordinate", () => {
+    const result = clampObjectCenter({ pos_x: -9999, pos_y: -9999 }, WALL, 0);
+    expect(result.pos_x).toBeGreaterThanOrEqual(0);
+    expect(result.pos_y).toBeGreaterThanOrEqual(0);
+  });
+
+  it("returns integers for a fractional centre", () => {
+    const result = clampObjectCenter({ pos_x: 600.4, pos_y: 400.6 }, WALL, 0);
+    expect(result).toEqual({ pos_x: 600, pos_y: 401 });
+  });
+});
+
+describe("applyObjectDragDelta", () => {
+  const centre = { pos_x: 600, pos_y: 400 };
+
+  it("moves by exactly the delta at scale 1", () => {
+    expect(applyObjectDragDelta(centre, { x: 50, y: -30 }, 1, WALL, 0)).toEqual({ pos_x: 650, pos_y: 370 });
+  });
+
+  it("doubles the delta at scale 0.5", () => {
+    expect(applyObjectDragDelta(centre, { x: 50, y: 50 }, 0.5, WALL, 0)).toEqual({ pos_x: 700, pos_y: 500 });
+  });
+
+  it("halves the delta at scale 2", () => {
+    expect(applyObjectDragDelta(centre, { x: 50, y: 50 }, 2, WALL, 0)).toEqual({ pos_x: 625, pos_y: 425 });
+  });
+
+  it("treats a non-positive scale as 1 rather than dividing by zero", () => {
+    expect(applyObjectDragDelta(centre, { x: 10, y: 10 }, 0, WALL, 0)).toEqual({ pos_x: 610, pos_y: 410 });
+  });
+
+  it("clamps a drag past the right edge, accounting for rotation", () => {
+    const flat = applyObjectDragDelta(centre, { x: 5000, y: 0 }, 1, WALL, 0);
+    const upright = applyObjectDragDelta(centre, { x: 5000, y: 0 }, 1, WALL, 90);
+    expect(flat.pos_x).toBe(LOGICAL_CANVAS.width - WALL.width / 2);
+    expect(upright.pos_x).toBe(LOGICAL_CANVAS.width - 10);
+  });
+
+  it("returns integers even for a fractional scale", () => {
+    const result = applyObjectDragDelta(centre, { x: 10, y: 10 }, 0.3, WALL, 0);
+    expect(Number.isInteger(result.pos_x)).toBe(true);
+    expect(Number.isInteger(result.pos_y)).toBe(true);
   });
 });
