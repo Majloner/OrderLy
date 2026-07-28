@@ -397,31 +397,59 @@ reset role;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
 do $$
-declare n int; leaked boolean := false;
+declare n int; state text;
 begin
   insert into public.profiles (user_id, company_id, role, full_name, email)
     values ('f1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'New Staff A', 'newstaffA@test.local');
   get diagnostics n = row_count;
   if n <> 1 then raise exception 'FAIL owner provision: INSERT affected %, expected 1', n; end if;
 
-  -- ...not into company B (the whole point of the three-term with-check)
+  -- ...not into company B (the whole point of the three-term with-check).
+  -- Asserted on SQLSTATE rather than `when others`, and with a distinct email
+  -- per attempt: otherwise a 23505 from profiles_company_email_idx would look
+  -- exactly like the RLS denial these blocks claim to prove.
   begin
     insert into public.profiles (user_id, company_id, role, full_name, email)
-      values ('f2222222-2222-2222-2222-222222222222', 'b2222222-2222-2222-2222-222222222222', 'waiter', 'Cross Tenant', 'denied@test.local');
-    leaked := true;
-  exception when others then leaked := false;
+      values ('f2222222-2222-2222-2222-222222222222', 'b2222222-2222-2222-2222-222222222222', 'waiter', 'Cross Tenant', 'crosstenant@test.local');
+    state := 'none';
+  exception when others then state := sqlstate;
   end;
-  if leaked then raise exception 'FAIL owner provision cross-tenant: INSERT into Firma B succeeded'; end if;
+  if state <> '42501' then
+    raise exception 'FAIL owner provision cross-tenant: sqlstate %, expected 42501 (RLS denial)', state;
+  end if;
 
   -- ...and never a second owner
   begin
     insert into public.profiles (user_id, company_id, role, full_name, email)
-      values ('f2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Second Owner', 'denied@test.local');
-    leaked := true;
-  exception when others then leaked := false;
+      values ('f2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Second Owner', 'secondowner@test.local');
+    state := 'none';
+  exception when others then state := sqlstate;
   end;
-  if leaked then raise exception 'FAIL owner provision: minting a second owner succeeded'; end if;
+  if state <> '42501' then
+    raise exception 'FAIL owner provision second owner: sqlstate %, expected 42501 (RLS denial)', state;
+  end if;
   raise notice 'OK owner A provisions staff only into own company, never as owner';
+end $$;
+reset role;
+
+-- --- Assertion 13b (S-02): owner cannot promote an existing waiter to owner --
+-- The UPDATE path to a second owner. profiles_update_owner's WITH CHECK does
+-- not constrain `role`, so the trigger's promotion branch is the ONLY thing
+-- stopping this — assertion 13 covers the INSERT path only.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare state text;
+begin
+  begin
+    update public.profiles set role = 'owner' where user_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> '42501' then
+    raise exception 'FAIL owner promotion: sqlstate %, expected 42501 (trigger denial)', state;
+  end if;
+  raise notice 'OK owner A cannot promote a waiter to owner';
 end $$;
 reset role;
 
@@ -547,6 +575,49 @@ begin
   raise notice 'OK owner A deletes same-company staff but not itself';
 end $$;
 reset role;
+
+-- --- Assertion 19 (S-02): handle_new_user() seeds the FULL tenant bootstrap --
+-- Runs as the privileged role (no `set local role`): handle_new_user is
+-- SECURITY DEFINER and fires on the auth.users insert, so this exercises the
+-- real registration path rather than simulating it.
+--
+-- Why this exists: three slices have now done `create or replace` on this one
+-- shared function (S-01 -> S-03 categories -> S-06 room -> S-02 email), and
+-- S-02 rebased onto a stale ancestor and silently dropped S-06's room insert.
+-- Nothing caught it, because every other fixture here seeds rooms by hand.
+-- Assert all four inserts together so the next replace cannot lose one quietly.
+do $$
+declare
+  boot_user_id uuid := '0bbbbbbb-0000-4000-8000-000000000001';
+  co uuid;
+  em text;
+  ro public.staff_role;
+  mc int;
+  rm int;
+begin
+  insert into auth.users (id, instance_id, aud, role, email, created_at, updated_at, raw_user_meta_data)
+  values (boot_user_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+          'bootstrap@test.local', now(), now(),
+          '{"company_name":"Firma Bootstrap","full_name":"Boot Owner"}'::jsonb);
+
+  select p.company_id, p.email, p.role into co, em, ro
+  from public.profiles p
+  where p.user_id = boot_user_id;
+
+  if co is null then raise exception 'FAIL bootstrap: handle_new_user created no profile'; end if;
+  if ro <> 'owner' then raise exception 'FAIL bootstrap: profile role %, expected owner', ro; end if;
+  if em <> 'bootstrap@test.local' then
+    raise exception 'FAIL bootstrap: profile email %, expected the auth email (S-02)', em;
+  end if;
+
+  select count(*) into mc from public.menu_categories where company_id = co;
+  if mc <> 4 then raise exception 'FAIL bootstrap: % default categories, expected 4 (S-03)', mc; end if;
+
+  select count(*) into rm from public.rooms where company_id = co;
+  if rm <> 1 then raise exception 'FAIL bootstrap: % default rooms, expected 1 (S-06)', rm; end if;
+
+  raise notice 'OK handle_new_user seeds company + owner profile (with email) + 4 categories + 1 room';
+end $$;
 
 rollback;
 

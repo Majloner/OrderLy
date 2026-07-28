@@ -79,12 +79,30 @@ describe("staffUpdateInputSchema", () => {
     expect(staffUpdateInputSchema.safeParse({ ...validUpdate, role: "owner" }).success).toBe(false);
   });
 
-  it("requires the active flag", () => {
-    const { active: _active, ...rest } = validUpdate;
-    expect(staffUpdateInputSchema.safeParse(rest).success).toBe(false);
-  });
-
   it("rejects a non-boolean active flag", () => {
     expect(staffUpdateInputSchema.safeParse({ ...validUpdate, active: "yes" }).success).toBe(false);
+  });
+
+  // Absent means "leave unchanged" — the route builds its patch from the keys
+  // that are actually present, so a rename never touches deactivated_at.
+  it("accepts a rename with no active flag and leaves it undefined", () => {
+    const result = staffUpdateInputSchema.parse({ full_name: "Anna Nowak", role: "kitchen" });
+    expect(result.active).toBeUndefined();
+  });
+
+  it("accepts an activity toggle on its own and leaves the other fields undefined", () => {
+    const result = staffUpdateInputSchema.parse({ active: false });
+    expect(result.active).toBe(false);
+    expect(result.full_name).toBeUndefined();
+    expect(result.role).toBeUndefined();
+  });
+
+  it("distinguishes an omitted full name from an explicit null", () => {
+    expect(staffUpdateInputSchema.parse({ role: "waiter" }).full_name).toBeUndefined();
+    expect(staffUpdateInputSchema.parse({ full_name: null }).full_name).toBeNull();
+  });
+
+  it("normalizes a whitespace-only full name to null", () => {
+    expect(staffUpdateInputSchema.parse({ full_name: "   " }).full_name).toBeNull();
   });
 });

@@ -76,11 +76,9 @@ export default function StaffManager({ currentUserId }: StaffManagerProps) {
     }
     const wasActive = confirm.deactivated_at === null;
     try {
-      await callStaffApi("PUT", `/api/staff/${confirm.user_id}`, {
-        full_name: confirm.full_name,
-        role: confirm.role,
-        active: !wasActive,
-      });
+      // Only `active` — restating full_name/role from this cached row would
+      // revert a rename or role change made from another tab.
+      await callStaffApi("PUT", `/api/staff/${confirm.user_id}`, { active: !wasActive });
       await refetch();
       setActionError(null);
     } catch (error) {
@@ -133,6 +131,7 @@ export default function StaffManager({ currentUserId }: StaffManagerProps) {
       <StaffDialog
         open={dialogOpen}
         member={editedMember}
+        isSelf={editedMember?.user_id === currentUserId}
         onOpenChange={setDialogOpen}
         onCreate={createMember}
         onUpdate={updateMember}

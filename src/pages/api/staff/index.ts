@@ -1,5 +1,12 @@
 import type { APIRoute } from "astro";
-import { guardStaffRequest, isUniqueViolation, jsonData, jsonError, parseBody } from "@/lib/api";
+import {
+  guardStaffRequest,
+  isInsufficientPrivilege,
+  isUniqueViolation,
+  jsonData,
+  jsonError,
+  parseBody,
+} from "@/lib/api";
 import { staffCreateInputSchema } from "@/lib/schemas/staff";
 import { createStaffAuthUser, deleteStaffAuthUser } from "@/lib/staff-admin";
 import type { StaffMember } from "@/types";
@@ -44,6 +51,14 @@ export const POST: APIRoute = async (context) => {
     return body.error;
   }
 
+  // NOTE: auth.users.email is unique across the WHOLE Supabase project
+  // (auth.users_email_partial_key), not per company, and the check below runs
+  // before any tenant scoping. The 409 is therefore deliberately vague — a
+  // message naming "a staff member in this company" would both be false and
+  // let an owner probe whether an address is registered with another tenant.
+  // Consequences worth knowing: one person cannot work at two venues, and a
+  // departed employee's address can never be re-provisioned. Replacing email
+  // with a per-company login is planned as a separate change.
   const created = await createStaffAuthUser({
     email: body.input.email,
     password: body.input.password,
@@ -51,7 +66,7 @@ export const POST: APIRoute = async (context) => {
   });
   if ("failure" in created) {
     if (created.failure === "duplicate") {
-      return jsonError("Pracownik z tym adresem e-mail już istnieje", 409);
+      return jsonError("Tego adresu e-mail nie można użyć", 409);
     }
     return jsonError("Nie udało się utworzyć konta pracownika", 500);
   }
@@ -71,9 +86,22 @@ export const POST: APIRoute = async (context) => {
     .single<StaffMember>();
 
   if (error) {
-    await deleteStaffAuthUser(created.userId);
+    // Roll back the auth user before reporting, so a failed provisioning does
+    // not leave the address permanently taken. If the rollback itself fails,
+    // say so — the owner otherwise sees a plain error and cannot understand
+    // why retrying the same address now returns 409.
+    const rolledBack = await deleteStaffAuthUser(created.userId);
+    if (!rolledBack) {
+      return jsonError(
+        "Nie udało się utworzyć konta, a adres e-mail pozostał zajęty. Użyj innego adresu lub skontaktuj się z pomocą.",
+        500,
+      );
+    }
+    if (isInsufficientPrivilege(error)) {
+      return jsonError("Tylko właściciel może tworzyć konta personelu", 403);
+    }
     if (isUniqueViolation(error)) {
-      return jsonError("Pracownik z tym adresem e-mail już istnieje", 409);
+      return jsonError("Tego adresu e-mail nie można użyć", 409);
     }
     return jsonError("Nie udało się utworzyć konta pracownika", 500);
   }

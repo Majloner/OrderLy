@@ -129,13 +129,6 @@ export async function parseBody<T>(
   return { input: parsed.data };
 }
 
-// Confirm a profile belongs to the caller's company (RLS-scoped SELECT) before
-// acting on it — same rationale as itemExistsInCompany.
-export async function profileExistsInCompany(supabase: SupabaseServerClient, userId: string): Promise<boolean> {
-  const { data } = await supabase.from("profiles").select("user_id").eq("user_id", userId).maybeSingle();
-  return data !== null;
-}
-
 export function isUniqueViolation(error: { code?: string } | null): boolean {
   return error?.code === "23505";
 }

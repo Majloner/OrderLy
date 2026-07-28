@@ -12,9 +12,10 @@ const roleBadgeClass: Record<StaffMember["role"], string> = {
 
 interface StaffRowProps {
   member: StaffMember;
-  // The signed-in owner's own row: the API and the DB trigger both reject role
-  // changes and self-deactivation, so the controls are disabled rather than
-  // offered and then refused.
+  // The signed-in owner's own row. Renaming yourself is allowed (the DB trigger
+  // permits it), so the edit button stays enabled and the dialog hides the role
+  // control instead. Only deactivation is disabled — the API and the trigger
+  // both reject it, so offering it and then refusing would be theatre.
   isSelf: boolean;
   onEdit: (member: StaffMember) => void;
   onToggleActive: (member: StaffMember) => void;
@@ -54,7 +55,6 @@ export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowPro
           size="icon"
           className="text-white/60 hover:text-white"
           aria-label={`Edytuj konto ${displayName}`}
-          disabled={isSelf}
           onClick={() => {
             onEdit(member);
           }}

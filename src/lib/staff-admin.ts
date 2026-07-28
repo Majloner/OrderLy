@@ -50,29 +50,56 @@ export async function createStaffAuthUser(input: {
     return { failure: "failed" };
   }
 
-  const { data, error } = await client.auth.admin.createUser({
-    email: input.email,
-    password: input.password,
-    email_confirm: true,
-    user_metadata: { full_name: input.fullName },
-  });
+  // GoTrue's admin methods re-throw anything that is not an AuthError, so a
+  // transport-level failure on Workers would reject the whole route and lose
+  // the mapped Polish message. Catch it and fold it into the result union.
+  try {
+    const { data, error } = await client.auth.admin.createUser({
+      email: input.email,
+      password: input.password,
+      email_confirm: true,
+      user_metadata: { full_name: input.fullName },
+    });
 
-  if (error) {
-    return { failure: isDuplicateEmail(error) ? "duplicate" : "failed" };
+    if (error) {
+      return { failure: isDuplicateEmail(error) ? "duplicate" : "failed" };
+    }
+
+    // data.user is non-null once error is ruled out (discriminated by the SDK).
+    return { userId: data.user.id };
+  } catch {
+    return { failure: "failed" };
   }
-
-  // data.user is non-null once error is ruled out (discriminated by the SDK).
-  return { userId: data.user.id };
 }
 
 // Compensating action for a failed profiles insert. The auth.users row is
 // created first (profiles.user_id is FK'd to it), so without this an aborted
-// provisioning leaves an orphan whose email is permanently taken. Best-effort
-// like removePhotoObjects: it must not mask the original error.
-export async function deleteStaffAuthUser(userId: string): Promise<void> {
+// provisioning leaves an orphan: a confirmed, password-bearing account with no
+// profile — invisible to GET /api/staff and unreclaimable through any route,
+// with its email permanently taken.
+//
+// Returns whether the cleanup succeeded so the caller can tell the owner the
+// address is stuck rather than implying a clean failure. Never throws: it must
+// not mask the original error that triggered the rollback.
+export async function deleteStaffAuthUser(userId: string): Promise<boolean> {
   const client = admin();
   if (!client) {
-    return;
+    return false;
   }
-  await client.auth.admin.deleteUser(userId);
+  try {
+    const { error } = await client.auth.admin.deleteUser(userId);
+    if (error) {
+      // The orphaned id is the only route back to a stranded auth user; losing
+      // it makes the address unreclaimable, so this log is load-bearing.
+      // eslint-disable-next-line no-console
+      console.error(`[staff] orphaned auth user ${userId}: cleanup failed`, error.message);
+      return false;
+    }
+    return true;
+  } catch (cleanupError) {
+    // Same as above — the id must survive somewhere.
+    // eslint-disable-next-line no-console
+    console.error(`[staff] orphaned auth user ${userId}: cleanup threw`, cleanupError);
+    return false;
+  }
 }

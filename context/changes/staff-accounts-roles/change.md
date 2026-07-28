@@ -1,7 +1,7 @@
 ---
 change_id: staff-accounts-roles
 title: Staff accounts and roles
-status: implemented
+status: impl_reviewed
 created: 2026-07-23
 updated: 2026-07-28
 ---
@@ -21,3 +21,10 @@ updated: 2026-07-28
   with S-06 — inline an own owner guard (e.g. guardStaffRequest) or agree the refactor up front.
 - Shared append-only files (merge with S-06 branch): src/middleware.ts, src/pages/dashboard.astro,
   src/types.ts, supabase/tests/rls_isolation.sql.
+- Known constraint (impl-review F4): `auth.users.email` is unique across the whole Supabase
+  project (`auth.users_email_partial_key`, a unique index in the Supabase-managed `auth` schema),
+  not per company — and the email IS the login identifier, since `signInWithPassword` resolves
+  globally with no tenant parameter. So one person cannot hold accounts at two venues, and a
+  departed employee's address can never be re-provisioned. `profiles_company_email_idx` is
+  per-company but only guards the denormalized display copy. Replacing email with a per-company
+  login requires a company code/slug at sign-in — planned as a separate change.
