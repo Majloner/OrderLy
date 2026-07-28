@@ -250,7 +250,9 @@ number is wrong and was repeated several times during implementation.
   visible symptom of F1.
 - **Fix**: Mirror the menu fallback — render unresolvable tables in a "Bez sali" section with an
   edit action, so a row is always reachable.
-- **Decision**: PENDING
+- **Decision**: FIXED — `knownRoomIds` / `orphanTables` derived in `RoomLayoutManager`, rendered as
+  an amber "Bez sali" section with the same `TableList` (edit + activate), so an orphaned row is
+  always reachable and reassignable through the dialog.
 
 ### F8 — This slice widens the known anon cross-tenant read leak
 
@@ -278,7 +280,11 @@ number is wrong and was repeated several times during implementation.
     `rls_isolation.sql` must invert.
   - Confidence: HIGH — nothing reads it today.
   - Blind spot: Haven't checked whether the unmerged S-02 migrations rely on it.
-- **Decision**: PENDING
+- **Decision**: FIXED via Fix A — the deferral stands, but it is now written into the **Blockers**
+  field of the S-07 slice in `context/foundation/roadmap.md`, stating that closing
+  `tables_anon_read_active` is blocking rather than optional and naming the growth in leaked
+  surface as the reason. Recorded in the roadmap rather than an S-07 change folder because that
+  change does not exist yet — the roadmap entry is what whoever opens it will read first.
 
 ### F9 — `Room.sort_order` is a dead column that looks functional
 
@@ -294,7 +300,11 @@ number is wrong and was repeated several times during implementation.
   way to influence order.
 - **Fix**: Either add the same append-at-end trigger the menu uses, or drop the column and the
   `.order("sort_order")` until reordering actually exists.
-- **Decision**: PENDING
+- **Decision**: FIXED — `set_room_sort_order()` + `rooms_set_sort_order` BEFORE INSERT trigger added
+  to the pending migration `20260728120000`, mirroring `set_menu_category_sort_order` exactly
+  (security definer, `search_path = ''`, an explicit non-zero value left untouched). Existing rooms
+  are backfilled alphabetically, so the seeded default keeps the position users already see and new
+  rooms land after it. Takes effect when the migration can be pushed (see F1).
 
 ### F10 — `RoomTabs` declares ARIA tabs semantics it does not implement
 
@@ -309,7 +319,9 @@ number is wrong and was repeated several times during implementation.
   siblings use no ARIA roles at all — so this is not a case of bypassing an available component.
 - **Fix**: Drop the roles and use `aria-pressed` on plain buttons, or add the Radix tabs primitive
   (`npx shadcn@latest add tabs`) and use it properly.
-- **Decision**: PENDING
+- **Decision**: FIXED — `role="tablist"`, `role="tab"` and `aria-selected` removed in favour of
+  `aria-pressed` on plain buttons, with a comment recording why the roles are deliberately absent so
+  nobody "restores" them. No new UI dependency.
 
 ## Also noted, not raised as findings
 

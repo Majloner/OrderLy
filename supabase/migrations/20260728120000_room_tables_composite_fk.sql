@@ -49,3 +49,46 @@ alter table public.tables
 -- the ceiling belongs in the schema regardless.
 alter table public.tables
   add constraint tables_number_range check (number between 1 and 999);
+
+-- F9 — rooms.sort_order was a dead column that looked functional.
+-- GET /api/room orders by sort_order then name and the Room type exposes it, but
+-- nothing ever wrote a non-zero value: no field in roomInputSchema, no reorder
+-- endpoint, and — unlike menu_categories — no trigger to append at the end. Every
+-- room sat at 0, so the tab strip was really alphabetical and an owner adding
+-- "Bar" saw it jump ahead of the seeded "Sala główna" with no way to influence it.
+-- Mirrors set_menu_category_sort_order (20260717093000_menu_ordering_hardening.sql):
+-- security definer so the max() scan sees the whole company regardless of RLS, and
+-- an explicitly non-zero sort_order (the trigger/backfill seed) is left untouched.
+create or replace function public.set_room_sort_order()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.sort_order = 0 then
+    select coalesce(max(sort_order), 0) + 1 into new.sort_order
+    from public.rooms
+    where company_id = new.company_id;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger rooms_set_sort_order
+  before insert on public.rooms
+  for each row
+  execute function public.set_room_sort_order();
+
+-- Existing rooms are all at 0; give them a deterministic order (alphabetical, the
+-- order the UI accidentally showed until now) so the seeded default keeps its place
+-- and newly added rooms land after it.
+with ordered as (
+  select id, row_number() over (partition by company_id order by lower(name), id) as rank
+  from public.rooms
+)
+update public.rooms r
+set sort_order = ordered.rank
+from ordered
+where ordered.id = r.id
+  and r.sort_order = 0;

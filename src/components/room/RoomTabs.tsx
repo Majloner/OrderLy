@@ -19,13 +19,17 @@ export function RoomTabs({ rooms, tables, activeRoomId, onSelect, onCreate, onEd
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Sale">
+      {/* Plain buttons with aria-pressed, deliberately NOT role="tablist"/"tab":
+          those roles promise a widget model this does not implement (no
+          aria-controls, no role="tabpanel", no arrow-key roving focus), and a
+          partial tabs implementation is worse for screen-reader users than
+          buttons that describe themselves honestly (impl-review F10). */}
+      <div className="flex flex-wrap gap-2" aria-label="Sale">
         {rooms.map((room) => (
           <button
             key={room.id}
             type="button"
-            role="tab"
-            aria-selected={room.id === activeRoomId}
+            aria-pressed={room.id === activeRoomId}
             onClick={() => {
               onSelect(room.id);
             }}

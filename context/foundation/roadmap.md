@@ -173,7 +173,13 @@ Fundamenty poniżej zakładają obecność tych warstw i ich NIE odbudowują.
 - **PRD refs:** FR-011
 - **Prerequisites:** S-06
 - **Parallel with:** S-03, S-04, S-05
-- **Blockers:** —
+- **Blockers:** Zamknięcie `tables_anon_read_active` jest w tym slice **blokujące, nie opcjonalne**.
+  Polityka nadal brzmi `using (is_active)` bez predykatu `company_id` (lekcja
+  „Anon RLS reads must be scoped by company_id"), a S-06 dopiął do tego wiersza `pos_x`, `pos_y`,
+  `shape` i `room_id` — wyciekająca dla anonimowego klucza powierzchnia wzrosła z numeru i opisu
+  stolika o geometrię planu sali i powiązanie ze strefami. Odłożono raz świadomie, bo scoping
+  wymaga tokenu QR, który należy do tego slice'a; drugi raz odłożyć nie wolno. Źródło:
+  `context/changes/room-layout-tables/reviews/impl-review.md` §F8.
 - **Unknowns:** —
 - **Risk:** Trwałość QR to guardrail (wydrukowane kody muszą pozostać ważne); identyfikator zakodowany w QR musi być niezależny od zmiennych danych menu/cennika.
 - **Status:** proposed
