@@ -26,6 +26,16 @@ const isOwner = role === "owner";
             </a>
           )
         }
+        {
+          isOwner && (
+            <a
+              href="/staff"
+              class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+            >
+              Pracownicy
+            </a>
+          )
+        }
         <a
           href="/settings"
           class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
