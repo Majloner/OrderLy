@@ -68,6 +68,11 @@ export interface MenuItem {
   sort_order: number;
   archived_at: string | null;
   created_at: string;
+  // Base Storage path `{company_id}/{id}`; full/thumb objects live at
+  // `${photo_path}/full.webp` and `${photo_path}/thumb.webp`. null = no photo.
+  photo_path: string | null;
+  // Cache-bust token bumped whenever the photo bytes change.
+  photo_updated_at: string | null;
 }
 
 // Single payload served by GET /api/menu (and the S-05 polling target).

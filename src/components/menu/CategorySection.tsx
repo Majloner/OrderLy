@@ -9,6 +9,7 @@ import { MenuItemRow } from "./MenuItemRow";
 interface CategorySectionProps {
   category: MenuCategory | null; // null renders the trailing "Bez kategorii" section
   items: MenuItem[];
+  supabaseUrl: string;
   onEditCategory: (category: MenuCategory) => void;
   onDeleteCategory: (category: MenuCategory) => void;
   onAddItem: (categoryId: string | null) => void;
@@ -19,6 +20,7 @@ interface CategorySectionProps {
 export function CategorySection({
   category,
   items,
+  supabaseUrl,
   onEditCategory,
   onDeleteCategory,
   onAddItem,
@@ -107,6 +109,7 @@ export function CategorySection({
                 key={item.id}
                 item={item}
                 sectionId={sectionId}
+                supabaseUrl={supabaseUrl}
                 onEdit={onEditItem}
                 onArchive={onArchiveItem}
               />

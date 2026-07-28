@@ -1,9 +1,12 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import MenuManager from "@/components/menu/MenuManager";
+import { SUPABASE_URL } from "astro:env/server";
 
 // Auth + owner role are enforced by middleware (PROTECTED_ROUTES/OWNER_ROUTES),
 // so this page only renders the island; it fetches GET /api/menu on mount.
+// SUPABASE_URL (the public project URL, not a secret) is passed so the island
+// can build public photo CDN URLs; photo uploads go through the API.
 ---
 
 <Layout title="Menu lokalu">
@@ -15,7 +18,7 @@ import MenuManager from "@/components/menu/MenuManager";
         </h1>
         <a href="/dashboard" class="text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
       </div>
-      <MenuManager client:load />
+      <MenuManager client:load supabaseUrl={SUPABASE_URL ?? ""} />
     </div>
   </div>
 </Layout>

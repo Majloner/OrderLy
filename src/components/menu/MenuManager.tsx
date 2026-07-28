@@ -14,15 +14,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { callMenuApi, useMenu } from "@/components/hooks/useMenu";
+import { putSignedBlob } from "@/lib/images";
 import type { MenuCategoryInput, MenuItemInput } from "@/lib/schemas/menu";
 import type { MenuCategory, MenuItem, MenuPayload } from "@/types";
 import { CategoryDialog } from "./CategoryDialog";
 import { CategorySection } from "./CategorySection";
-import { MenuItemDialog } from "./MenuItemDialog";
+import { MenuItemDialog, type PhotoIntent } from "./MenuItemDialog";
 
 type ConfirmState = { type: "archive-item"; item: MenuItem } | { type: "delete-category"; category: MenuCategory };
 
-export default function MenuManager() {
+interface SignedUploadResponse {
+  full: { signedUrl: string };
+  thumb: { signedUrl: string };
+}
+
+export default function MenuManager({ supabaseUrl }: { supabaseUrl: string }) {
   const { menu, setMenu, loadError, refetch, reload } = useMenu();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -91,13 +97,38 @@ export default function MenuManager() {
     await refetch();
   };
 
-  const saveItem = async (input: MenuItemInput) => {
-    if (editedItem) {
-      await callMenuApi("PUT", `/api/menu/items/${editedItem.id}`, input);
-    } else {
-      await callMenuApi("POST", "/api/menu/items", input);
+  // Save the row first (POST returns the new id needed for the photo path),
+  // then run the photo intent, then a single refetch reflects both.
+  const saveItem = async (input: MenuItemInput, photo: PhotoIntent, signal?: AbortSignal) => {
+    const saved = editedItem
+      ? await callMenuApi<MenuItem>("PUT", `/api/menu/items/${editedItem.id}`, input, signal)
+      : await callMenuApi<MenuItem>("POST", "/api/menu/items", input, signal);
+    if (photo.kind === "upload") {
+      await uploadItemPhoto(saved.id, photo.full, photo.thumb, signal);
+    } else if (photo.kind === "remove") {
+      await callMenuApi("DELETE", `/api/menu/items/${saved.id}/photo`, undefined, signal);
     }
     await refetch();
+  };
+
+  // Server mints signed upload URLs (service role) after authorizing the request;
+  // the browser PUTs both blobs straight to Storage, then links the row. The
+  // AbortSignal lets the dialog cancel an in-flight save.
+  const uploadItemPhoto = async (itemId: string, full: Blob, thumb: Blob, signal?: AbortSignal) => {
+    const urls = await callMenuApi<SignedUploadResponse>(
+      "POST",
+      `/api/menu/items/${itemId}/photo-url`,
+      { contentType: "image/webp", fullSize: full.size, thumbSize: thumb.size },
+      signal,
+    );
+    await Promise.all([
+      putSignedBlob(urls.full.signedUrl, full, signal),
+      putSignedBlob(urls.thumb.signedUrl, thumb, signal),
+    ]);
+    // If the attach below fails after the blobs land, the objects are orphaned
+    // only transiently: the path is deterministic ({company}/{item}) and mint
+    // uses upsert, so the next save overwrites rather than accumulating.
+    await callMenuApi("PUT", `/api/menu/items/${itemId}/photo`, undefined, signal);
   };
 
   const handleConfirm = async () => {
@@ -224,6 +255,7 @@ export default function MenuManager() {
                 key={category.id}
                 category={category}
                 items={itemsFor(category.id)}
+                supabaseUrl={supabaseUrl}
                 onEditCategory={openEditCategory}
                 onDeleteCategory={(target) => {
                   setConfirm({ type: "delete-category", category: target });
@@ -240,6 +272,7 @@ export default function MenuManager() {
             <CategorySection
               category={null}
               items={uncategorized}
+              supabaseUrl={supabaseUrl}
               onEditCategory={() => undefined}
               onDeleteCategory={() => undefined}
               onAddItem={openCreateItem}
@@ -264,6 +297,7 @@ export default function MenuManager() {
         item={editedItem}
         categories={menu.categories}
         defaultCategoryId={itemDefaultCategoryId}
+        supabaseUrl={supabaseUrl}
         onOpenChange={setItemDialogOpen}
         onSubmit={saveItem}
       />

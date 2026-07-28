@@ -8,11 +8,17 @@ interface ApiEnvelope<T> {
 
 // Thin client for /api/menu/*: unwraps { data } and throws the PL { error }
 // message from the API on failure.
-export async function callMenuApi<T = unknown>(method: string, url: string, body?: unknown): Promise<T> {
+export async function callMenuApi<T = unknown>(
+  method: string,
+  url: string,
+  body?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
   const response = await fetch(url, {
     method,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal,
   });
 
   let envelope: ApiEnvelope<T> | null = null;

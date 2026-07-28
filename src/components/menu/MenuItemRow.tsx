@@ -1,8 +1,9 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { publicPhotoUrl } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import { ALLERGEN_LABELS, AVAILABILITY_LABELS, type MenuItem } from "@/types";
 
@@ -20,15 +21,20 @@ const availabilityBadgeClass: Record<MenuItem["availability"], string> = {
 interface MenuItemRowProps {
   item: MenuItem;
   sectionId: string;
+  supabaseUrl: string;
   onEdit: (item: MenuItem) => void;
   onArchive: (item: MenuItem) => void;
 }
 
-export function MenuItemRow({ item, sectionId, onEdit, onArchive }: MenuItemRowProps) {
+export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }: MenuItemRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     data: { type: "item", sectionId },
   });
+
+  const thumbUrl = item.photo_path
+    ? publicPhotoUrl(supabaseUrl, item.photo_path, "thumb", item.photo_updated_at)
+    : null;
 
   return (
     <li
@@ -48,6 +54,14 @@ export function MenuItemRow({ item, sectionId, onEdit, onArchive }: MenuItemRowP
       >
         <GripVertical className="size-4" />
       </button>
+
+      {thumbUrl ? (
+        <img src={thumbUrl} alt="" loading="lazy" className="size-12 shrink-0 rounded-md object-cover" />
+      ) : (
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/30">
+          <ImageIcon className="size-5" />
+        </div>
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">

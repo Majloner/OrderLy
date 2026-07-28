@@ -51,5 +51,24 @@ export const reorderSchema = z
   .min(1, "Lista identyfikatorów nie może być pusta")
   .max(500, "Zbyt wiele identyfikatorów");
 
+// Declared format/size for a photo upload request; the WebP blobs are produced
+// client-side, validated here before the server mints signed upload URLs.
+export const MAX_FULL_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB
+export const MAX_THUMB_PHOTO_BYTES = 300 * 1024; // 300 KB
+
+export const photoUploadRequestSchema = z.object({
+  contentType: z.literal("image/webp", "Wymagany format WebP"),
+  fullSize: z
+    .number("Rozmiar musi być liczbą")
+    .int()
+    .positive()
+    .max(MAX_FULL_PHOTO_BYTES, "Zdjęcie jest zbyt duże (maks. 2 MB)"),
+  thumbSize: z
+    .number("Rozmiar musi być liczbą")
+    .int()
+    .positive()
+    .max(MAX_THUMB_PHOTO_BYTES, "Miniatura jest zbyt duża"),
+});
+
 export type MenuCategoryInput = z.output<typeof menuCategoryInputSchema>;
 export type MenuItemInput = z.output<typeof menuItemInputSchema>;

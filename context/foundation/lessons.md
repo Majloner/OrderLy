@@ -18,3 +18,24 @@
   scoping z aplikacji do RLS.
 - **Applies to**: nowe polityki RLS `to anon` na tabelach z danymi najemcy
   (menu_categories, menu_items, companies, tables) — Supabase/Postgres RLS.
+
+## Supabase Storage nie honoruje tokenu użytkownika — operacje przez service_role
+
+- **Context**: S-04 (`menu-item-photos`). Upload zdjęć wymagał autoryzacji do
+  Storage jako właściciel. Próbowano: klient `@supabase/ssr` (cookie), opcja
+  `accessToken`, surowy REST z `Authorization: Bearer <user JWT>`, oraz
+  `createBrowserClient` z sesją z cookies.
+- **Problem**: Każda droga z tokenem użytkownika kończyła się `new row violates
+  row-level security policy` — Storage widział żądanie jako `anon`, mimo że
+  PostgREST ten sam token akceptuje (izolacja weryfikacji JWT: PostgREST vs
+  usługa Storage). Symulacja polityki w SQL z `request.jwt.claims` właściciela
+  przechodziła, więc polityka była poprawna — problem był w dostarczeniu tożsamości.
+- **Rule**: Operacje Storage wymagające tożsamości najemcy (mint signed upload
+  URL, `remove`) wykonuj **po stronie serwera kluczem `service_role`** (omija RLS),
+  a autoryzację egzekwuj w endpoincie: guard roli + przynależność zasobu do firmy
+  + ścieżkę obiektu buduj serwerowo z `company_id` (klient nie może jej sfałszować).
+  Nie polegaj na tym, że token użytkownika dotrze do RLS Storage. `service_role`
+  trzymaj wyłącznie w `.dev.vars` / sekretach workera, użyj tylko w module serwerowym.
+- **Applies to**: każda serwerowa operacja Supabase Storage w tym projekcie
+  (bucket `menu-photos` i przyszłe) — `src/lib/storage.ts`. Powiązane:
+  [[anon-rls-reads-must-be-scoped-by-company-id]].
