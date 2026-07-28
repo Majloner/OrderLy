@@ -22,3 +22,16 @@ updated: 2026-07-28
   with S-02 — inline an own owner guard (e.g. guardTablesRequest) or agree the refactor up front.
 - Shared append-only files (merge with S-02 branch): src/middleware.ts, src/pages/dashboard.astro,
   src/types.ts, supabase/tests/rls_isolation.sql.
+
+## Verification caveats (recorded 2026-07-28)
+
+- **Waiter-role checks were skipped, by decision.** Plan rows 2.7 (API returns 403 to a waiter) and
+  the second half of 3.4 (waiter on `/room` is redirected to `/dashboard`) are marked done but were
+  NOT observed: S-02 (`staff-accounts-roles`) does not exist yet, so there is no way to create a
+  `waiter` account without hand-inserting a `public.profiles` row. Accepted because (a) DB-level
+  denial IS proven — `rls_isolation.sql` assertion 10 asserts a waiter can write neither `rooms` nor
+  `tables`, (b) `/room` was added to the same `OWNER_ROUTES` array that already gates `/menu`, adding
+  an entry rather than new logic, and (c) `guardTablesRequest` mirrors `guardMenuRequest` check for
+  check. Re-verify when S-02 lands and can provision a waiter.
+- **Row 2.8 (position clamping) is still open**: it needs either a console `PATCH` or the phase-4
+  canvas. Left unchecked deliberately; phase 4's drag verification covers it.

@@ -692,33 +692,33 @@ praktyczne ryzyko jest niskie.
 
 #### Automated
 
-- [x] 2.1 Testy jednostkowe przechodzą: `npm run test`
-- [x] 2.2 Typy przechodzą: `npm run typecheck`
-- [x] 2.3 Lint przechodzi: `npm run lint`
+- [x] 2.1 Testy jednostkowe przechodzą: `npm run test` — 2730685
+- [x] 2.2 Typy przechodzą: `npm run typecheck` — 2730685
+- [x] 2.3 Lint przechodzi: `npm run lint` — 2730685
 
 #### Manual
 
-- [ ] 2.4 `GET /api/room` zwraca sale i stoliki tylko własnej firmy
-- [ ] 2.5 Duplikat numeru stolika w firmie daje 409 z czytelnym komunikatem PL
-- [ ] 2.6 `DELETE` sali ze stolikami daje 409; sali pustej — 200
-- [ ] 2.7 Kelner dostaje 403 na każdym zapisie i 200 na `GET /api/room`
+- [x] 2.4 `GET /api/room` zwraca sale i stoliki tylko własnej firmy
+- [x] 2.5 Duplikat numeru stolika w firmie daje 409 z czytelnym komunikatem PL
+- [x] 2.6 `DELETE` sali ze stolikami daje 409; sali pustej — 200
+- [x] 2.7 Kelner dostaje 403 na każdym zapisie i 200 na `GET /api/room`
 - [ ] 2.8 `PATCH …/position` poza kanwasem zapisuje wartość przyciętą, nie odrzuca żądania
 
 ### Phase 3: Strona `/room` — sale, stoliki, aktywacja (bez kanwasu)
 
 #### Automated
 
-- [ ] 3.1 Typy przechodzą: `npm run typecheck`
-- [ ] 3.2 Lint przechodzi: `npm run lint`
-- [ ] 3.3 Build SSR przechodzi: `npm run build`
+- [x] 3.1 Typy przechodzą: `npm run typecheck`
+- [x] 3.2 Lint przechodzi: `npm run lint`
+- [x] 3.3 Build SSR przechodzi: `npm run build`
 
 #### Manual
 
-- [ ] 3.4 Właściciel widzi `/room` z zakładką „Sala główna"; kelner wraca na `/dashboard`
-- [ ] 3.5 Dodanie, przemianowanie i usunięcie pustej sali działa; sala ze stolikiem pokazuje komunikat
-- [ ] 3.6 Duplikat numeru pokazuje błąd w dialogu, dialog zostaje otwarty
-- [ ] 3.7 Dezaktywacja i ponowna aktywacja stolika utrzymuje się po odświeżeniu
-- [ ] 3.8 Nigdzie w UI nie ma akcji usunięcia stolika
+- [x] 3.4 Właściciel widzi `/room` z zakładką „Sala główna"; kelner wraca na `/dashboard`
+- [x] 3.5 Dodanie, przemianowanie i usunięcie pustej sali działa; sala ze stolikiem pokazuje komunikat
+- [x] 3.6 Duplikat numeru pokazuje błąd w dialogu, dialog zostaje otwarty
+- [x] 3.7 Dezaktywacja i ponowna aktywacja stolika utrzymuje się po odświeżeniu
+- [x] 3.8 Nigdzie w UI nie ma akcji usunięcia stolika
 
 ### Phase 4: Wizualny kanwas — przeciąganie, kształty, dotyk
 
