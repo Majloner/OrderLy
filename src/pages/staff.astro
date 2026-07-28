@@ -1,0 +1,24 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import StaffManager from "@/components/staff/StaffManager";
+
+// Auth + owner role are enforced by middleware (PROTECTED_ROUTES/OWNER_ROUTES),
+// so this page only renders the island; it fetches GET /api/staff on mount.
+// The user id is passed so the owner's own row can disable the controls the API
+// and the profiles_guard_self_change trigger would reject.
+const { user } = Astro.locals;
+---
+
+<Layout title="Pracownicy">
+  <div class="bg-cosmic min-h-screen p-4 text-white sm:p-8">
+    <div class="mx-auto w-full max-w-3xl">
+      <div class="mb-6 flex items-center justify-between">
+        <h1 class="bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent">
+          Pracownicy
+        </h1>
+        <a href="/dashboard" class="text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
+      </div>
+      <StaffManager client:load currentUserId={user?.id ?? ""} />
+    </div>
+  </div>
+</Layout>

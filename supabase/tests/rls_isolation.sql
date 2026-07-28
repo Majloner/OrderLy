@@ -1,12 +1,16 @@
--- RLS isolation test (F-01 guardrail, extended in S-03, S-04 and S-06). Seeds
--- two companies with owners, a waiter, rooms, tables, menu categories and menu
--- items, then asserts, per simulated JWT context, that staff see only their own
--- company, that menu writes are owner-only (waiter denied), that anonymous
--- callers read only visible rows (available/sold_out, non-archived) and cannot
--- write, that an orphan (profile-less) authenticated user sees nothing, that
--- menu-photos Storage writes are owner-only and scoped to the caller's company
--- prefix, and that room/table writes are owner-only while a table can be
--- deleted by NOBODY (S-06 QR-permanence guardrail). Everything runs inside a
+-- RLS isolation test (F-01 guardrail, extended in S-03, S-04, S-06 and S-02).
+-- Seeds two companies with owners, a waiter, a deactivated staff member, rooms,
+-- tables, menu categories and menu items, then asserts, per simulated JWT
+-- context, that staff see only their own company, that menu writes are
+-- owner-only (waiter denied), that anonymous callers read only visible rows
+-- (available/sold_out, non-archived) and cannot write, that an orphan
+-- (profile-less) authenticated user sees nothing, that menu-photos Storage
+-- writes are owner-only and scoped to the caller's company prefix, that
+-- room/table writes are owner-only while a table can be deleted by NOBODY
+-- (S-06 QR-permanence guardrail), and — from S-02 — that staff provisioning is
+-- owner-only and same-company, that nobody can mint a second owner or promote
+-- themselves, that an owner cannot demote or deactivate itself, and that a
+-- deactivated account is denied everywhere. Everything runs inside a
 -- transaction and is ROLLED BACK — no fixtures persist.
 --
 -- Assertions raise an exception on failure, which aborts the transaction and
@@ -23,21 +27,26 @@ insert into auth.users (id, instance_id, aud, role, email, created_at, updated_a
 values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ownerA@test.local', now(), now()),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ownerB@test.local', now(), now()),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'waiterA@test.local', now(), now());
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'waiterA@test.local', now(), now()),
+  -- S-02: a deactivated staff member of company A, and two profile-less users
+  -- the provisioning assertions insert profiles for (profiles.user_id is FK'd
+  -- to auth.users, so the auth row must exist before an authenticated INSERT).
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'goneA@test.local', now(), now()),
+  ('f1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'newstaffA@test.local', now(), now()),
+  ('f2222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'denied@test.local', now(), now());
 
 insert into public.companies (id, name)
 values
   ('a1111111-1111-1111-1111-111111111111', 'Firma A'),
   ('b2222222-2222-2222-2222-222222222222', 'Firma B');
 
--- profiles.email is NOT NULL as of the S-02 (staff accounts) migration, which is
--- applied on the shared hosted DB this test runs against (`--linked`). Emails
--- mirror the auth.users rows above.
-insert into public.profiles (user_id, company_id, role, full_name, email)
+-- S-02: profiles.email is NOT NULL (denormalized display copy of auth.users.email).
+insert into public.profiles (user_id, company_id, role, full_name, email, deactivated_at)
 values
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Owner A', 'ownerA@test.local'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'b2222222-2222-2222-2222-222222222222', 'owner', 'Owner B', 'ownerB@test.local'),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'Waiter A', 'waiterA@test.local');
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Owner A', 'ownerA@test.local', null),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'b2222222-2222-2222-2222-222222222222', 'owner', 'Owner B', 'ownerB@test.local', null),
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'Waiter A', 'waiterA@test.local', null),
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'a1111111-1111-1111-1111-111111111111', 'kitchen', 'Gone A', 'goneA@test.local', now());
 
 -- S-06: tables.room_id is NOT NULL, so rooms must be seeded first.
 insert into public.rooms (id, company_id, name, sort_order)
@@ -78,7 +87,10 @@ begin
   select count(*) into rm from public.rooms;
   select count(*) into b_leak from public.companies where id = 'b2222222-2222-2222-2222-222222222222';
   if co <> 1 then raise exception 'FAIL A.companies: saw %, expected 1', co; end if;
-  if pr <> 2 then raise exception 'FAIL A.profiles: saw %, expected 2 (owner+waiter)', pr; end if;
+  -- Deactivated staff stay visible to their own company: profiles_select_same_company
+  -- filters on the CALLER's company, not the row's state, which is what makes
+  -- the reactivate flow possible without a second policy.
+  if pr <> 3 then raise exception 'FAIL A.profiles: saw %, expected 3 (owner+waiter+deactivated)', pr; end if;
   if tb <> 2 then raise exception 'FAIL A.tables: saw %, expected 2 (own active+inactive)', tb; end if;
   if rm <> 1 then raise exception 'FAIL A.rooms: saw %, expected 1 (own)', rm; end if;
   if mi <> 4 then raise exception 'FAIL A.menu_items: saw %, expected 4 (own, incl. archived)', mi; end if;
@@ -381,7 +393,234 @@ begin
 end $$;
 reset role;
 
--- --- Assertion 13 (S-06, impl-review F1): own company_id + FOREIGN room_id ----
+-- --- Assertion 13 (S-02): owner A provisions staff, but only into own company --
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare n int; state text;
+begin
+  insert into public.profiles (user_id, company_id, role, full_name, email)
+    values ('f1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'New Staff A', 'newstaffA@test.local');
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL owner provision: INSERT affected %, expected 1', n; end if;
+
+  -- ...not into company B (the whole point of the three-term with-check).
+  -- Asserted on SQLSTATE rather than `when others`, and with a distinct email
+  -- per attempt: otherwise a 23505 from profiles_company_email_idx would look
+  -- exactly like the RLS denial these blocks claim to prove.
+  begin
+    insert into public.profiles (user_id, company_id, role, full_name, email)
+      values ('f2222222-2222-2222-2222-222222222222', 'b2222222-2222-2222-2222-222222222222', 'waiter', 'Cross Tenant', 'crosstenant@test.local');
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> '42501' then
+    raise exception 'FAIL owner provision cross-tenant: sqlstate %, expected 42501 (RLS denial)', state;
+  end if;
+
+  -- ...and never a second owner
+  begin
+    insert into public.profiles (user_id, company_id, role, full_name, email)
+      values ('f2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Second Owner', 'secondowner@test.local');
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> '42501' then
+    raise exception 'FAIL owner provision second owner: sqlstate %, expected 42501 (RLS denial)', state;
+  end if;
+  raise notice 'OK owner A provisions staff only into own company, never as owner';
+end $$;
+reset role;
+
+-- --- Assertion 13b (S-02): owner cannot promote an existing waiter to owner --
+-- The UPDATE path to a second owner. profiles_update_owner's WITH CHECK does
+-- not constrain `role`, so the trigger's promotion branch is the ONLY thing
+-- stopping this — assertion 13 covers the INSERT path only.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare state text;
+begin
+  begin
+    update public.profiles set role = 'owner' where user_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> '42501' then
+    raise exception 'FAIL owner promotion: sqlstate %, expected 42501 (trigger denial)', state;
+  end if;
+  raise notice 'OK owner A cannot promote a waiter to owner';
+end $$;
+reset role;
+
+-- --- Assertion 14 (S-02): waiter A cannot provision or promote itself --------
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"dddddddd-dddd-dddd-dddd-dddddddddddd","role":"authenticated"}';
+do $$
+declare n int; leaked boolean := false;
+begin
+  begin
+    insert into public.profiles (user_id, company_id, role, full_name, email)
+      values ('f2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'Self Provisioned', 'denied@test.local');
+    leaked := true;
+  exception when others then leaked := false;
+  end;
+  if leaked then raise exception 'FAIL waiter provision: INSERT succeeded (should be denied)'; end if;
+
+  -- UPDATE is owner-only, so this is silently filtered rather than rejected
+  update public.profiles set role = 'owner' where user_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL waiter self-promotion: UPDATE affected % rows, expected 0', n; end if;
+  raise notice 'OK waiter A cannot provision staff or promote itself';
+end $$;
+reset role;
+
+-- --- Assertion 15 (S-02): owner A cannot demote or deactivate itself ---------
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare n int; leaked boolean := false;
+begin
+  begin
+    update public.profiles set role = 'waiter' where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    leaked := true;
+  exception when others then leaked := false;
+  end;
+  if leaked then raise exception 'FAIL owner self-demotion: UPDATE succeeded (would orphan the tenant)'; end if;
+
+  begin
+    update public.profiles set deactivated_at = now() where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    leaked := true;
+  exception when others then leaked := false;
+  end;
+  if leaked then raise exception 'FAIL owner self-deactivation: UPDATE succeeded'; end if;
+
+  -- ...but the guard must not over-block: renaming yourself is fine
+  update public.profiles set full_name = 'Owner A Renamed' where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL owner self-rename: UPDATE affected % rows, expected 1', n; end if;
+  raise notice 'OK owner A cannot demote/deactivate itself but can rename itself';
+end $$;
+reset role;
+
+-- --- Assertion 16 (S-02): owner A can deactivate and reactivate staff --------
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare n int;
+begin
+  update public.profiles set deactivated_at = now() where user_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL deactivate: UPDATE affected % rows, expected 1', n; end if;
+
+  update public.profiles set deactivated_at = null where user_id = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL reactivate: UPDATE affected % rows, expected 1', n; end if;
+  raise notice 'OK owner A can deactivate and reactivate staff';
+end $$;
+reset role;
+
+-- --- Assertion 17 (S-02): a deactivated staff member sees nothing ------------
+-- Both resolvers return NULL for them, so every policy in the schema
+-- default-denies — same shape as the orphan-user assertion above, but reached
+-- through deactivation rather than a missing profile. This is what makes the
+-- flag meaningful on tables later slices have not built yet.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee","role":"authenticated"}';
+do $$
+declare co int; pr int; mi int; tb int; n int;
+begin
+  select count(*) into co from public.companies;
+  select count(*) into pr from public.profiles;
+  select count(*) into mi from public.menu_items;
+  select count(*) into tb from public.tables;
+  if co <> 0 then raise exception 'FAIL deactivated: saw % companies, expected 0', co; end if;
+  if pr <> 0 then raise exception 'FAIL deactivated: saw % profiles, expected 0 (not even own)', pr; end if;
+  if mi <> 0 then raise exception 'FAIL deactivated: saw % menu_items, expected 0', mi; end if;
+  if tb <> 0 then raise exception 'FAIL deactivated: saw % tables, expected 0', tb; end if;
+
+  -- and cannot reactivate itself back in
+  update public.profiles set deactivated_at = null where user_id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL deactivated self-reactivation: UPDATE affected % rows, expected 0', n; end if;
+  raise notice 'OK deactivated staff member sees nothing and cannot reactivate itself';
+end $$;
+reset role;
+
+-- --- Assertion 18 (S-02): profiles DELETE is owner-only and never self -------
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"dddddddd-dddd-dddd-dddd-dddddddddddd","role":"authenticated"}';
+do $$
+declare n int;
+begin
+  delete from public.profiles where user_id = 'f1111111-1111-1111-1111-111111111111';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL waiter delete: DELETE affected % rows, expected 0', n; end if;
+  raise notice 'OK waiter A cannot delete profiles';
+end $$;
+reset role;
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare n int;
+begin
+  delete from public.profiles where user_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL owner self-delete: DELETE affected % rows, expected 0', n; end if;
+
+  delete from public.profiles where user_id = 'f1111111-1111-1111-1111-111111111111';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL owner delete: DELETE affected % rows, expected 1', n; end if;
+  raise notice 'OK owner A deletes same-company staff but not itself';
+end $$;
+reset role;
+
+-- --- Assertion 19 (S-02): handle_new_user() seeds the FULL tenant bootstrap --
+-- Runs as the privileged role (no `set local role`): handle_new_user is
+-- SECURITY DEFINER and fires on the auth.users insert, so this exercises the
+-- real registration path rather than simulating it.
+--
+-- Why this exists: three slices have now done `create or replace` on this one
+-- shared function (S-01 -> S-03 categories -> S-06 room -> S-02 email), and
+-- S-02 rebased onto a stale ancestor and silently dropped S-06's room insert.
+-- Nothing caught it, because every other fixture here seeds rooms by hand.
+-- Assert all four inserts together so the next replace cannot lose one quietly.
+do $$
+declare
+  boot_user_id uuid := '0bbbbbbb-0000-4000-8000-000000000001';
+  co uuid;
+  em text;
+  ro public.staff_role;
+  mc int;
+  rm int;
+begin
+  insert into auth.users (id, instance_id, aud, role, email, created_at, updated_at, raw_user_meta_data)
+  values (boot_user_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+          'bootstrap@test.local', now(), now(),
+          '{"company_name":"Firma Bootstrap","full_name":"Boot Owner"}'::jsonb);
+
+  select p.company_id, p.email, p.role into co, em, ro
+  from public.profiles p
+  where p.user_id = boot_user_id;
+
+  if co is null then raise exception 'FAIL bootstrap: handle_new_user created no profile'; end if;
+  if ro <> 'owner' then raise exception 'FAIL bootstrap: profile role %, expected owner', ro; end if;
+  if em <> 'bootstrap@test.local' then
+    raise exception 'FAIL bootstrap: profile email %, expected the auth email (S-02)', em;
+  end if;
+
+  select count(*) into mc from public.menu_categories where company_id = co;
+  if mc <> 4 then raise exception 'FAIL bootstrap: % default categories, expected 4 (S-03)', mc; end if;
+
+  select count(*) into rm from public.rooms where company_id = co;
+  if rm <> 1 then raise exception 'FAIL bootstrap: % default rooms, expected 1 (S-06)', rm; end if;
+
+  raise notice 'OK handle_new_user seeds company + owner profile (with email) + 4 categories + 1 room';
+end $$;
+
+-- --- Assertion 20 (S-06, impl-review F1): own company_id + FOREIGN room_id ----
+-- Numbered 20 on merge: S-02 had already claimed 13-19 on its branch.
 -- The case RLS alone PERMITS: the policies only check tables.company_id, and FK
 -- validation runs below RLS, so before the composite FK this insert succeeded and
 -- left Firma B unable to delete a room holding tables it could not even see.
