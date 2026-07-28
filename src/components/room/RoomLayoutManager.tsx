@@ -12,25 +12,25 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { callRoomApi, useRoomLayout } from "@/components/hooks/useRoomLayout";
-import type { RoomInput, TableInput } from "@/lib/schemas/room";
-import type { Room, RoomTable } from "@/types";
+import { MAX_TABLE_NUMBER, type RoomInput, type TableInput } from "@/lib/schemas/room";
+import type { Room, RoomLayoutPayload, RoomTable } from "@/types";
 import { RoomCanvas } from "./RoomCanvas";
 import { RoomDialog } from "./RoomDialog";
 import { RoomTabs } from "./RoomTabs";
 import { TableDialog } from "./TableDialog";
 import { TableList } from "./TableList";
 
-// A table's full PUT payload, so a single-field change (activation) can reuse
-// the same endpoint as the dialog without inventing a partial-update route.
-function tableToInput(table: RoomTable): TableInput {
+// Replace one table's coordinates, leaving every other table untouched. Used with
+// the functional form of setLayout so concurrent per-table updates cannot clobber
+// each other (see persistPosition).
+function patchTablePosition(
+  payload: RoomLayoutPayload,
+  tableId: string,
+  position: { pos_x: number; pos_y: number },
+): RoomLayoutPayload {
   return {
-    room_id: table.room_id,
-    number: table.number,
-    label: table.label,
-    shape: table.shape,
-    pos_x: table.pos_x,
-    pos_y: table.pos_y,
-    is_active: table.is_active,
+    ...payload,
+    tables: payload.tables.map((candidate) => (candidate.id === tableId ? { ...candidate, ...position } : candidate)),
   };
 }
 
@@ -38,9 +38,8 @@ export default function RoomLayoutManager() {
   const { layout, setLayout, loadError, refetch, reload } = useRoomLayout();
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
-  // One in-flight position PATCH per table, so a rapid re-drag can supersede its
-  // predecessor instead of racing it.
-  const positionRequests = useRef(new Map<string, AbortController>());
+  // Tail of the serialised PATCH chain per table — see persistPosition.
+  const positionQueue = useRef(new Map<string, Promise<void>>());
 
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [editedRoom, setEditedRoom] = useState<Room | null>(null);
@@ -75,9 +74,31 @@ export default function RoomLayoutManager() {
   const activeRoom = layout.rooms.find((room) => room.id === selectedRoomId) ?? layout.rooms.at(0) ?? null;
   const tablesInRoom = activeRoom ? layout.tables.filter((table) => table.room_id === activeRoom.id) : [];
 
-  // Numbers are unique per COMPANY (FR-010), not per room, so the suggestion
-  // looks across every room — otherwise the dialog would pre-fill a 409.
-  const nextFreeNumber = layout.tables.reduce((max, table) => Math.max(max, table.number), 0) + 1;
+  // Tables whose room does not resolve to a known room. GET /api/room reads rooms
+  // and tables as two separate snapshots, so a table moved into a room created
+  // between those reads would otherwise render in no tab at all — and since a table
+  // can never be deleted, an unreachable row would stay unreachable forever. Mirrors
+  // the "Bez kategorii" fallback in MenuManager (impl-review F7).
+  const knownRoomIds = new Set(layout.rooms.map((room) => room.id));
+  const orphanTables = layout.tables.filter((table) => !knownRoomIds.has(table.room_id));
+
+  // Numbers are unique per COMPANY (FR-010), not per room, so the suggestion looks
+  // across every room — otherwise the dialog would pre-fill a 409.
+  //
+  // Lowest FREE number, not max + 1: numbers are never released (a table cannot be
+  // deleted), so max + 1 only ever climbs, and with a table numbered 999 present it
+  // would pre-fill 1000 — a value the schema rejects, making "Dodaj stolik" fail on
+  // validation every time (impl-review F4).
+  const nextFreeNumber = (() => {
+    const used = new Set(layout.tables.map((table) => table.number));
+    for (let candidate = 1; candidate <= MAX_TABLE_NUMBER; candidate += 1) {
+      if (!used.has(candidate)) {
+        return candidate;
+      }
+    }
+    // Every number taken: fall back to the ceiling and let the 409 explain itself.
+    return MAX_TABLE_NUMBER;
+  })();
 
   // Lay new tables out on a simple grid so a room does not stack everything at
   // (0,0) before the owner has dragged anything on the phase-4 canvas.
@@ -129,12 +150,14 @@ export default function RoomLayoutManager() {
     await refetch();
   };
 
+  // Single-field PATCH, not a full PUT: rewriting all seven columns from client
+  // state lets a stale tab silently revert a drag or rename made elsewhere
+  // (impl-review F5).
   const toggleActive = async (table: RoomTable) => {
     setActionError(null);
     setBusyTableId(table.id);
     try {
-      await callRoomApi("PUT", `/api/room/tables/${table.id}`, {
-        ...tableToInput(table),
+      await callRoomApi("PATCH", `/api/room/tables/${table.id}/activation`, {
         is_active: !table.is_active,
       });
       await refetch();
@@ -145,36 +168,50 @@ export default function RoomLayoutManager() {
     }
   };
 
-  // Optimistic with rollback — the same shape as persistReorder in MenuManager,
-  // and the only optimistic mutation here. A drop must feel instant, so the
-  // position is applied locally first and reverted if the PATCH fails.
-  const persistPosition = async (table: RoomTable, next: { pos_x: number; pos_y: number }) => {
-    const previous = layout;
-    setLayout({
-      ...layout,
-      tables: layout.tables.map((candidate) => (candidate.id === table.id ? { ...candidate, ...next } : candidate)),
-    });
+  // Optimistic with rollback — the only optimistic mutation here. A drop must feel
+  // instant, so the position is applied locally first.
+  //
+  // Two things this deliberately does NOT do, both learned the hard way:
+  //
+  // 1. It never restores a whole-layout snapshot. Reverting `{...layout}` captured
+  //    at call time would discard writes to OTHER tables that committed while this
+  //    request was in flight — a failed drag of table A would visibly undo table
+  //    B's already-saved move. Every update is functional and touches one table.
+  //
+  // 2. It does not abort superseded requests. abort() only closes the client
+  //    connection; a request the Worker already forwarded still commits, so an
+  //    older position could land in Postgres LAST while the UI shows the newer one
+  //    — silently, since the aborted response never arrives. Chaining per table
+  //    makes commit order equal send order, which is what actually fixes it, and
+  //    lets the server's returned row be authoritative.
+  const persistPosition = (table: RoomTable, next: { pos_x: number; pos_y: number }) => {
+    const before = { pos_x: table.pos_x, pos_y: table.pos_y };
+
+    setLayout((prev) => (prev === null ? prev : patchTablePosition(prev, table.id, next)));
     setActionError(null);
 
-    positionRequests.current.get(table.id)?.abort();
-    const controller = new AbortController();
-    positionRequests.current.set(table.id, controller);
+    const tail = positionQueue.current.get(table.id) ?? Promise.resolve();
+    const run = tail
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          const saved = await callRoomApi<RoomTable>("PATCH", `/api/room/tables/${table.id}/position`, next);
+          // The server clamps, so its answer can differ from what we guessed.
+          setLayout((prev) =>
+            prev === null ? prev : patchTablePosition(prev, table.id, { pos_x: saved.pos_x, pos_y: saved.pos_y }),
+          );
+        } catch (error) {
+          setLayout((prev) => (prev === null ? prev : patchTablePosition(prev, table.id, before)));
+          setActionError(error instanceof Error ? error.message : "Nie udało się zapisać pozycji stolika");
+        }
+      });
 
-    try {
-      await callRoomApi("PATCH", `/api/room/tables/${table.id}/position`, next, controller.signal);
-    } catch (error) {
-      // An abort means a newer drag of the same table replaced this request; its
-      // optimistic state is the current truth, so rolling back would undo it.
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
+    positionQueue.current.set(table.id, run);
+    void run.finally(() => {
+      if (positionQueue.current.get(table.id) === run) {
+        positionQueue.current.delete(table.id);
       }
-      setLayout(previous);
-      setActionError(error instanceof Error ? error.message : "Nie udało się zapisać pozycji stolika");
-    } finally {
-      if (positionRequests.current.get(table.id) === controller) {
-        positionRequests.current.delete(table.id);
-      }
-    }
+    });
   };
 
   // A room holding tables cannot be deleted (ON DELETE RESTRICT -> 409); the
@@ -242,11 +279,7 @@ export default function RoomLayoutManager() {
             </div>
           ) : (
             <>
-              <RoomCanvas
-                tables={tablesInRoom}
-                onOpenTable={openEditTable}
-                onMoveTable={(table, next) => void persistPosition(table, next)}
-              />
+              <RoomCanvas tables={tablesInRoom} onOpenTable={openEditTable} onMoveTable={persistPosition} />
               {/* The canvas is pointer-driven, so the list below stays the
                   keyboard-reachable path to every action — not decoration. */}
               <TableList
@@ -258,6 +291,21 @@ export default function RoomLayoutManager() {
             </>
           )}
         </>
+      )}
+
+      {orphanTables.length > 0 && (
+        <div className="space-y-2 rounded-2xl border border-amber-400/30 bg-amber-500/5 p-4">
+          <h2 className="text-lg font-semibold">Bez sali</h2>
+          <p className="text-sm text-white/60">
+            Te stoliki wskazują salę, której już nie ma. Otwórz stolik i przypisz go do istniejącej sali.
+          </p>
+          <TableList
+            tables={orphanTables}
+            busyTableId={busyTableId}
+            onEdit={openEditTable}
+            onToggleActive={(table) => void toggleActive(table)}
+          />
+        </div>
       )}
 
       <RoomDialog open={roomDialogOpen} room={editedRoom} onOpenChange={setRoomDialogOpen} onSubmit={saveRoom} />

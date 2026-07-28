@@ -17,6 +17,11 @@ const posYSchema = z
   .min(0, "Pozycja Y nie może być ujemna")
   .max(LOGICAL_CANVAS.height, "Pozycja Y wykracza poza plan sali");
 
+// Single source of truth for the table-number ceiling: the zod bound, the UI's
+// next-free-number suggestion and the DB check constraint must agree, or a row can
+// exist that no UI path is able to save (impl-review F4).
+export const MAX_TABLE_NUMBER = 999;
+
 export const roomInputSchema = z.object({
   name: z
     .string("Nazwa sali jest wymagana")
@@ -31,7 +36,7 @@ export const tableInputSchema = z.object({
     .number("Numer stolika musi być liczbą")
     .int("Numer stolika musi być liczbą całkowitą")
     .min(1, "Numer stolika musi być większy od zera")
-    .max(999, "Numer stolika może mieć najwyżej trzy cyfry"),
+    .max(MAX_TABLE_NUMBER, "Numer stolika może mieć najwyżej trzy cyfry"),
   label: z
     .string("Opis musi być tekstem")
     .trim()
@@ -56,6 +61,14 @@ export const tablePositionSchema = z.object({
   pos_y: posYSchema,
 });
 
+// Same reasoning as the position payload: a one-field change must not rewrite the
+// other six columns from possibly-stale client state, or a second tab's toggle
+// silently reverts a drag or rename made elsewhere (impl-review F5).
+export const tableActivationSchema = z.object({
+  is_active: z.boolean("Dostępność stolika musi być wartością logiczną"),
+});
+
 export type RoomInput = z.output<typeof roomInputSchema>;
 export type TableInput = z.output<typeof tableInputSchema>;
 export type TablePositionInput = z.output<typeof tablePositionSchema>;
+export type TableActivationInput = z.output<typeof tableActivationSchema>;

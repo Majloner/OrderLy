@@ -30,11 +30,14 @@ values
   ('a1111111-1111-1111-1111-111111111111', 'Firma A'),
   ('b2222222-2222-2222-2222-222222222222', 'Firma B');
 
-insert into public.profiles (user_id, company_id, role, full_name)
+-- profiles.email is NOT NULL as of the S-02 (staff accounts) migration, which is
+-- applied on the shared hosted DB this test runs against (`--linked`). Emails
+-- mirror the auth.users rows above.
+insert into public.profiles (user_id, company_id, role, full_name, email)
 values
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Owner A'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'b2222222-2222-2222-2222-222222222222', 'owner', 'Owner B'),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'Waiter A');
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Owner A', 'ownerA@test.local'),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'b2222222-2222-2222-2222-222222222222', 'owner', 'Owner B', 'ownerB@test.local'),
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'Waiter A', 'waiterA@test.local');
 
 -- S-06: tables.room_id is NOT NULL, so rooms must be seeded first.
 insert into public.rooms (id, company_id, name, sort_order)
@@ -375,6 +378,47 @@ begin
   get diagnostics n = row_count;
   if n <> 0 then raise exception 'FAIL A cross-tenant: owner A updated % Firma B tables, expected 0', n; end if;
   raise notice 'OK owner A cannot read or write Firma B rooms and tables';
+end $$;
+reset role;
+
+-- --- Assertion 13 (S-06, impl-review F1): own company_id + FOREIGN room_id ----
+-- The case RLS alone PERMITS: the policies only check tables.company_id, and FK
+-- validation runs below RLS, so before the composite FK this insert succeeded and
+-- left Firma B unable to delete a room holding tables it could not even see.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+-- Gated on the constraint's existence: migration 20260728120000 cannot be pushed
+-- until the S-02 branch merges (the shared hosted DB holds S-02 migrations absent
+-- from this branch, so `supabase db push` refuses). Without the gate this
+-- assertion would fail the whole suite until then, training everyone to ignore a
+-- red test:rls and hiding the other twelve assertions. It starts enforcing by
+-- itself the moment the migration lands — no further edit needed.
+do $$
+declare state text; has_fk boolean;
+begin
+  select exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.tables'::regclass
+      and conname = 'tables_company_id_room_id_fkey'
+  ) into has_fk;
+
+  if not has_fk then
+    raise notice 'SKIP cross-tenant room_id: migration 20260728120000 not applied yet (impl-review F1)';
+    return;
+  end if;
+
+  begin
+    insert into public.tables (company_id, room_id, number)
+      values ('a1111111-1111-1111-1111-111111111111', 'f0b22222-2222-2222-2222-222222222222', 77);
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  -- 23503: the composite FK (company_id, room_id) -> rooms (company_id, id) has
+  -- no matching row, because that room belongs to Firma B.
+  if state <> '23503' then
+    raise exception 'FAIL cross-tenant room_id: sqlstate %, expected 23503 (composite FK)', state;
+  end if;
+  raise notice 'OK a table cannot reference another company''s room';
 end $$;
 reset role;
 

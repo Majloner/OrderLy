@@ -1,7 +1,7 @@
 ---
 change_id: room-layout-tables
 title: Room layout and tables
-status: implemented
+status: impl_reviewed
 created: 2026-07-23
 updated: 2026-07-28
 ---
