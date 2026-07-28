@@ -33,5 +33,10 @@ updated: 2026-07-28
   `tables`, (b) `/room` was added to the same `OWNER_ROUTES` array that already gates `/menu`, adding
   an entry rather than new logic, and (c) `guardTablesRequest` mirrors `guardMenuRequest` check for
   check. Re-verify when S-02 lands and can provision a waiter.
-- **Row 2.8 (position clamping) is still open**: it needs either a console `PATCH` or the phase-4
-  canvas. Left unchecked deliberately; phase 4's drag verification covers it.
+- **Row 2.8 (position clamping) was closed in phase 4**: verified by dragging past the canvas edge
+  and observing the snap to the footprint boundary, which exercises the same server-side
+  `clampPosition` the console `PATCH` would have.
+- Follow-up parked as a separate change: room furnishing objects (walls, chairs, doors, windows, bar,
+  plant, stairs, toilet, till) as a new `room_objects` entity. Deliberately NOT part of S-06 — FR-008
+  covers tables only. Note for whoever picks it up: unlike `tables`, that table SHOULD have a delete
+  policy, since no permanent QR code is attached to a chair.

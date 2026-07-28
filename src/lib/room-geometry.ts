@@ -33,3 +33,38 @@ export function clampPosition(
     pos_y: clampAxis(position.pos_y, LOGICAL_CANVAS.height - footprint.height),
   };
 }
+
+// How many rendered pixels one logical pixel occupies. The canvas keeps the
+// logical aspect ratio, so one factor covers both axes. Floored at a small value
+// so a container measured at 0 (first paint, display:none) cannot produce a 0 or
+// Infinity scale and blow up applyDragDelta.
+export function computeScale(containerWidth: number): number {
+  if (!Number.isFinite(containerWidth) || containerWidth <= 0) {
+    return 1;
+  }
+  return Math.max(containerWidth / LOGICAL_CANVAS.width, 0.1);
+}
+
+// Translate a dnd-kit drag delta into a new LOGICAL position.
+//
+// This is the one piece of non-obvious maths in the editor: the delta arrives in
+// RENDERED pixels while positions are stored in logical ones, so it must be
+// DIVIDED by the scale here (rendering multiplies by it). Getting the direction
+// wrong is invisible at exactly 1200px wide, where scale === 1 — which is why
+// this lives in a tested pure function instead of inside the canvas component.
+export function applyDragDelta(
+  position: { pos_x: number; pos_y: number },
+  delta: { x: number; y: number },
+  scale: number,
+  shape: TableShape,
+): { pos_x: number; pos_y: number } {
+  const safeScale = scale > 0 ? scale : 1;
+
+  return clampPosition(
+    {
+      pos_x: position.pos_x + delta.x / safeScale,
+      pos_y: position.pos_y + delta.y / safeScale,
+    },
+    shape,
+  );
+}

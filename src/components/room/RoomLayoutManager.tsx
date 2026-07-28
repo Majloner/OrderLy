@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import {
   AlertDialog,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { callRoomApi, useRoomLayout } from "@/components/hooks/useRoomLayout";
 import type { RoomInput, TableInput } from "@/lib/schemas/room";
 import type { Room, RoomTable } from "@/types";
+import { RoomCanvas } from "./RoomCanvas";
 import { RoomDialog } from "./RoomDialog";
 import { RoomTabs } from "./RoomTabs";
 import { TableDialog } from "./TableDialog";
@@ -34,9 +35,12 @@ function tableToInput(table: RoomTable): TableInput {
 }
 
 export default function RoomLayoutManager() {
-  const { layout, loadError, refetch, reload } = useRoomLayout();
+  const { layout, setLayout, loadError, refetch, reload } = useRoomLayout();
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  // One in-flight position PATCH per table, so a rapid re-drag can supersede its
+  // predecessor instead of racing it.
+  const positionRequests = useRef(new Map<string, AbortController>());
 
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [editedRoom, setEditedRoom] = useState<Room | null>(null);
@@ -141,6 +145,38 @@ export default function RoomLayoutManager() {
     }
   };
 
+  // Optimistic with rollback — the same shape as persistReorder in MenuManager,
+  // and the only optimistic mutation here. A drop must feel instant, so the
+  // position is applied locally first and reverted if the PATCH fails.
+  const persistPosition = async (table: RoomTable, next: { pos_x: number; pos_y: number }) => {
+    const previous = layout;
+    setLayout({
+      ...layout,
+      tables: layout.tables.map((candidate) => (candidate.id === table.id ? { ...candidate, ...next } : candidate)),
+    });
+    setActionError(null);
+
+    positionRequests.current.get(table.id)?.abort();
+    const controller = new AbortController();
+    positionRequests.current.set(table.id, controller);
+
+    try {
+      await callRoomApi("PATCH", `/api/room/tables/${table.id}/position`, next, controller.signal);
+    } catch (error) {
+      // An abort means a newer drag of the same table replaced this request; its
+      // optimistic state is the current truth, so rolling back would undo it.
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      setLayout(previous);
+      setActionError(error instanceof Error ? error.message : "Nie udało się zapisać pozycji stolika");
+    } finally {
+      if (positionRequests.current.get(table.id) === controller) {
+        positionRequests.current.delete(table.id);
+      }
+    }
+  };
+
   // A room holding tables cannot be deleted (ON DELETE RESTRICT -> 409); the
   // API's message tells the owner to move the tables first.
   const confirmDeleteRoom = async () => {
@@ -205,12 +241,21 @@ export default function RoomLayoutManager() {
               </Button>
             </div>
           ) : (
-            <TableList
-              tables={tablesInRoom}
-              busyTableId={busyTableId}
-              onEdit={openEditTable}
-              onToggleActive={(table) => void toggleActive(table)}
-            />
+            <>
+              <RoomCanvas
+                tables={tablesInRoom}
+                onOpenTable={openEditTable}
+                onMoveTable={(table, next) => void persistPosition(table, next)}
+              />
+              {/* The canvas is pointer-driven, so the list below stays the
+                  keyboard-reachable path to every action — not decoration. */}
+              <TableList
+                tables={tablesInRoom}
+                busyTableId={busyTableId}
+                onEdit={openEditTable}
+                onToggleActive={(table) => void toggleActive(table)}
+              />
+            </>
           )}
         </>
       )}
