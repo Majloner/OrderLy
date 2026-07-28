@@ -870,13 +870,13 @@ istniejącej tabeli nie została zmieniona.
 
 #### Automated
 
-- [x] 1.1 Testy jednostkowe przechodzą, w tym 16 istniejących testów geometrii bez modyfikacji: `npm run test`
-- [x] 1.2 Typy przechodzą: `npm run typecheck`
-- [x] 1.3 Lint przechodzi: `npm run lint`
+- [x] 1.1 Testy jednostkowe przechodzą, w tym 16 istniejących testów geometrii bez modyfikacji: `npm run test` — 3c8612f
+- [x] 1.2 Typy przechodzą: `npm run typecheck` — 3c8612f
+- [x] 1.3 Lint przechodzi: `npm run lint` — 3c8612f
 
 #### Manual
 
-- [x] 1.4 Sanity-check AABB: 400×20 @45° ≈ 297×297, a 1200×20 @45° wyśrodkowuje `pos_y` na 400
+- [x] 1.4 Sanity-check AABB: 400×20 @45° ≈ 297×297, a 1200×20 @45° wyśrodkowuje `pos_y` na 400 — 3c8612f
 
 ### Phase 2: Migracja, RLS i test izolacji
 
