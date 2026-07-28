@@ -80,3 +80,36 @@ export interface MenuPayload {
   categories: MenuCategory[];
   items: MenuItem[];
 }
+
+// --- Staff (S-02) -----------------------------------------------------------
+// Mirrors public.staff_role and the profiles row shape after
+// supabase/migrations/20260727220415_staff_accounts_roles.sql.
+
+export const STAFF_ROLES = ["owner", "waiter", "kitchen"] as const;
+
+export type StaffRole = (typeof STAFF_ROLES)[number];
+
+// Roles the owner may assign. `owner` is deliberately excluded: it belongs to
+// the account that registered the company and is not grantable (enforced by
+// profiles_insert_owner's `role <> 'owner'` and the self-change trigger).
+export const STAFF_ASSIGNABLE_ROLES = ["waiter", "kitchen"] as const;
+
+export type AssignableStaffRole = (typeof STAFF_ASSIGNABLE_ROLES)[number];
+
+export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
+  owner: "Właściciel",
+  waiter: "Kelner",
+  kitchen: "Kuchnia",
+};
+
+export interface StaffMember {
+  user_id: string;
+  company_id: string;
+  email: string;
+  full_name: string | null;
+  role: StaffRole;
+  // null = active. Set to a timestamp, both resolvers return NULL for this
+  // user and every RLS policy in the schema default-denies them.
+  deactivated_at: string | null;
+  created_at: string;
+}

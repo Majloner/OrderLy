@@ -51,6 +51,49 @@ export function guardMenuRequest(
   return { supabase, companyId: company_id };
 }
 
+interface StaffRequestContext {
+  supabase: SupabaseServerClient;
+  companyId: string;
+  userId: string;
+}
+
+// Route-level guard for /api/staff/*. A deliberate sibling of
+// guardMenuRequest rather than a shared refactor — S-06 is in flight on this
+// file (see context/changes/staff-accounts-roles/change.md).
+//
+// Unlike menu, reads are owner-only too: the staff roster is not something a
+// waiter or the kitchen needs, so `write` only distinguishes the error copy.
+// RLS remains the real enforcement (profiles_select_same_company +
+// profiles_insert_owner/update_owner/delete_owner).
+export function guardStaffRequest(
+  context: APIContext,
+  options: { write: boolean },
+): { error: Response } | StaffRequestContext {
+  const { user, company_id, role } = context.locals;
+
+  if (!user) {
+    return { error: jsonError("Wymagane zalogowanie", 401) };
+  }
+  if (role !== "owner") {
+    return {
+      error: jsonError(
+        options.write ? "Tylko właściciel może zarządzać kontami personelu" : "Tylko właściciel widzi listę personelu",
+        403,
+      ),
+    };
+  }
+  if (!company_id) {
+    return { error: jsonError("Konto nie jest przypisane do żadnej firmy", 403) };
+  }
+
+  const supabase = context.locals.supabase;
+  if (!supabase) {
+    return { error: jsonError("Supabase nie jest skonfigurowany", 500) };
+  }
+
+  return { supabase, companyId: company_id, userId: user.id };
+}
+
 // Confirm a category belongs to the caller's company before an item references
 // it. The SELECT is RLS-scoped to current_company_id(), so a category from
 // another tenant reads as absent — FK validation alone would bypass RLS and let
@@ -86,6 +129,20 @@ export async function parseBody<T>(
   return { input: parsed.data };
 }
 
+// Confirm a profile belongs to the caller's company (RLS-scoped SELECT) before
+// acting on it — same rationale as itemExistsInCompany.
+export async function profileExistsInCompany(supabase: SupabaseServerClient, userId: string): Promise<boolean> {
+  const { data } = await supabase.from("profiles").select("user_id").eq("user_id", userId).maybeSingle();
+  return data !== null;
+}
+
 export function isUniqueViolation(error: { code?: string } | null): boolean {
   return error?.code === "23505";
+}
+
+// 42501 = insufficient_privilege, raised by the profiles_guard_self_change
+// trigger on owner self-demotion / self-deactivation / promotion to owner.
+// Distinguishing it lets the route answer 403 instead of a blanket 500.
+export function isInsufficientPrivilege(error: { code?: string } | null): boolean {
+  return error?.code === "42501";
 }

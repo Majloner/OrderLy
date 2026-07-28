@@ -689,25 +689,25 @@ already runs at `src/middleware.ts:34-38`.
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npm run db:push`
-- [x] 1.2 RLS isolation suite passes, including all eight pre-existing assertions: `npm run test:rls`
-- [x] 1.3 Linting passes: `npm run lint`
+- [x] 1.1 Migration applies cleanly: `npm run db:push` — cfffeb2
+- [x] 1.2 RLS isolation suite passes, including all eight pre-existing assertions: `npm run test:rls` — cfffeb2
+- [x] 1.3 Linting passes: `npm run lint` — cfffeb2
 
 #### Manual
 
-- [x] 1.4 Existing owner profiles have a non-null `email` matching `auth.users`
-- [x] 1.5 New company registration via `/auth/signup` works and populates owner `email`
-- [x] 1.6 Existing `/menu` CRUD as owner still works
-- [x] 1.7 Pre-existing dev waiter account still resolves a role (N/A — the dev DB holds only two profiles, both `owner`; no waiter account exists. The non-owner resolver path is covered by 1.2, assertions 4/10/14, which run as an active waiter. The first real waiter is created by Phase 2.)
+- [x] 1.4 Existing owner profiles have a non-null `email` matching `auth.users` — cfffeb2
+- [x] 1.5 New company registration via `/auth/signup` works and populates owner `email` — cfffeb2
+- [x] 1.6 Existing `/menu` CRUD as owner still works — cfffeb2
+- [x] 1.7 Pre-existing dev waiter account still resolves a role (N/A — the dev DB holds only two profiles, both `owner`; no waiter account exists. The non-owner resolver path is covered by 1.2, assertions 4/10/14, which run as an active waiter. The first real waiter is created by Phase 2.) — cfffeb2
 
 ### Phase 2: Admin Module & Staff API
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test`
-- [ ] 2.2 Type checking passes: `npm run typecheck`
-- [ ] 2.3 Linting passes: `npm run lint`
-- [ ] 2.4 Production build succeeds: `npm run build`
+- [x] 2.1 Unit tests pass: `npm run test`
+- [x] 2.2 Type checking passes: `npm run typecheck`
+- [x] 2.3 Linting passes: `npm run lint`
+- [x] 2.4 Production build succeeds: `npm run build`
 
 #### Manual
 
