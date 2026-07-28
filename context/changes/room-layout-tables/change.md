@@ -1,9 +1,9 @@
 ---
 change_id: room-layout-tables
 title: Room layout and tables
-status: implementing
+status: impl_reviewed
 created: 2026-07-23
-updated: 2026-07-27
+updated: 2026-07-28
 ---
 
 ## Notes
@@ -22,3 +22,21 @@ updated: 2026-07-27
   with S-02 — inline an own owner guard (e.g. guardTablesRequest) or agree the refactor up front.
 - Shared append-only files (merge with S-02 branch): src/middleware.ts, src/pages/dashboard.astro,
   src/types.ts, supabase/tests/rls_isolation.sql.
+
+## Verification caveats (recorded 2026-07-28)
+
+- **Waiter-role checks were skipped, by decision.** Plan rows 2.7 (API returns 403 to a waiter) and
+  the second half of 3.4 (waiter on `/room` is redirected to `/dashboard`) are marked done but were
+  NOT observed: S-02 (`staff-accounts-roles`) does not exist yet, so there is no way to create a
+  `waiter` account without hand-inserting a `public.profiles` row. Accepted because (a) DB-level
+  denial IS proven — `rls_isolation.sql` assertion 10 asserts a waiter can write neither `rooms` nor
+  `tables`, (b) `/room` was added to the same `OWNER_ROUTES` array that already gates `/menu`, adding
+  an entry rather than new logic, and (c) `guardTablesRequest` mirrors `guardMenuRequest` check for
+  check. Re-verify when S-02 lands and can provision a waiter.
+- **Row 2.8 (position clamping) was closed in phase 4**: verified by dragging past the canvas edge
+  and observing the snap to the footprint boundary, which exercises the same server-side
+  `clampPosition` the console `PATCH` would have.
+- Follow-up parked as a separate change: room furnishing objects (walls, chairs, doors, windows, bar,
+  plant, stairs, toilet, till) as a new `room_objects` entity. Deliberately NOT part of S-06 — FR-008
+  covers tables only. Note for whoever picks it up: unlike `tables`, that table SHOULD have a delete
+  policy, since no permanent QR code is attached to a chair.

@@ -678,63 +678,63 @@ praktyczne ryzyko jest niskie.
 
 #### Automated
 
-- [x] 1.1 Migracja aplikuje się czysto: `npm run db:push`
-- [x] 1.2 Test izolacji przechodzi (w tym nowe asercje zapisu): `npm run test:rls`
-- [x] 1.3 Typy i lint bez regresji: `npm run typecheck` oraz `npm run lint`
+- [x] 1.1 Migracja aplikuje się czysto: `npm run db:push` — 864304a
+- [x] 1.2 Test izolacji przechodzi (w tym nowe asercje zapisu): `npm run test:rls` — 864304a
+- [x] 1.3 Typy i lint bez regresji: `npm run typecheck` oraz `npm run lint` — 864304a
 
 #### Manual
 
-- [x] 1.4 `public.tables` ma `room_id NOT NULL`, `pos_x`, `pos_y`, `shape`, a każdy wiersz wskazuje na salę swojej firmy
-- [x] 1.5 Polityki na `tables` to dokładnie select_staff / insert_owner / update_owner / anon_read_active — bez delete
-- [x] 1.6 Rejestracja nowej firmy zakłada salę „Sala główna"
+- [x] 1.4 `public.tables` ma `room_id NOT NULL`, `pos_x`, `pos_y`, `shape`, a każdy wiersz wskazuje na salę swojej firmy — 864304a
+- [x] 1.5 Polityki na `tables` to dokładnie select_staff / insert_owner / update_owner / anon_read_active — bez delete — 864304a
+- [x] 1.6 Rejestracja nowej firmy zakłada salę „Sala główna" — 864304a
 
 ### Phase 2: API, typy i schematy
 
 #### Automated
 
-- [ ] 2.1 Testy jednostkowe przechodzą: `npm run test`
-- [ ] 2.2 Typy przechodzą: `npm run typecheck`
-- [ ] 2.3 Lint przechodzi: `npm run lint`
+- [x] 2.1 Testy jednostkowe przechodzą: `npm run test` — 2730685
+- [x] 2.2 Typy przechodzą: `npm run typecheck` — 2730685
+- [x] 2.3 Lint przechodzi: `npm run lint` — 2730685
 
 #### Manual
 
-- [ ] 2.4 `GET /api/room` zwraca sale i stoliki tylko własnej firmy
-- [ ] 2.5 Duplikat numeru stolika w firmie daje 409 z czytelnym komunikatem PL
-- [ ] 2.6 `DELETE` sali ze stolikami daje 409; sali pustej — 200
-- [ ] 2.7 Kelner dostaje 403 na każdym zapisie i 200 na `GET /api/room`
-- [ ] 2.8 `PATCH …/position` poza kanwasem zapisuje wartość przyciętą, nie odrzuca żądania
+- [x] 2.4 `GET /api/room` zwraca sale i stoliki tylko własnej firmy — 085be82
+- [x] 2.5 Duplikat numeru stolika w firmie daje 409 z czytelnym komunikatem PL — 085be82
+- [x] 2.6 `DELETE` sali ze stolikami daje 409; sali pustej — 200 — 085be82
+- [x] 2.7 Kelner dostaje 403 na każdym zapisie i 200 na `GET /api/room` — 085be82
+- [x] 2.8 `PATCH …/position` poza kanwasem zapisuje wartość przyciętą, nie odrzuca żądania — a2abdc8
 
 ### Phase 3: Strona `/room` — sale, stoliki, aktywacja (bez kanwasu)
 
 #### Automated
 
-- [ ] 3.1 Typy przechodzą: `npm run typecheck`
-- [ ] 3.2 Lint przechodzi: `npm run lint`
-- [ ] 3.3 Build SSR przechodzi: `npm run build`
+- [x] 3.1 Typy przechodzą: `npm run typecheck` — 085be82
+- [x] 3.2 Lint przechodzi: `npm run lint` — 085be82
+- [x] 3.3 Build SSR przechodzi: `npm run build` — 085be82
 
 #### Manual
 
-- [ ] 3.4 Właściciel widzi `/room` z zakładką „Sala główna"; kelner wraca na `/dashboard`
-- [ ] 3.5 Dodanie, przemianowanie i usunięcie pustej sali działa; sala ze stolikiem pokazuje komunikat
-- [ ] 3.6 Duplikat numeru pokazuje błąd w dialogu, dialog zostaje otwarty
-- [ ] 3.7 Dezaktywacja i ponowna aktywacja stolika utrzymuje się po odświeżeniu
-- [ ] 3.8 Nigdzie w UI nie ma akcji usunięcia stolika
+- [x] 3.4 Właściciel widzi `/room` z zakładką „Sala główna"; kelner wraca na `/dashboard` — 085be82
+- [x] 3.5 Dodanie, przemianowanie i usunięcie pustej sali działa; sala ze stolikiem pokazuje komunikat — 085be82
+- [x] 3.6 Duplikat numeru pokazuje błąd w dialogu, dialog zostaje otwarty — 085be82
+- [x] 3.7 Dezaktywacja i ponowna aktywacja stolika utrzymuje się po odświeżeniu — 085be82
+- [x] 3.8 Nigdzie w UI nie ma akcji usunięcia stolika — 085be82
 
 ### Phase 4: Wizualny kanwas — przeciąganie, kształty, dotyk
 
 #### Automated
 
-- [ ] 4.1 Testy geometrii i schematów przechodzą: `npm run test`
-- [ ] 4.2 Typy przechodzą: `npm run typecheck`
-- [ ] 4.3 Lint przechodzi: `npm run lint`
-- [ ] 4.4 Build SSR przechodzi: `npm run build`
+- [x] 4.1 Testy geometrii i schematów przechodzą: `npm run test` — a2abdc8
+- [x] 4.2 Typy przechodzą: `npm run typecheck` — a2abdc8
+- [x] 4.3 Lint przechodzi: `npm run lint` — a2abdc8
+- [x] 4.4 Build SSR przechodzi: `npm run build` — a2abdc8
 
 #### Manual
 
-- [ ] 4.5 Przeciągnięcie myszą zapisuje pozycję; utrzymuje się po odświeżeniu
-- [ ] 4.6 Przeciąganie palcem działa i strona się nie przewija
-- [ ] 4.7 Zwężenie okna skaluje układ, a drag nadal trafia pod kursor
-- [ ] 4.8 Przeciągnięcie ku krawędzi zatrzymuje stolik na granicy kanwasu
-- [ ] 4.9 Kliknięcie bez przeciągnięcia otwiera dialog edycji
-- [ ] 4.10 Stoliki nieaktywne są wizualnie odróżnialne
-- [ ] 4.11 Błąd sieci przy upuszczeniu cofa pozycję i pokazuje komunikat
+- [x] 4.5 Przeciągnięcie myszą zapisuje pozycję; utrzymuje się po odświeżeniu — a2abdc8
+- [x] 4.6 Przeciąganie palcem działa i strona się nie przewija — a2abdc8
+- [x] 4.7 Zwężenie okna skaluje układ, a drag nadal trafia pod kursor — a2abdc8
+- [x] 4.8 Przeciągnięcie ku krawędzi zatrzymuje stolik na granicy kanwasu — a2abdc8
+- [x] 4.9 Kliknięcie bez przeciągnięcia otwiera dialog edycji — a2abdc8
+- [x] 4.10 Stoliki nieaktywne są wizualnie odróżnialne — a2abdc8
+- [x] 4.11 Błąd sieci przy upuszczeniu cofa pozycję i pokazuje komunikat — a2abdc8

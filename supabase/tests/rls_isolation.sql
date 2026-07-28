@@ -619,6 +619,48 @@ begin
   raise notice 'OK handle_new_user seeds company + owner profile (with email) + 4 categories + 1 room';
 end $$;
 
+-- --- Assertion 20 (S-06, impl-review F1): own company_id + FOREIGN room_id ----
+-- Numbered 20 on merge: S-02 had already claimed 13-19 on its branch.
+-- The case RLS alone PERMITS: the policies only check tables.company_id, and FK
+-- validation runs below RLS, so before the composite FK this insert succeeded and
+-- left Firma B unable to delete a room holding tables it could not even see.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+-- Gated on the constraint's existence: migration 20260728120000 cannot be pushed
+-- until the S-02 branch merges (the shared hosted DB holds S-02 migrations absent
+-- from this branch, so `supabase db push` refuses). Without the gate this
+-- assertion would fail the whole suite until then, training everyone to ignore a
+-- red test:rls and hiding the other twelve assertions. It starts enforcing by
+-- itself the moment the migration lands — no further edit needed.
+do $$
+declare state text; has_fk boolean;
+begin
+  select exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.tables'::regclass
+      and conname = 'tables_company_id_room_id_fkey'
+  ) into has_fk;
+
+  if not has_fk then
+    raise notice 'SKIP cross-tenant room_id: migration 20260728120000 not applied yet (impl-review F1)';
+    return;
+  end if;
+
+  begin
+    insert into public.tables (company_id, room_id, number)
+      values ('a1111111-1111-1111-1111-111111111111', 'f0b22222-2222-2222-2222-222222222222', 77);
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  -- 23503: the composite FK (company_id, room_id) -> rooms (company_id, id) has
+  -- no matching row, because that room belongs to Firma B.
+  if state <> '23503' then
+    raise exception 'FAIL cross-tenant room_id: sqlstate %, expected 23503 (composite FK)', state;
+  end if;
+  raise notice 'OK a table cannot reference another company''s room';
+end $$;
+reset role;
+
 rollback;
 
 -- Rollback proof: fixtures gone.
