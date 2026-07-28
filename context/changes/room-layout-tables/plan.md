@@ -702,7 +702,7 @@ praktyczne ryzyko jest niskie.
 - [x] 2.5 Duplikat numeru stolika w firmie daje 409 z czytelnym komunikatem PL — 085be82
 - [x] 2.6 `DELETE` sali ze stolikami daje 409; sali pustej — 200 — 085be82
 - [x] 2.7 Kelner dostaje 403 na każdym zapisie i 200 na `GET /api/room` — 085be82
-- [x] 2.8 `PATCH …/position` poza kanwasem zapisuje wartość przyciętą, nie odrzuca żądania
+- [x] 2.8 `PATCH …/position` poza kanwasem zapisuje wartość przyciętą, nie odrzuca żądania — a2abdc8
 
 ### Phase 3: Strona `/room` — sale, stoliki, aktywacja (bez kanwasu)
 
@@ -724,17 +724,17 @@ praktyczne ryzyko jest niskie.
 
 #### Automated
 
-- [x] 4.1 Testy geometrii i schematów przechodzą: `npm run test`
-- [x] 4.2 Typy przechodzą: `npm run typecheck`
-- [x] 4.3 Lint przechodzi: `npm run lint`
-- [x] 4.4 Build SSR przechodzi: `npm run build`
+- [x] 4.1 Testy geometrii i schematów przechodzą: `npm run test` — a2abdc8
+- [x] 4.2 Typy przechodzą: `npm run typecheck` — a2abdc8
+- [x] 4.3 Lint przechodzi: `npm run lint` — a2abdc8
+- [x] 4.4 Build SSR przechodzi: `npm run build` — a2abdc8
 
 #### Manual
 
-- [x] 4.5 Przeciągnięcie myszą zapisuje pozycję; utrzymuje się po odświeżeniu
-- [x] 4.6 Przeciąganie palcem działa i strona się nie przewija
-- [x] 4.7 Zwężenie okna skaluje układ, a drag nadal trafia pod kursor
-- [x] 4.8 Przeciągnięcie ku krawędzi zatrzymuje stolik na granicy kanwasu
-- [x] 4.9 Kliknięcie bez przeciągnięcia otwiera dialog edycji
-- [x] 4.10 Stoliki nieaktywne są wizualnie odróżnialne
-- [x] 4.11 Błąd sieci przy upuszczeniu cofa pozycję i pokazuje komunikat
+- [x] 4.5 Przeciągnięcie myszą zapisuje pozycję; utrzymuje się po odświeżeniu — a2abdc8
+- [x] 4.6 Przeciąganie palcem działa i strona się nie przewija — a2abdc8
+- [x] 4.7 Zwężenie okna skaluje układ, a drag nadal trafia pod kursor — a2abdc8
+- [x] 4.8 Przeciągnięcie ku krawędzi zatrzymuje stolik na granicy kanwasu — a2abdc8
+- [x] 4.9 Kliknięcie bez przeciągnięcia otwiera dialog edycji — a2abdc8
+- [x] 4.10 Stoliki nieaktywne są wizualnie odróżnialne — a2abdc8
+- [x] 4.11 Błąd sieci przy upuszczeniu cofa pozycję i pokazuje komunikat — a2abdc8
