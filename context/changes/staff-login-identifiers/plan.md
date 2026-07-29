@@ -553,24 +553,24 @@ column to the `profiles` select the middleware already runs.
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly: `npm run db:push`
-- [x] 1.2 RLS isolation suite passes, including every pre-existing assertion: `npm run test:rls`
-- [x] 1.3 Linting passes: `npm run lint`
+- [x] 1.1 Migration applies cleanly: `npm run db:push` — 58be1f9
+- [x] 1.2 RLS isolation suite passes, including every pre-existing assertion: `npm run test:rls` — 58be1f9
+- [x] 1.3 Linting passes: `npm run lint` — 58be1f9
 
 #### Manual
 
-- [x] 1.4 Both existing companies have a non-null, distinct `code`
-- [x] 1.5 New company registration produces a code, four categories and one room
-- [x] 1.6 Existing `/menu` and `/staff` pages still load for an owner
+- [x] 1.4 Both existing companies have a non-null, distinct `code` — 58be1f9
+- [x] 1.5 New company registration produces a code, four categories and one room — 58be1f9
+- [x] 1.6 Existing `/menu` and `/staff` pages still load for an owner — 58be1f9
 
 ### Phase 2: Synthetic auth address and provisioning
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test`
-- [ ] 2.2 Type checking passes: `npm run typecheck`
-- [ ] 2.3 Linting passes: `npm run lint`
-- [ ] 2.4 Production build succeeds: `npm run build`
+- [x] 2.1 Unit tests pass: `npm run test`
+- [x] 2.2 Type checking passes: `npm run typecheck`
+- [x] 2.3 Linting passes: `npm run lint`
+- [x] 2.4 Production build succeeds: `npm run build`
 
 #### Manual
 

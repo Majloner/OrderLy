@@ -8,7 +8,7 @@ export const prerender = false;
 
 const idSchema = z.uuid();
 
-const COLUMNS = "user_id, company_id, email, full_name, role, deactivated_at, created_at";
+const COLUMNS = "user_id, company_id, login, email, full_name, role, deactivated_at, created_at";
 
 // Rename, role change, deactivate and reactivate in one call. No DELETE export:
 // removal is the soft deactivated_at flag, so order attribution survives (S-09).
@@ -42,9 +42,19 @@ export const PUT: APIRoute = async (context) => {
   // unchanged", so a rename cannot resurrect a deactivated member (nor reset
   // the timestamp recording when access was revoked), and toggling activity
   // cannot revert a rename made from another tab.
-  const patch: { full_name?: string | null; role?: AssignableStaffRole; deactivated_at?: string | null } = {};
+  // `login` is absent from the update schema on purpose — the auth address is
+  // derived from it, so changing it would strand the account.
+  const patch: {
+    full_name?: string | null;
+    email?: string | null;
+    role?: AssignableStaffRole;
+    deactivated_at?: string | null;
+  } = {};
   if (body.input.full_name !== undefined) {
     patch.full_name = body.input.full_name;
+  }
+  if (body.input.email !== undefined) {
+    patch.email = body.input.email;
   }
   if (body.input.role !== undefined) {
     patch.role = body.input.role;
