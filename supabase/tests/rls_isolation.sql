@@ -10,8 +10,10 @@
 -- (S-06 QR-permanence guardrail), and — from S-02 — that staff provisioning is
 -- owner-only and same-company, that nobody can mint a second owner or promote
 -- themselves, that an owner cannot demote or deactivate itself, and that a
--- deactivated account is denied everywhere. Everything runs inside a
--- transaction and is ROLLED BACK — no fixtures persist.
+-- deactivated account is denied everywhere — and, from staff-login-identifiers,
+-- that a staff login is unique within a venue but free to repeat across venues,
+-- while an email may repeat or be absent. Everything runs inside a transaction
+-- and is ROLLED BACK — no fixtures persist.
 --
 -- Assertions raise an exception on failure, which aborts the transaction and
 -- makes `supabase db query` exit non-zero. A clean run ends with the rollback
@@ -33,20 +35,29 @@ values
   -- to auth.users, so the auth row must exist before an authenticated INSERT).
   ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'goneA@test.local', now(), now()),
   ('f1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'newstaffA@test.local', now(), now()),
-  ('f2222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'denied@test.local', now(), now());
+  ('f2222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'denied@test.local', now(), now()),
+  -- staff-login: four profile-less users for the per-venue login assertions.
+  ('f3333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'annaA@test.local', now(), now()),
+  ('f4444444-4444-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'annaB@test.local', now(), now()),
+  ('f5555555-5555-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dup@test.local', now(), now()),
+  ('f6666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'noemail@test.local', now(), now());
 
-insert into public.companies (id, name)
+-- companies.code is NOT NULL and unique (staff-login migration). Fixed
+-- fixture codes rather than generated ones, so failures name a stable value.
+-- Both are drawn from the generator's alphabet, which excludes 0/O/1/I/L.
+insert into public.companies (id, name, code)
 values
-  ('a1111111-1111-1111-1111-111111111111', 'Firma A'),
-  ('b2222222-2222-2222-2222-222222222222', 'Firma B');
+  ('a1111111-1111-1111-1111-111111111111', 'Firma A', 'AAAAAA'),
+  ('b2222222-2222-2222-2222-222222222222', 'Firma B', 'BBBBBB');
 
--- S-02: profiles.email is NOT NULL (denormalized display copy of auth.users.email).
-insert into public.profiles (user_id, company_id, role, full_name, email, deactivated_at)
+-- profiles.email is now OPTIONAL contact data (staff-login migration); the login
+-- is the staff credential and is null for owners, who authenticate by email.
+insert into public.profiles (user_id, company_id, role, full_name, email, login, deactivated_at)
 values
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Owner A', 'ownerA@test.local', null),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'b2222222-2222-2222-2222-222222222222', 'owner', 'Owner B', 'ownerB@test.local', null),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'Waiter A', 'waiterA@test.local', null),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'a1111111-1111-1111-1111-111111111111', 'kitchen', 'Gone A', 'goneA@test.local', now());
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Owner A', 'ownerA@test.local', null, null),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'b2222222-2222-2222-2222-222222222222', 'owner', 'Owner B', 'ownerB@test.local', null, null),
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'Waiter A', 'waiterA@test.local', 'waiter-a', null),
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'a1111111-1111-1111-1111-111111111111', 'kitchen', 'Gone A', 'goneA@test.local', 'gone-a', now());
 
 -- S-06: tables.room_id is NOT NULL, so rooms must be seeded first.
 insert into public.rooms (id, company_id, name, sort_order)
@@ -594,6 +605,7 @@ declare
   ro public.staff_role;
   mc int;
   rm int;
+  vc text;
 begin
   insert into auth.users (id, instance_id, aud, role, email, created_at, updated_at, raw_user_meta_data)
   values (boot_user_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
@@ -616,7 +628,15 @@ begin
   select count(*) into rm from public.rooms where company_id = co;
   if rm <> 1 then raise exception 'FAIL bootstrap: % default rooms, expected 1 (S-06)', rm; end if;
 
-  raise notice 'OK handle_new_user seeds company + owner profile (with email) + 4 categories + 1 room';
+  select c.code into vc from public.companies c where c.id = co;
+  if vc is null or length(vc) <> 6 then
+    raise exception 'FAIL bootstrap: venue code %, expected 6 characters (staff-login)', coalesce(vc, 'NULL');
+  end if;
+  if vc ~ '[01OIL]' then
+    raise exception 'FAIL bootstrap: venue code % contains an ambiguous character', vc;
+  end if;
+
+  raise notice 'OK handle_new_user seeds company + owner profile + 4 categories + 1 room + venue code';
 end $$;
 
 -- --- Assertion 20 (S-06, impl-review F1): own company_id + FOREIGN room_id ----
@@ -658,6 +678,80 @@ begin
     raise exception 'FAIL cross-tenant room_id: sqlstate %, expected 23503 (composite FK)', state;
   end if;
   raise notice 'OK a table cannot reference another company''s room';
+end $$;
+reset role;
+
+-- --- Assertion 21 (staff-login): login unique per venue, email free-form ------
+-- The whole point of the change: within one venue a login is taken exactly
+-- once, while an email may repeat or be absent entirely.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare n int; state text;
+begin
+  insert into public.profiles (user_id, company_id, role, full_name, email, login)
+    values ('f3333333-3333-3333-3333-333333333333', 'a1111111-1111-1111-1111-111111111111',
+            'waiter', 'Anna A', 'anna@lokal.pl', 'anna');
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL login insert: affected %, expected 1', n; end if;
+
+  -- the same login twice in ONE venue is rejected by profiles_company_login_idx
+  begin
+    insert into public.profiles (user_id, company_id, role, full_name, email, login)
+      values ('f5555555-5555-5555-5555-555555555555', 'a1111111-1111-1111-1111-111111111111',
+              'waiter', 'Anna Duplikat', 'dup@lokal.pl', 'anna');
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> '23505' then
+    raise exception 'FAIL duplicate login in one venue: sqlstate %, expected 23505', state;
+  end if;
+
+  -- ...and case-insensitively, because the index is on lower(login)
+  begin
+    insert into public.profiles (user_id, company_id, role, full_name, email, login)
+      values ('f5555555-5555-5555-5555-555555555555', 'a1111111-1111-1111-1111-111111111111',
+              'waiter', 'Anna Wielka', 'dup@lokal.pl', 'ANNA');
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> '23505' then
+    raise exception 'FAIL duplicate login differing only in case: sqlstate %, expected 23505', state;
+  end if;
+
+  -- the SAME email on a second staff member is now fine (the per-company unique
+  -- index this migration dropped used to make this a 23505)
+  insert into public.profiles (user_id, company_id, role, full_name, email, login)
+    values ('f5555555-5555-5555-5555-555555555555', 'a1111111-1111-1111-1111-111111111111',
+            'waiter', 'Anna Druga', 'anna@lokal.pl', 'anna2');
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL repeated email: affected %, expected 1', n; end if;
+
+  -- ...and no email at all is fine too
+  insert into public.profiles (user_id, company_id, role, full_name, email, login)
+    values ('f6666666-6666-6666-6666-666666666666', 'a1111111-1111-1111-1111-111111111111',
+            'kitchen', 'Bez Maila', null, 'anna3');
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL null email: affected %, expected 1', n; end if;
+
+  raise notice 'OK login unique per venue; email may repeat or be absent';
+end $$;
+reset role;
+
+-- --- Assertion 22 (staff-login): the same login in a DIFFERENT venue ---------
+-- The core claim of this change, and the thing the global auth.users email
+-- uniqueness made impossible before.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","role":"authenticated"}';
+do $$
+declare n int;
+begin
+  insert into public.profiles (user_id, company_id, role, full_name, email, login)
+    values ('f4444444-4444-4444-4444-444444444444', 'b2222222-2222-2222-2222-222222222222',
+            'waiter', 'Anna B', null, 'anna');
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL same login in another venue: affected %, expected 1', n; end if;
+  raise notice 'OK the login "anna" exists independently in Firma A and Firma B';
 end $$;
 reset role;
 
