@@ -7,7 +7,10 @@
 -- (profile-less) authenticated user sees nothing, that menu-photos Storage
 -- writes are owner-only and scoped to the caller's company prefix, that
 -- room/table writes are owner-only while a table can be deleted by NOBODY
--- (S-06 QR-permanence guardrail), and — from S-02 — that staff provisioning is
+-- (S-06 QR-permanence guardrail), that room_objects writes are owner-only while an
+-- object CAN be deleted by its owner (the deliberate contrast: no QR code is
+-- pinned to a chair) and cascades when its room goes, and — from S-02 — that staff
+-- provisioning is
 -- owner-only and same-company, that nobody can mint a second owner or promote
 -- themselves, that an owner cannot demote or deactivate itself, and that a
 -- deactivated account is denied everywhere. Everything runs inside a
@@ -59,6 +62,14 @@ values
   ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 1, true),
   ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 2, false),   -- A inactive
   ('b2222222-2222-2222-2222-222222222222', 'f0b22222-2222-2222-2222-222222222222', 1, true);    -- B active
+
+-- Furnishing objects. Same composite-FK requirement as tables: (company_id, room_id)
+-- must match an existing room of the SAME company, so rooms come first.
+insert into public.room_objects (company_id, room_id, kind, label, pos_x, pos_y, width, height, rotation)
+values
+  ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'wall',  'Obj-A1', 600, 10,  400, 20, 0),
+  ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'chair', 'Obj-A2', 200, 300, 40,  40, 90),
+  ('b2222222-2222-2222-2222-222222222222', 'f0b22222-2222-2222-2222-222222222222', 'bar',   'Obj-B1', 400, 400, 240, 60, 0);
 
 insert into public.menu_categories (id, company_id, name, sort_order)
 values
@@ -177,13 +188,15 @@ do $$
 -- Counts are scoped to the two fixture companies: the hosted DB may hold real
 -- (dev) companies whose rows are also anon-visible; absolute counts would be
 -- brittle against that pre-existing data.
-declare co int; tb int; mi int; mc int; rm int; hidden int; leaked boolean := false;
+declare co int; tb int; mi int; mc int; rm int; ro int; hidden int; leaked boolean := false;
 begin
   select count(*) into co from public.companies
     where id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into tb from public.tables            -- active only (2)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into rm from public.rooms             -- no anon policy at all (0)
+    where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
+  select count(*) into ro from public.room_objects      -- no anon policy at all (0)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into mi from public.menu_items        -- available+sold_out, non-archived (3)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
@@ -195,6 +208,7 @@ begin
   if mi <> 3 then raise exception 'FAIL anon.menu_items: saw %, expected 3 (available+sold_out, non-archived)', mi; end if;
   if mc <> 2 then raise exception 'FAIL anon.menu_categories: saw %, expected 2', mc; end if;
   if rm <> 0 then raise exception 'FAIL anon.rooms: saw %, expected 0 (no anon policy)', rm; end if;
+  if ro <> 0 then raise exception 'FAIL anon.room_objects: saw %, expected 0 (no anon policy)', ro; end if;
   if hidden <> 0 then raise exception 'FAIL anon leak: unavailable/archived item visible'; end if;
   begin
     insert into public.menu_items (company_id, name, price)
@@ -658,6 +672,127 @@ begin
     raise exception 'FAIL cross-tenant room_id: sqlstate %, expected 23503 (composite FK)', state;
   end if;
   raise notice 'OK a table cannot reference another company''s room';
+end $$;
+reset role;
+
+-- --- Assertion 21 (room-objects): owner A writes objects AND CAN delete one ----
+-- The deliberate contrast with assertion 9, which proves NOBODY deletes a table.
+-- room_objects has a delete policy precisely because no printed QR code points at
+-- a chair, so the QR-permanence guardrail does not apply. If this assertion ever
+-- starts failing the way assertion 9 passes, the delete policy was lost.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare n int; new_object_id uuid;
+begin
+  insert into public.room_objects (company_id, room_id, kind, label, pos_x, pos_y, width, height, rotation)
+    values ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111',
+            'door', 'Obj-A-New', 500, 400, 80, 20, 45)
+    returning id into new_object_id;
+
+  update public.room_objects set pos_x = 550, rotation = 270 where id = new_object_id;
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL owner objects: UPDATE affected % rows, expected 1', n; end if;
+
+  delete from public.room_objects where id = new_object_id;
+  get diagnostics n = row_count;
+  if n <> 1 then
+    raise exception 'FAIL object delete: owner DELETE affected % rows, expected 1 (delete policy missing?)', n;
+  end if;
+  raise notice 'OK owner A writes objects and CAN delete one (unlike a table)';
+end $$;
+reset role;
+
+-- --- Assertion 22 (room-objects): waiter A reads objects but cannot write them --
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"dddddddd-dddd-dddd-dddd-dddddddddddd","role":"authenticated"}';
+do $$
+-- Keyed on the fixture labels rather than an absolute count, so neighbouring
+-- assertions that add and remove objects cannot make this brittle (same reasoning
+-- as assertion 10).
+declare ob int; n int; leaked boolean := false;
+begin
+  select count(*) into ob from public.room_objects where label in ('Obj-A1', 'Obj-A2');
+  if ob <> 2 then raise exception 'FAIL waiter read objects: saw %, expected 2', ob; end if;
+
+  begin
+    insert into public.room_objects (company_id, room_id, kind, width, height)
+      values ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'plant', 50, 50);
+    leaked := true;
+  exception when others then leaked := false;
+  end;
+  if leaked then raise exception 'FAIL waiter write: room_objects INSERT succeeded (should be denied)'; end if;
+
+  update public.room_objects set pos_x = 999 where label = 'Obj-A1';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL waiter write: room_objects UPDATE affected % rows, expected 0', n; end if;
+
+  -- A delete policy exists, but it is owner-only, so the waiter's DELETE is
+  -- silently filtered rather than rejected.
+  delete from public.room_objects where label = 'Obj-A1';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL waiter write: room_objects DELETE affected % rows, expected 0', n; end if;
+  raise notice 'OK waiter A reads objects but can neither write nor delete them';
+end $$;
+reset role;
+
+-- --- Assertion 23 (room-objects): tenant isolation, composite FK, room cascade --
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare ob_b int; n int; state text; leaked boolean := false; spare_room_id uuid; left_over int;
+begin
+  select count(*) into ob_b from public.room_objects
+    where company_id = 'b2222222-2222-2222-2222-222222222222';
+  if ob_b <> 0 then raise exception 'FAIL A cross-tenant objects: owner A sees % objects of Firma B', ob_b; end if;
+
+  begin
+    insert into public.room_objects (company_id, room_id, kind, width, height)
+      values ('b2222222-2222-2222-2222-222222222222', 'f0b22222-2222-2222-2222-222222222222', 'wall', 400, 20);
+    leaked := true;
+  exception when others then leaked := false;
+  end;
+  if leaked then raise exception 'FAIL A cross-tenant: owner A inserted an object into Firma B'; end if;
+
+  update public.room_objects set pos_x = 1 where company_id = 'b2222222-2222-2222-2222-222222222222';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL A cross-tenant: owner A updated % Firma B objects, expected 0', n; end if;
+
+  -- The case RLS alone PERMITS (impl-review F1, same shape as assertion 20): own
+  -- company_id paired with a room belonging to Firma B. Only the composite FK
+  -- stops it, and it must stop it here from the very first migration.
+  begin
+    insert into public.room_objects (company_id, room_id, kind, width, height)
+      values ('a1111111-1111-1111-1111-111111111111', 'f0b22222-2222-2222-2222-222222222222', 'wall', 400, 20);
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> '23503' then
+    raise exception 'FAIL cross-tenant object room_id: sqlstate %, expected 23503 (composite FK)', state;
+  end if;
+
+  -- ON DELETE CASCADE, the opposite of tables' NO ACTION: a room emptied of tables
+  -- is deletable and takes its furnishing with it. Needs a room of its own —
+  -- Sala-A1 holds tables, so assertion 11 already proves it cannot be deleted.
+  insert into public.rooms (company_id, name)
+    values ('a1111111-1111-1111-1111-111111111111', 'Sala-A-Obj')
+    returning id into spare_room_id;
+
+  insert into public.room_objects (company_id, room_id, kind, label, width, height)
+    values ('a1111111-1111-1111-1111-111111111111', spare_room_id, 'toilet', 'Obj-Cascade', 120, 120),
+           ('a1111111-1111-1111-1111-111111111111', spare_room_id, 'till',   'Obj-Cascade', 80,  60);
+
+  delete from public.rooms where id = spare_room_id;
+  get diagnostics n = row_count;
+  if n <> 1 then
+    raise exception 'FAIL room cascade: DELETE of a table-free room affected % rows, expected 1', n;
+  end if;
+
+  select count(*) into left_over from public.room_objects where label = 'Obj-Cascade';
+  if left_over <> 0 then
+    raise exception 'FAIL room cascade: % objects survived their room, expected 0', left_over;
+  end if;
+  raise notice 'OK objects are tenant-isolated, cannot cross-reference a room, and cascade with theirs';
 end $$;
 reset role;
 
