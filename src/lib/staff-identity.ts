@@ -19,7 +19,18 @@
 // RFC 2606 reserves `.invalid` as a TLD guaranteed never to resolve. Using it
 // means no mail can ever be attempted against these addresses and no real
 // address can collide with a generated one.
-const STAFF_EMAIL_DOMAIN_SUFFIX = "staff.orderly.invalid";
+//
+// Exported because /auth/signup must REFUSE addresses in this namespace. It is
+// open and unauthenticated, so without that check anyone could register
+// `<login>@<code>.staff.orderly.invalid` and permanently occupy a login in
+// someone else's venue — the owner would then get "this login is taken" for an
+// account that does not exist in their venue and that they cannot reclaim.
+export const STAFF_EMAIL_DOMAIN_SUFFIX = "staff.orderly.invalid";
+
+// True for any address inside the derived staff namespace, regardless of case.
+export function isStaffAuthEmail(email: string): boolean {
+  return email.trim().toLowerCase().endsWith(`.${STAFF_EMAIL_DOMAIN_SUFFIX}`);
+}
 
 export const MIN_STAFF_LOGIN_LENGTH = 3;
 export const MAX_STAFF_LOGIN_LENGTH = 32;

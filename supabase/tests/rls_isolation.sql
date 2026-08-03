@@ -755,6 +755,34 @@ begin
 end $$;
 reset role;
 
+-- --- Assertion 23 (impl-review F2): the venue code is immutable --------------
+-- Staff auth addresses are derived from the code and never stored, so changing
+-- it would permanently lock every staff account out of that venue. The comments
+-- claimed immutability long before anything enforced it; this pins it down.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare state text; n int;
+begin
+  begin
+    update public.companies set code = 'ZZZZZZ' where id = 'a1111111-1111-1111-1111-111111111111';
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> '42501' then
+    raise exception 'FAIL venue code immutability: sqlstate %, expected 42501', state;
+  end if;
+
+  -- ...but the rest of the company profile is still editable (FR-002), so the
+  -- trigger must not over-block.
+  update public.companies set name = 'Firma A Nowa' where id = 'a1111111-1111-1111-1111-111111111111';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL company rename: UPDATE affected % rows, expected 1', n; end if;
+
+  raise notice 'OK venue code is immutable while the rest of the profile stays editable';
+end $$;
+reset role;
+
 rollback;
 
 -- Rollback proof: fixtures gone.
