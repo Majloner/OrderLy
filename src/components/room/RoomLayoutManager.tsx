@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { callRoomApi, useRoomLayout } from "@/components/hooks/useRoomLayout";
-import { MAX_TABLE_NUMBER, type RoomInput, type TableInput } from "@/lib/schemas/room";
-import type { Room, RoomLayoutPayload, RoomTable } from "@/types";
+import { MAX_TABLE_NUMBER, type RoomInput, type RoomObjectInput, type TableInput } from "@/lib/schemas/room";
+import { ROOM_OBJECT_KIND_LABELS, type Room, type RoomLayoutPayload, type RoomObject, type RoomTable } from "@/types";
 import { RoomCanvas } from "./RoomCanvas";
 import { RoomDialog } from "./RoomDialog";
+import { RoomObjectDialog } from "./RoomObjectDialog";
+import { RoomObjectList } from "./RoomObjectList";
 import { RoomTabs } from "./RoomTabs";
 import { TableDialog } from "./TableDialog";
 import { TableList } from "./TableList";
@@ -34,6 +36,21 @@ function patchTablePosition(
   };
 }
 
+// The room_objects counterpart of patchTablePosition, for the same reason: one
+// object's coordinates change and nothing else does.
+function patchObjectPosition(
+  payload: RoomLayoutPayload,
+  objectId: string,
+  position: { pos_x: number; pos_y: number },
+): RoomLayoutPayload {
+  return {
+    ...payload,
+    objects: payload.objects.map((candidate) =>
+      candidate.id === objectId ? { ...candidate, ...position } : candidate,
+    ),
+  };
+}
+
 export default function RoomLayoutManager() {
   const { layout, setLayout, loadError, refetch, reload } = useRoomLayout();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -47,6 +64,14 @@ export default function RoomLayoutManager() {
   const [editedTable, setEditedTable] = useState<RoomTable | null>(null);
   const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [busyTableId, setBusyTableId] = useState<string | null>(null);
+  const [objectDialogOpen, setObjectDialogOpen] = useState(false);
+  const [editedObject, setEditedObject] = useState<RoomObject | null>(null);
+  const [objectToDelete, setObjectToDelete] = useState<RoomObject | null>(null);
+  const [busyObjectId, setBusyObjectId] = useState<string | null>(null);
+  // Separate queue from positionQueue: an object and a table can hold the same
+  // position in the map only by id, and mixing the two would let a table's chain
+  // block an object's for no reason.
+  const objectPositionQueue = useRef(new Map<string, Promise<void>>());
 
   // Full-screen error only when there is nothing to show yet (initial load).
   // A failed refetch after a successful mutation surfaces as actionError below.
@@ -73,6 +98,7 @@ export default function RoomLayoutManager() {
   // last, empty room). `.at()` returns Room | undefined, so types match reality.
   const activeRoom = layout.rooms.find((room) => room.id === selectedRoomId) ?? layout.rooms.at(0) ?? null;
   const tablesInRoom = activeRoom ? layout.tables.filter((table) => table.room_id === activeRoom.id) : [];
+  const objectsInRoom = activeRoom ? layout.objects.filter((object) => object.room_id === activeRoom.id) : [];
 
   // Tables whose room does not resolve to a known room. GET /api/room reads rooms
   // and tables as two separate snapshots, so a table moved into a room created
@@ -108,6 +134,14 @@ export default function RoomLayoutManager() {
     return { pos_x: 40 + (index % perRow) * 120, pos_y: 40 + Math.floor(index / perRow) * 120 };
   };
 
+  // Same idea for objects, but these coordinates are the CENTRE, so the grid starts
+  // half a default footprint in rather than at the corner.
+  const nextFreeObjectPosition = () => {
+    const index = objectsInRoom.length;
+    const perRow = 5;
+    return { pos_x: 220 + (index % perRow) * 180, pos_y: 150 + Math.floor(index / perRow) * 150 };
+  };
+
   const openCreateRoom = () => {
     setEditedRoom(null);
     setRoomDialogOpen(true);
@@ -126,6 +160,16 @@ export default function RoomLayoutManager() {
   const openEditTable = (table: RoomTable) => {
     setEditedTable(table);
     setTableDialogOpen(true);
+  };
+
+  const openCreateObject = () => {
+    setEditedObject(null);
+    setObjectDialogOpen(true);
+  };
+
+  const openEditObject = (object: RoomObject) => {
+    setEditedObject(object);
+    setObjectDialogOpen(true);
   };
 
   // Dialog submits: errors propagate to the dialog, which renders them inline.
@@ -148,6 +192,72 @@ export default function RoomLayoutManager() {
     // Follow the table if the dialog moved it to another room.
     setSelectedRoomId(input.room_id);
     await refetch();
+  };
+
+  const saveObject = async (input: RoomObjectInput) => {
+    if (editedObject) {
+      await callRoomApi("PUT", `/api/room/objects/${editedObject.id}`, input);
+    } else {
+      await callRoomApi("POST", "/api/room/objects", input);
+    }
+    // Follow the object if the dialog moved it to another room.
+    setSelectedRoomId(input.room_id);
+    await refetch();
+  };
+
+  // The delete path public.tables deliberately has no equivalent of: an object is
+  // not tied to a printed QR code, so removing one costs nothing permanent.
+  const confirmDeleteObject = async () => {
+    if (!objectToDelete) {
+      return;
+    }
+    setActionError(null);
+    setBusyObjectId(objectToDelete.id);
+    try {
+      await callRoomApi("DELETE", `/api/room/objects/${objectToDelete.id}`);
+      await refetch();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Nie udało się usunąć elementu");
+    } finally {
+      setBusyObjectId(null);
+      setObjectToDelete(null);
+    }
+  };
+
+  // Mirrors persistPosition exactly, including both of the lessons recorded there:
+  // a functional per-object patch instead of a whole-layout snapshot, and a
+  // serialised chain per id instead of aborting superseded requests. Adding a third
+  // collection to the payload is precisely what would have made a snapshot rollback
+  // worse — it would now discard concurrent writes to tables as well.
+  const persistObjectPosition = (object: RoomObject, next: { pos_x: number; pos_y: number }) => {
+    const before = { pos_x: object.pos_x, pos_y: object.pos_y };
+
+    setLayout((prev) => (prev === null ? prev : patchObjectPosition(prev, object.id, next)));
+    setActionError(null);
+
+    const tail = objectPositionQueue.current.get(object.id) ?? Promise.resolve();
+    const run = tail
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          const saved = await callRoomApi<RoomObject>("PATCH", `/api/room/objects/${object.id}/position`, next);
+          // The server clamps against the ROTATED bounding box, so its answer can
+          // differ from the client's guess by more than rounding.
+          setLayout((prev) =>
+            prev === null ? prev : patchObjectPosition(prev, object.id, { pos_x: saved.pos_x, pos_y: saved.pos_y }),
+          );
+        } catch (error) {
+          setLayout((prev) => (prev === null ? prev : patchObjectPosition(prev, object.id, before)));
+          setActionError(error instanceof Error ? error.message : "Nie udało się zapisać pozycji elementu");
+        }
+      });
+
+    objectPositionQueue.current.set(object.id, run);
+    void run.finally(() => {
+      if (objectPositionQueue.current.get(object.id) === run) {
+        objectPositionQueue.current.delete(object.id);
+      }
+    });
   };
 
   // Single-field PATCH, not a full PUT: rewriting all seven columns from client
@@ -263,31 +373,56 @@ export default function RoomLayoutManager() {
 
       {activeRoom && (
         <>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold">{activeRoom.name}</h2>
-            <Button type="button" onClick={openCreateTable}>
-              <Plus className="size-4" /> Dodaj stolik
-            </Button>
+            <span className="flex gap-2">
+              <Button type="button" variant="outline" onClick={openCreateObject}>
+                <Plus className="size-4" /> Dodaj obiekt
+              </Button>
+              <Button type="button" onClick={openCreateTable}>
+                <Plus className="size-4" /> Dodaj stolik
+              </Button>
+            </span>
           </div>
 
-          {tablesInRoom.length === 0 ? (
+          {tablesInRoom.length === 0 && objectsInRoom.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
-              <p className="text-white/70">W tej sali nie ma jeszcze stolików.</p>
+              <p className="text-white/70">W tej sali nie ma jeszcze stolików ani wyposażenia.</p>
               <Button type="button" className="mt-4" onClick={openCreateTable}>
                 <Plus className="size-4" /> Dodaj pierwszy stolik
               </Button>
             </div>
           ) : (
             <>
-              <RoomCanvas tables={tablesInRoom} onOpenTable={openEditTable} onMoveTable={persistPosition} />
-              {/* The canvas is pointer-driven, so the list below stays the
-                  keyboard-reachable path to every action — not decoration. */}
-              <TableList
+              <RoomCanvas
                 tables={tablesInRoom}
-                busyTableId={busyTableId}
-                onEdit={openEditTable}
-                onToggleActive={(table) => void toggleActive(table)}
+                objects={objectsInRoom}
+                onOpenTable={openEditTable}
+                onMoveTable={persistPosition}
+                onOpenObject={openEditObject}
+                onMoveObject={persistObjectPosition}
               />
+              {/* The canvas is pointer-driven, so the lists below stay the
+                  keyboard-reachable path to every action — not decoration. */}
+              {tablesInRoom.length > 0 && (
+                <TableList
+                  tables={tablesInRoom}
+                  busyTableId={busyTableId}
+                  onEdit={openEditTable}
+                  onToggleActive={(table) => void toggleActive(table)}
+                />
+              )}
+              {objectsInRoom.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-white/70">Wyposażenie</h3>
+                  <RoomObjectList
+                    objects={objectsInRoom}
+                    busyObjectId={busyObjectId}
+                    onEdit={openEditObject}
+                    onDelete={setObjectToDelete}
+                  />
+                </div>
+              )}
             </>
           )}
         </>
@@ -322,6 +457,44 @@ export default function RoomLayoutManager() {
           onSubmit={saveTable}
         />
       )}
+
+      {activeRoom && (
+        <RoomObjectDialog
+          open={objectDialogOpen}
+          object={editedObject}
+          rooms={layout.rooms}
+          defaultRoomId={activeRoom.id}
+          defaultPosition={nextFreeObjectPosition()}
+          onOpenChange={setObjectDialogOpen}
+          onSubmit={saveObject}
+          onDelete={setObjectToDelete}
+        />
+      )}
+
+      <AlertDialog
+        open={objectToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setObjectToDelete(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {`Usunąć: ${objectToDelete === null ? "" : ROOM_OBJECT_KIND_LABELS[objectToDelete.kind]}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Elementu nie da się przywrócić — trzeba go dodać i wymiarować od nowa. Stoliki tego nie dotyczy: ich się
+              nie usuwa, tylko wyłącza.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmDeleteObject()}>Usuń</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={roomToDelete !== null}
