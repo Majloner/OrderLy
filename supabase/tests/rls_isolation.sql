@@ -42,9 +42,13 @@ values
   ('f5555555-5555-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dup@test.local', now(), now()),
   ('f6666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'noemail@test.local', now(), now());
 
--- companies.code is NOT NULL and unique (staff-login migration). Fixed
--- fixture codes rather than generated ones, so failures name a stable value.
--- Both are drawn from the generator's alphabet, which excludes 0/O/1/I/L.
+-- companies.code is NOT NULL with no default and a unique index
+-- (companies_code_idx), added by 20260728150833_venue_code_and_staff_login.sql.
+-- Without it the very first fixture insert fails with 23502 and the whole suite
+-- aborts before reaching a single assertion. Fixed literals rather than
+-- public.generate_venue_code(): a fixture should be deterministic, so a failure
+-- names a stable value. Both codes are drawn from the generator's alphabet,
+-- which excludes the ambiguous 0/O/1/I/L.
 insert into public.companies (id, name, code)
 values
   ('a1111111-1111-1111-1111-111111111111', 'Firma A', 'AAAAAA'),
