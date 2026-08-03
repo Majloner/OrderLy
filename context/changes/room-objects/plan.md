@@ -913,10 +913,10 @@ istniejącej tabeli nie została zmieniona.
 
 #### Automated
 
-- [x] 4.1 Testy przechodzą: `npm run test`
-- [x] 4.2 Typy przechodzą: `npm run typecheck`
-- [x] 4.3 Lint przechodzi: `npm run lint`
-- [x] 4.4 Build SSR przechodzi: `npm run build`
+- [x] 4.1 Testy przechodzą: `npm run test` — 1728c6c
+- [x] 4.2 Typy przechodzą: `npm run typecheck` — 1728c6c
+- [x] 4.3 Lint przechodzi: `npm run lint` — 1728c6c
+- [x] 4.4 Build SSR przechodzi: `npm run build` — 1728c6c
 
 #### Manual
 
