@@ -574,28 +574,28 @@ column to the `profiles` select the middleware already runs.
 
 #### Manual
 
-- [x] 2.5 Creating a staff member with a login succeeds and the roster shows it
-- [x] 2.6 The same login in a second venue is accepted
-- [x] 2.7 A duplicate login within one venue returns 409 with the new message
-- [x] 2.8 Two staff in one venue may share an email; a staff member may have none
-- [x] 2.9 No orphaned `auth.users` rows after a failed create
+- [x] 2.5 Creating a staff member with a login succeeds and the roster shows it — 8291fc5
+- [x] 2.6 The same login in a second venue is accepted — 8291fc5
+- [x] 2.7 A duplicate login within one venue returns 409 with the new message — 8291fc5
+- [x] 2.8 Two staff in one venue may share an email; a staff member may have none — 8291fc5
+- [x] 2.9 No orphaned `auth.users` rows after a failed create — 8291fc5
 
 ### Phase 3: Sign-in and identity display
 
 #### Automated
 
-- [x] 3.1 Type checking passes: `npm run typecheck`
-- [x] 3.2 Linting passes: `npm run lint`
-- [x] 3.3 Unit tests pass: `npm run test`
-- [x] 3.4 Production build succeeds: `npm run build`
+- [x] 3.1 Type checking passes: `npm run typecheck` — 8291fc5
+- [x] 3.2 Linting passes: `npm run lint` — 8291fc5
+- [x] 3.3 Unit tests pass: `npm run test` — 8291fc5
+- [x] 3.4 Production build succeeds: `npm run build` — 8291fc5
 
 #### Manual
 
-- [x] 3.5 An owner signs in with email and an empty venue code, as before
-- [x] 3.6 A staff member signs in with venue code, login and password
-- [x] 3.7 Wrong venue code, wrong login and wrong password give the same message
-- [x] 3.8 No synthetic `.invalid` address is visible anywhere in the UI
-- [x] 3.9 The staff roster shows logins and is ordered by role then login
-- [x] 3.10 The venue code is visible to the owner on `/staff`
-- [x] 3.11 A staff member of venue A cannot reach venue B's data
-- [x] 3.12 Layout holds at mobile width
+- [x] 3.5 An owner signs in with email and an empty venue code, as before — 8291fc5
+- [x] 3.6 A staff member signs in with venue code, login and password — 8291fc5
+- [x] 3.7 Wrong venue code, wrong login and wrong password give the same message — 8291fc5
+- [x] 3.8 No synthetic `.invalid` address is visible anywhere in the UI — 8291fc5
+- [x] 3.9 The staff roster shows logins and is ordered by role then login — 8291fc5
+- [x] 3.10 The venue code is visible to the owner on `/staff` — 8291fc5
+- [x] 3.11 A staff member of venue A cannot reach venue B's data — 8291fc5
+- [x] 3.12 Layout holds at mobile width — 8291fc5
