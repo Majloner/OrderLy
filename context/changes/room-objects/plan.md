@@ -870,13 +870,13 @@ istniejącej tabeli nie została zmieniona.
 
 #### Automated
 
-- [x] 1.1 Testy jednostkowe przechodzą, w tym 16 istniejących testów geometrii bez modyfikacji: `npm run test` — 3c8612f
-- [x] 1.2 Typy przechodzą: `npm run typecheck` — 3c8612f
-- [x] 1.3 Lint przechodzi: `npm run lint` — 3c8612f
+- [x] 1.1 Testy jednostkowe przechodzą, w tym 16 istniejących testów geometrii bez modyfikacji: `npm run test` — bb2bd83
+- [x] 1.2 Typy przechodzą: `npm run typecheck` — bb2bd83
+- [x] 1.3 Lint przechodzi: `npm run lint` — bb2bd83
 
 #### Manual
 
-- [x] 1.4 Sanity-check AABB: 400×20 @45° ≈ 297×297, a 1200×20 @45° wyśrodkowuje `pos_y` na 400 — 3c8612f
+- [x] 1.4 Sanity-check AABB: 400×20 @45° ≈ 297×297, a 1200×20 @45° wyśrodkowuje `pos_y` na 400 — bb2bd83
 
 ### Phase 2: Migracja, RLS i test izolacji
 
@@ -884,22 +884,22 @@ istniejącej tabeli nie została zmieniona.
 
 - [ ] 2.1 Migracja aplikuje się czysto: `npm run db:push`
 - [ ] 2.2 Test izolacji przechodzi, w tym asercja 13 bez `SKIP`: `npm run test:rls`
-- [ ] 2.3 Typy i lint bez regresji: `npm run typecheck` oraz `npm run lint`
+- [x] 2.3 Typy i lint bez regresji: `npm run typecheck` oraz `npm run lint`
 
 #### Manual
 
-- [ ] 2.4 Polityki na `room_objects` to dokładnie select_staff / insert_owner / update_owner / delete_owner, żadnej `to anon`
-- [ ] 2.5 `rotation = 400` i `width = 5` odrzucone przez `CHECK`
-- [ ] 2.6 Usunięcie sali z obiektami bez stolików udaje się i kasuje obiekty; ta sama sala ze stolikiem daje `23503`
-- [ ] 2.7 Kasowanie firmy nadal przechodzi — kaskada obiektów nie wprowadziła blokady
+- [x] 2.4 Polityki na `room_objects` to dokładnie select_staff / insert_owner / update_owner / delete_owner, żadnej `to anon`
+- [x] 2.5 `rotation = 400` i `width = 5` odrzucone przez `CHECK`
+- [x] 2.6 Usunięcie sali z obiektami bez stolików udaje się i kasuje obiekty; ta sama sala ze stolikiem daje `23503`
+- [x] 2.7 Kasowanie firmy nadal przechodzi — kaskada obiektów nie wprowadziła blokady
 
 ### Phase 3: API obiektów
 
 #### Automated
 
-- [ ] 3.1 Testy przechodzą: `npm run test`
-- [ ] 3.2 Typy przechodzą: `npm run typecheck`
-- [ ] 3.3 Lint przechodzi: `npm run lint`
+- [x] 3.1 Testy przechodzą: `npm run test`
+- [x] 3.2 Typy przechodzą: `npm run typecheck`
+- [x] 3.3 Lint przechodzi: `npm run lint`
 
 #### Manual
 
