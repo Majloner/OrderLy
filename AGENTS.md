@@ -19,7 +19,11 @@ OrderLY is a multi-tenant SaaS for small/medium restaurants (active menu with ph
 - `npm run dev` — Astro dev server on the Cloudflare workerd runtime.
 - `npm run build` / `npm run preview` — SSR build via `@astrojs/cloudflare`.
 - `npm run lint` / `lint:fix` / `format` — ESLint 9 flat config (`@eslint.config.js`) + Prettier.
-- `npx supabase start` — local Postgres/Auth (needs Docker); `npx wrangler deploy` — ship to Cloudflare.
+- `npx supabase start` — local Postgres/Auth (needs Docker); `npm run deploy` — ship to Cloudflare.
+  Deploy must go through that script, not a bare `wrangler deploy`: `astro build` is what writes
+  `.wrangler/deploy/config.json`, which points wrangler at the adapter-generated
+  `dist/server/wrangler.json`. Without it wrangler falls back to the root `wrangler.jsonc`, whose
+  `main` is a package specifier rather than a file, and fails with "entry-point file … was not found".
 - Pre-commit: husky + lint-staged auto-fix staged files. No test framework is configured yet — add one before the first feature.
 
 ## Coding Style & Conventions
