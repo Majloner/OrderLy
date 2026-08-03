@@ -897,9 +897,9 @@ istniejącej tabeli nie została zmieniona.
 
 #### Automated
 
-- [x] 3.1 Testy przechodzą: `npm run test`
-- [x] 3.2 Typy przechodzą: `npm run typecheck`
-- [x] 3.3 Lint przechodzi: `npm run lint`
+- [x] 3.1 Testy przechodzą: `npm run test` — da38dd9
+- [x] 3.2 Typy przechodzą: `npm run typecheck` — da38dd9
+- [x] 3.3 Lint przechodzi: `npm run lint` — da38dd9
 
 #### Manual
 
