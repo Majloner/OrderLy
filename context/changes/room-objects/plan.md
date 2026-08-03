@@ -882,8 +882,8 @@ istniejącej tabeli nie została zmieniona.
 
 #### Automated
 
-- [ ] 2.1 Migracja aplikuje się czysto: `npm run db:push`
-- [ ] 2.2 Test izolacji przechodzi, w tym asercja 13 bez `SKIP`: `npm run test:rls`
+- [x] 2.1 Migracja aplikuje się czysto: `npm run db:push`
+- [x] 2.2 Test izolacji przechodzi, w tym asercja 13 bez `SKIP`: `npm run test:rls`
 - [x] 2.3 Typy i lint bez regresji: `npm run typecheck` oraz `npm run lint`
 
 #### Manual
