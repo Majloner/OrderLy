@@ -38,10 +38,14 @@ values
   ('f1111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'newstaffA@test.local', now(), now()),
   ('f2222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'denied@test.local', now(), now());
 
-insert into public.companies (id, name)
+-- companies.code is NOT NULL with no default (staff-login-identifiers): a short,
+-- unique, dictated-over-the-phone venue identifier. Fixed values rather than
+-- generate_venue_code() so the fixture stays deterministic; companies_code_idx is
+-- unique, so the two must differ.
+insert into public.companies (id, name, code)
 values
-  ('a1111111-1111-1111-1111-111111111111', 'Firma A'),
-  ('b2222222-2222-2222-2222-222222222222', 'Firma B');
+  ('a1111111-1111-1111-1111-111111111111', 'Firma A', 'AAAAAA'),
+  ('b2222222-2222-2222-2222-222222222222', 'Firma B', 'BBBBBB');
 
 -- S-02: profiles.email is NOT NULL (denormalized display copy of auth.users.email).
 insert into public.profiles (user_id, company_id, role, full_name, email, deactivated_at)
