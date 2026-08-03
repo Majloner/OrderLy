@@ -24,10 +24,15 @@ const STAFF_EMAIL_DOMAIN_SUFFIX = "staff.orderly.invalid";
 export const MIN_STAFF_LOGIN_LENGTH = 3;
 export const MAX_STAFF_LOGIN_LENGTH = 32;
 
-// Lowercase letters, digits, dot, hyphen, underscore. Deliberately excludes `@`
-// and anything else that would make the composed value an invalid address —
+// Letters (either case), digits, dot, hyphen, underscore. Deliberately excludes
+// `@` and anything else that would make the composed value an invalid address —
 // GoTrue still applies its own syntactic address validation.
-export const STAFF_LOGIN_PATTERN = /^[a-z0-9._-]+$/;
+//
+// Case is PRESERVED in storage so a login like `KAdam` displays the way the
+// owner wrote it, but it is never significant: the uniqueness index is on
+// lower(login) and staffAuthEmail lowercases both arguments, so `KAdam`,
+// `kadam` and `KADAM` are one account and all three work at sign-in.
+export const STAFF_LOGIN_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 export function isValidStaffLogin(login: string): boolean {
   if (login.length < MIN_STAFF_LOGIN_LENGTH || login.length > MAX_STAFF_LOGIN_LENGTH) {

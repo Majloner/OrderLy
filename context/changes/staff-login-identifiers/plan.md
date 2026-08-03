@@ -567,35 +567,35 @@ column to the `profiles` select the middleware already runs.
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `npm run test`
-- [x] 2.2 Type checking passes: `npm run typecheck`
-- [x] 2.3 Linting passes: `npm run lint`
-- [x] 2.4 Production build succeeds: `npm run build`
+- [x] 2.1 Unit tests pass: `npm run test` — 889d529
+- [x] 2.2 Type checking passes: `npm run typecheck` — 889d529
+- [x] 2.3 Linting passes: `npm run lint` — 889d529
+- [x] 2.4 Production build succeeds: `npm run build` — 889d529
 
 #### Manual
 
-- [ ] 2.5 Creating a staff member with a login succeeds and the roster shows it
-- [ ] 2.6 The same login in a second venue is accepted
-- [ ] 2.7 A duplicate login within one venue returns 409 with the new message
-- [ ] 2.8 Two staff in one venue may share an email; a staff member may have none
-- [ ] 2.9 No orphaned `auth.users` rows after a failed create
+- [x] 2.5 Creating a staff member with a login succeeds and the roster shows it
+- [x] 2.6 The same login in a second venue is accepted
+- [x] 2.7 A duplicate login within one venue returns 409 with the new message
+- [x] 2.8 Two staff in one venue may share an email; a staff member may have none
+- [x] 2.9 No orphaned `auth.users` rows after a failed create
 
 ### Phase 3: Sign-in and identity display
 
 #### Automated
 
-- [ ] 3.1 Type checking passes: `npm run typecheck`
-- [ ] 3.2 Linting passes: `npm run lint`
-- [ ] 3.3 Unit tests pass: `npm run test`
-- [ ] 3.4 Production build succeeds: `npm run build`
+- [x] 3.1 Type checking passes: `npm run typecheck`
+- [x] 3.2 Linting passes: `npm run lint`
+- [x] 3.3 Unit tests pass: `npm run test`
+- [x] 3.4 Production build succeeds: `npm run build`
 
 #### Manual
 
-- [ ] 3.5 An owner signs in with email and an empty venue code, as before
-- [ ] 3.6 A staff member signs in with venue code, login and password
-- [ ] 3.7 Wrong venue code, wrong login and wrong password give the same message
-- [ ] 3.8 No synthetic `.invalid` address is visible anywhere in the UI
-- [ ] 3.9 The staff roster shows logins and is ordered by role then login
-- [ ] 3.10 The venue code is visible to the owner on `/staff`
-- [ ] 3.11 A staff member of venue A cannot reach venue B's data
-- [ ] 3.12 Layout holds at mobile width
+- [x] 3.5 An owner signs in with email and an empty venue code, as before
+- [x] 3.6 A staff member signs in with venue code, login and password
+- [x] 3.7 Wrong venue code, wrong login and wrong password give the same message
+- [x] 3.8 No synthetic `.invalid` address is visible anywhere in the UI
+- [x] 3.9 The staff roster shows logins and is ordered by role then login
+- [x] 3.10 The venue code is visible to the owner on `/staff`
+- [x] 3.11 A staff member of venue A cannot reach venue B's data
+- [x] 3.12 Layout holds at mobile width

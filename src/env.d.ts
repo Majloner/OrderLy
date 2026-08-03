@@ -3,6 +3,9 @@ declare namespace App {
     user: import("@supabase/supabase-js").User | null;
     company_id: string | null;
     role: import("@/types").StaffRole | null;
+    // What to show a signed-in person: full name, then login, then email.
+    // Never render user.email directly — staff addresses are synthetic.
+    display_name: string | null;
     supabase: ReturnType<typeof import("@/lib/supabase").createClient>;
   }
 }

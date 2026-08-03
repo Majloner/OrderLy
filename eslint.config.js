@@ -59,6 +59,26 @@ const reactConfig = tseslint.config({
   },
 });
 
+// One-off operational scripts under scripts/ run on Node, not on the Workers
+// runtime, and are not covered by the app tsconfig — so the type-aware rules
+// have no type information and every Supabase response reads as `any`. Lint
+// them for real mistakes (unused vars, syntax) with Node globals available, and
+// drop the type-aware layer plus no-console, which is the point of a CLI script.
+const scriptsConfig = tseslint.config({
+  files: ["scripts/**/*.{js,mjs}"],
+  extends: [tseslint.configs.disableTypeChecked],
+  languageOptions: {
+    globals: {
+      console: "readonly",
+      process: "readonly",
+      URL: "readonly",
+    },
+  },
+  rules: {
+    "no-console": "off",
+  },
+});
+
 const astroConfig = tseslint.config({
   files: ["**/*.astro"],
   rules: {
@@ -75,5 +95,6 @@ export default tseslint.config(
   eslintPluginAstro.configs["flat/recommended"],
   ...eslintPluginAstro.configs["flat/jsx-a11y-recommended"],
   astroConfig,
+  scriptsConfig,
   eslintPluginPrettier,
 );

@@ -9,13 +9,13 @@ import { STAFF_ASSIGNABLE_ROLES } from "@/types";
 export const MIN_STAFF_PASSWORD_LENGTH = 8;
 
 export const staffCreateInputSchema = z.object({
-  // The credential. Lowercased so it matches the (company_id, lower(login))
-  // index and so staffAuthEmail derives the same address regardless of how the
-  // owner typed it. Immutable after creation — see src/lib/staff-identity.ts.
+  // The credential. Case is preserved as the owner typed it, but never
+  // significant: the uniqueness index is on lower(login) and staffAuthEmail
+  // lowercases, so KAdam and kadam are one account and both work at sign-in.
+  // Immutable after creation — see src/lib/staff-identity.ts.
   login: z
     .string("Login jest wymagany")
     .trim()
-    .toLowerCase()
     .min(MIN_STAFF_LOGIN_LENGTH, `Login musi mieć co najmniej ${MIN_STAFF_LOGIN_LENGTH} znaki`)
     .max(MAX_STAFF_LOGIN_LENGTH, `Login może mieć najwyżej ${MAX_STAFF_LOGIN_LENGTH} znaków`)
     .regex(STAFF_LOGIN_PATTERN, "Login może zawierać tylko litery, cyfry, kropkę, myślnik i podkreślnik"),

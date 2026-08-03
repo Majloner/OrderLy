@@ -33,9 +33,17 @@ describe("staffCreateInputSchema", () => {
     expect(staffCreateInputSchema.safeParse(rest).success).toBe(false);
   });
 
-  it("lowercases and trims the login", () => {
-    const result = staffCreateInputSchema.parse({ ...validCreate, login: "  ANNA.Kowalska  " });
-    expect(result.login).toBe("anna.kowalska");
+  it("trims the login but preserves the case the owner typed", () => {
+    const result = staffCreateInputSchema.parse({ ...validCreate, login: "  KAdam  " });
+    expect(result.login).toBe("KAdam");
+  });
+
+  it("accepts a mixed-case login", () => {
+    expect(staffCreateInputSchema.safeParse({ ...validCreate, login: "MSwiatek" }).success).toBe(true);
+  });
+
+  it("rejects Polish diacritics in the login", () => {
+    expect(staffCreateInputSchema.safeParse({ ...validCreate, login: "MŚwiątek" }).success).toBe(false);
   });
 
   it("accepts dots, hyphens and underscores", () => {

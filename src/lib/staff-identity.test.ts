@@ -50,11 +50,19 @@ describe("isValidStaffLogin", () => {
     expect(isValidStaffLogin("anna@lokal")).toBe(false);
   });
 
-  it("rejects uppercase, spaces and other punctuation", () => {
-    expect(isValidStaffLogin("Anna")).toBe(false);
+  // Case is preserved for display but never significant — see staffAuthEmail's
+  // case-insensitivity test above.
+  it("accepts mixed case, so a login can be written KAdam", () => {
+    expect(isValidStaffLogin("KAdam")).toBe(true);
+    expect(isValidStaffLogin("MSwiatek")).toBe(true);
+    expect(isValidStaffLogin("KWojtek2")).toBe(true);
+  });
+
+  it("rejects spaces and other punctuation", () => {
     expect(isValidStaffLogin("anna kowalska")).toBe(false);
     expect(isValidStaffLogin("anna+1")).toBe(false);
     expect(isValidStaffLogin("anna/k")).toBe(false);
+    expect(isValidStaffLogin("Świątek")).toBe(false);
   });
 
   it("enforces the length bounds", () => {

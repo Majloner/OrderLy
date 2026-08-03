@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { Mail, Lock, LogIn, Store } from "lucide-react";
 import { FormField } from "@/components/auth/FormField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
@@ -10,17 +10,23 @@ interface Props {
 }
 
 export default function SignInForm({ serverError }: Props) {
-  const [email, setEmail] = useState("");
+  const [venueCode, setVenueCode] = useState("");
+  const [identity, setIdentity] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ venue_code?: string; identity?: string; password?: string }>({});
+
+  // A venue code present means this is a staff sign-in and the identity field
+  // holds a login, not an address — so the email format check must not run.
+  // Empty code means the owner path, unchanged from before this feature.
+  const isStaffSignIn = venueCode.trim().length > 0;
 
   function validate() {
     const next: typeof errors = {};
-    if (!email.trim()) {
-      next.email = "E-mail jest wymagany";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      next.email = "Podaj poprawny adres e-mail";
+    if (!identity.trim()) {
+      next.identity = isStaffSignIn ? "Login jest wymagany" : "E-mail jest wymagany";
+    } else if (!isStaffSignIn && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identity)) {
+      next.identity = "Podaj poprawny adres e-mail";
     }
     if (!password) {
       next.password = "Hasło jest wymagane";
@@ -42,17 +48,34 @@ export default function SignInForm({ serverError }: Props) {
   return (
     <form method="POST" action="/api/auth/signin" className="space-y-4" onSubmit={handleSubmit} noValidate>
       <FormField
-        id="email"
-        type="email"
-        label="E-mail"
-        value={email}
+        id="venue_code"
+        label="Kod lokalu"
+        value={venueCode}
         onChange={(v) => {
-          setEmail(v);
-          clearError("email");
+          setVenueCode(v);
+          clearError("venue_code");
         }}
-        placeholder="ty@przyklad.pl"
-        error={errors.email}
-        icon={<Mail className="size-4" />}
+        placeholder="np. H42NAM"
+        error={errors.venue_code}
+        icon={<Store className="size-4" />}
+        hint={<p className="mt-1 text-xs text-blue-100/50">Zostaw puste, jeśli jesteś właścicielem lokalu.</p>}
+      />
+
+      {/* One field, two meanings — the venue code decides which. The `id` also
+          supplies the formData key via FormField, so it stays `email` for
+          backwards compatibility with the endpoint's owner path. */}
+      <FormField
+        id="email"
+        type={isStaffSignIn ? "text" : "email"}
+        label={isStaffSignIn ? "Login" : "E-mail"}
+        value={identity}
+        onChange={(v) => {
+          setIdentity(v);
+          clearError("identity");
+        }}
+        placeholder={isStaffSignIn ? "np. anna" : "ty@przyklad.pl"}
+        error={errors.identity}
+        icon={isStaffSignIn ? <Store className="size-4" /> : <Mail className="size-4" />}
       />
 
       <FormField
