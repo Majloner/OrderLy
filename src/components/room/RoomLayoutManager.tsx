@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { callRoomApi, useRoomLayout } from "@/components/hooks/useRoomLayout";
 import { MAX_TABLE_NUMBER, type RoomInput, type RoomObjectInput, type TableInput } from "@/lib/schemas/room";
 import { ROOM_OBJECT_KIND_LABELS, type Room, type RoomLayoutPayload, type RoomObject, type RoomTable } from "@/types";
+import type { RoomObjectTransform } from "./DraggableRoomObject";
 import { RoomCanvas } from "./RoomCanvas";
 import { RoomDialog } from "./RoomDialog";
 import { RoomObjectDialog } from "./RoomObjectDialog";
@@ -37,17 +38,28 @@ function patchTablePosition(
 }
 
 // The room_objects counterpart of patchTablePosition, for the same reason: one
-// object's coordinates change and nothing else does.
-function patchObjectPosition(
-  payload: RoomLayoutPayload,
-  objectId: string,
-  position: { pos_x: number; pos_y: number },
-): RoomLayoutPayload {
+// object's fields change and nothing else does. Takes a partial so a drag (position
+// only) and a handle gesture (position + size + rotation) share one path.
+function patchObject(payload: RoomLayoutPayload, objectId: string, fields: Partial<RoomObject>): RoomLayoutPayload {
   return {
     ...payload,
-    objects: payload.objects.map((candidate) =>
-      candidate.id === objectId ? { ...candidate, ...position } : candidate,
-    ),
+    objects: payload.objects.map((candidate) => (candidate.id === objectId ? { ...candidate, ...fields } : candidate)),
+  };
+}
+
+// Full PUT body for an object, so a handle gesture can reuse the same endpoint the
+// dialog does without inventing a partial-update route for size and rotation.
+function objectToInput(object: RoomObject, override: Partial<RoomObjectInput> = {}): RoomObjectInput {
+  return {
+    room_id: object.room_id,
+    kind: object.kind,
+    label: object.label,
+    pos_x: object.pos_x,
+    pos_y: object.pos_y,
+    width: object.width,
+    height: object.height,
+    rotation: object.rotation,
+    ...override,
   };
 }
 
@@ -232,7 +244,7 @@ export default function RoomLayoutManager() {
   const persistObjectPosition = (object: RoomObject, next: { pos_x: number; pos_y: number }) => {
     const before = { pos_x: object.pos_x, pos_y: object.pos_y };
 
-    setLayout((prev) => (prev === null ? prev : patchObjectPosition(prev, object.id, next)));
+    setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, next)));
     setActionError(null);
 
     const tail = objectPositionQueue.current.get(object.id) ?? Promise.resolve();
@@ -244,11 +256,61 @@ export default function RoomLayoutManager() {
           // The server clamps against the ROTATED bounding box, so its answer can
           // differ from the client's guess by more than rounding.
           setLayout((prev) =>
-            prev === null ? prev : patchObjectPosition(prev, object.id, { pos_x: saved.pos_x, pos_y: saved.pos_y }),
+            prev === null ? prev : patchObject(prev, object.id, { pos_x: saved.pos_x, pos_y: saved.pos_y }),
           );
         } catch (error) {
-          setLayout((prev) => (prev === null ? prev : patchObjectPosition(prev, object.id, before)));
+          setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, before)));
           setActionError(error instanceof Error ? error.message : "Nie udało się zapisać pozycji elementu");
+        }
+      });
+
+    objectPositionQueue.current.set(object.id, run);
+    void run.finally(() => {
+      if (objectPositionQueue.current.get(object.id) === run) {
+        objectPositionQueue.current.delete(object.id);
+      }
+    });
+  };
+
+  // End of a resize or rotate gesture. Goes through PUT rather than the position
+  // PATCH because size and rotation change too, and shares persistObjectPosition's
+  // queue so a gesture and a drag of the SAME object cannot commit out of order.
+  const persistObjectTransform = (object: RoomObject, next: RoomObjectTransform) => {
+    const before = {
+      pos_x: object.pos_x,
+      pos_y: object.pos_y,
+      width: object.width,
+      height: object.height,
+      rotation: object.rotation,
+    };
+
+    setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, next)));
+    setActionError(null);
+
+    const tail = objectPositionQueue.current.get(object.id) ?? Promise.resolve();
+    const run = tail
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          const saved = await callRoomApi<RoomObject>(
+            "PUT",
+            `/api/room/objects/${object.id}`,
+            objectToInput(object, next),
+          );
+          setLayout((prev) =>
+            prev === null
+              ? prev
+              : patchObject(prev, object.id, {
+                  pos_x: saved.pos_x,
+                  pos_y: saved.pos_y,
+                  width: saved.width,
+                  height: saved.height,
+                  rotation: saved.rotation,
+                }),
+          );
+        } catch (error) {
+          setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, before)));
+          setActionError(error instanceof Error ? error.message : "Nie udało się zapisać elementu");
         }
       });
 
@@ -401,6 +463,7 @@ export default function RoomLayoutManager() {
                 onMoveTable={persistPosition}
                 onOpenObject={openEditObject}
                 onMoveObject={persistObjectPosition}
+                onTransformObject={persistObjectTransform}
               />
               {/* The canvas is pointer-driven, so the lists below stay the
                   keyboard-reachable path to every action — not decoration. */}

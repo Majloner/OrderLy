@@ -935,10 +935,10 @@ istniejącej tabeli nie została zmieniona.
 
 #### Automated
 
-- [ ] 5.1 Testy geometrii uchwytów przechodzą: `npm run test`
-- [ ] 5.2 Typy przechodzą: `npm run typecheck`
-- [ ] 5.3 Lint przechodzi: `npm run lint`
-- [ ] 5.4 Build SSR przechodzi: `npm run build`
+- [x] 5.1 Testy geometrii uchwytów przechodzą: `npm run test`
+- [x] 5.2 Typy przechodzą: `npm run typecheck`
+- [x] 5.3 Lint przechodzi: `npm run lint`
+- [x] 5.4 Build SSR przechodzi: `npm run build`
 
 #### Manual
 

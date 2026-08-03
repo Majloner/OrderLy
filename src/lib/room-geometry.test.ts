@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   applyDragDelta,
   applyObjectDragDelta,
+  applyResizeDelta,
+  applyRotateDelta,
   clampObjectCenter,
   clampPosition,
   computeScale,
   LOGICAL_CANVAS,
+  OBJECT_SIZE_BOUNDS,
   rotatedFootprint,
   SHAPE_FOOTPRINTS,
 } from "@/lib/room-geometry";
@@ -209,5 +212,107 @@ describe("applyObjectDragDelta", () => {
     const result = applyObjectDragDelta(centre, { x: 10, y: 10 }, 0.3, WALL, 0);
     expect(Number.isInteger(result.pos_x)).toBe(true);
     expect(Number.isInteger(result.pos_y)).toBe(true);
+  });
+});
+
+describe("applyResizeDelta", () => {
+  const centre = { pos_x: 600, pos_y: 400 };
+  const BOTTOM_RIGHT = { x: 1, y: 1 } as const;
+  const TOP_LEFT = { x: -1, y: -1 } as const;
+
+  it("grows by the delta and moves the centre half as far", () => {
+    const result = applyResizeDelta(centre, WALL, 0, BOTTOM_RIGHT, { x: 100, y: 50 }, 1);
+    expect(result).toEqual({ pos_x: 650, pos_y: 425, width: 500, height: 70 });
+  });
+
+  // The invariant that makes a resize feel like a resize instead of a move: the
+  // corner you are NOT holding stays exactly where it was.
+  it("keeps the opposite corner still", () => {
+    const before = { x: centre.pos_x - WALL.width / 2, y: centre.pos_y - WALL.height / 2 };
+    const result = applyResizeDelta(centre, WALL, 0, BOTTOM_RIGHT, { x: 100, y: 50 }, 1);
+    const after = { x: result.pos_x - result.width / 2, y: result.pos_y - result.height / 2 };
+    expect(after).toEqual(before);
+  });
+
+  it("grows towards the top-left when that corner is held", () => {
+    const before = { x: centre.pos_x + WALL.width / 2, y: centre.pos_y + WALL.height / 2 };
+    const result = applyResizeDelta(centre, WALL, 0, TOP_LEFT, { x: -100, y: -10 }, 1);
+    expect(result.width).toBe(500);
+    expect(result.height).toBe(30);
+    // ...and now the BOTTOM-right corner is the fixed one.
+    const after = { x: result.pos_x + result.width / 2, y: result.pos_y + result.height / 2 };
+    expect(after).toEqual(before);
+  });
+
+  // At 90° the object's own +x axis points down the screen, so a downward drag has
+  // to grow the WIDTH. This is the assertion that fails if either of the two
+  // rotations in applyResizeDelta is missing or has the wrong sign.
+  it("resizes along the object's own axes when rotated", () => {
+    const result = applyResizeDelta(centre, WALL, 90, BOTTOM_RIGHT, { x: 0, y: 100 }, 1);
+    expect(result.width).toBe(500);
+    expect(result.height).toBe(WALL.height);
+  });
+
+  it("doubles the delta at half scale", () => {
+    const result = applyResizeDelta(centre, WALL, 0, BOTTOM_RIGHT, { x: 50, y: 0 }, 0.5);
+    expect(result.width).toBe(500);
+  });
+
+  it("clamps to the minimum size and stops moving the centre with it", () => {
+    const small = { width: 20, height: 20 };
+    const result = applyResizeDelta(centre, small, 0, BOTTOM_RIGHT, { x: -1000, y: -1000 }, 1);
+    expect(result.width).toBe(OBJECT_SIZE_BOUNDS.minWidth);
+    expect(result.height).toBe(OBJECT_SIZE_BOUNDS.minHeight);
+    // Shift derived from the clamped change (-10), not the raw one (-1000).
+    expect(result.pos_x).toBe(centre.pos_x - 5);
+    expect(result.pos_y).toBe(centre.pos_y - 5);
+  });
+
+  it("clamps to the maximum size without drifting", () => {
+    const huge = { width: OBJECT_SIZE_BOUNDS.maxWidth, height: 20 };
+    const result = applyResizeDelta({ pos_x: 600, pos_y: 400 }, huge, 0, BOTTOM_RIGHT, { x: 500, y: 0 }, 1);
+    expect(result.width).toBe(OBJECT_SIZE_BOUNDS.maxWidth);
+    expect(result.pos_x).toBe(600);
+  });
+
+  it("returns integer sizes and coordinates", () => {
+    const result = applyResizeDelta(centre, WALL, 33, BOTTOM_RIGHT, { x: 37, y: 11 }, 0.7);
+    for (const value of [result.pos_x, result.pos_y, result.width, result.height]) {
+      expect(Number.isInteger(value)).toBe(true);
+    }
+  });
+});
+
+describe("applyRotateDelta", () => {
+  const centre = { pos_x: 600, pos_y: 400 };
+
+  // The handle is drawn above the object, so "pointer straight up" must mean 0°.
+  it("reads a pointer straight above the centre as 0 degrees", () => {
+    expect(applyRotateDelta(centre, { x: 600, y: 300 }, 1)).toBe(0);
+  });
+
+  it("walks clockwise through the quadrants", () => {
+    expect(applyRotateDelta(centre, { x: 700, y: 400 }, 1)).toBe(90);
+    expect(applyRotateDelta(centre, { x: 600, y: 500 }, 1)).toBe(180);
+    expect(applyRotateDelta(centre, { x: 500, y: 400 }, 1)).toBe(270);
+  });
+
+  it("converts the pointer out of rendered pixels", () => {
+    // (350, 200) rendered at scale 0.5 is (700, 400) logical — due east of centre.
+    expect(applyRotateDelta(centre, { x: 350, y: 200 }, 0.5)).toBe(90);
+  });
+
+  it("snaps to the requested increment", () => {
+    // ~84°, which rounds to 90 on a 15° grid.
+    expect(applyRotateDelta(centre, { x: 700, y: 390 }, 1, 15)).toBe(90);
+  });
+
+  it("never returns 360, wrapping just short of upright to 359", () => {
+    const result = applyRotateDelta(centre, { x: 599, y: 300 }, 1);
+    expect(result).toBe(359);
+  });
+
+  it("returns 0 inside the dead zone rather than snapping wildly", () => {
+    expect(applyRotateDelta(centre, { x: 600, y: 400 }, 1)).toBe(0);
   });
 });

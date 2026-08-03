@@ -200,3 +200,109 @@ export function applyObjectDragDelta(
     rotation,
   );
 }
+
+// ---------------------------------------------------------------------------
+// Direct manipulation — RESIZE AND ROTATE HANDLES.
+//
+// Both live here rather than in the component for the same reason the drag
+// conversion does: the maths is where the bugs are, and a pure function can be
+// tested without a pointer.
+// ---------------------------------------------------------------------------
+
+// Which corner (or edge) is being pulled, as a sign per axis. -1 is the left/top
+// side, +1 the right/bottom, 0 an axis the handle does not resize.
+export interface ResizeHandle {
+  x: -1 | 0 | 1;
+  y: -1 | 0 | 1;
+}
+
+function degreesToRadians(degrees: number): number {
+  return (((degrees % 360) + 360) % 360) * (Math.PI / 180);
+}
+
+function clampSize(value: number, min: number, max: number): number {
+  return Math.min(Math.max(Math.round(value), min), max);
+}
+
+// Resize about the dragged corner, keeping the OPPOSITE corner still.
+//
+// Two rotations are involved and mixing them up is the whole difficulty. The
+// pointer delta arrives in screen space, but a handle resizes along the object's
+// OWN axes, so the delta is first rotated by -rotation into the object's frame.
+// Growing by the far corner then moves the centre by half the size change — a
+// shift expressed in the object's frame, which has to be rotated BACK by
+// +rotation before it can be added to the stored centre. Skip either rotation and
+// the object slides sideways as you resize it, in proportion to the angle.
+export function applyResizeDelta(
+  centre: { pos_x: number; pos_y: number },
+  footprint: Footprint,
+  rotation: number,
+  handle: ResizeHandle,
+  delta: { x: number; y: number },
+  scale: number,
+): { pos_x: number; pos_y: number; width: number; height: number } {
+  const safeScale = scale > 0 ? scale : 1;
+  const radians = degreesToRadians(rotation);
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+
+  // Screen delta -> object's local frame (rotate by -rotation), then to logical px.
+  const localX = (delta.x * cos + delta.y * sin) / safeScale;
+  const localY = (-delta.x * sin + delta.y * cos) / safeScale;
+
+  const width = clampSize(
+    footprint.width + handle.x * localX,
+    OBJECT_SIZE_BOUNDS.minWidth,
+    OBJECT_SIZE_BOUNDS.maxWidth,
+  );
+  const height = clampSize(
+    footprint.height + handle.y * localY,
+    OBJECT_SIZE_BOUNDS.minHeight,
+    OBJECT_SIZE_BOUNDS.maxHeight,
+  );
+
+  // Derive the shift from the CLAMPED sizes, not the raw ones: at the minimum or
+  // maximum the size stops changing, and the centre has to stop moving with it.
+  const localShiftX = (handle.x * (width - footprint.width)) / 2;
+  const localShiftY = (handle.y * (height - footprint.height)) / 2;
+
+  // Local shift -> world (rotate back by +rotation).
+  const shiftX = localShiftX * cos - localShiftY * sin;
+  const shiftY = localShiftX * sin + localShiftY * cos;
+
+  const moved = clampObjectCenter(
+    { pos_x: centre.pos_x + shiftX, pos_y: centre.pos_y + shiftY },
+    { width, height },
+    rotation,
+  );
+
+  return { ...moved, width, height };
+}
+
+// Absolute angle from the object's centre to the pointer, not an increment: a
+// rotate handle follows the pointer, so the angle IS the pointer's bearing.
+//
+// The handle is drawn directly above the object, so a pointer straight up must
+// read as 0°. atan2 measures from the +x axis, hence the +90 turn.
+export function applyRotateDelta(
+  centre: { pos_x: number; pos_y: number },
+  pointer: { x: number; y: number },
+  scale: number,
+  snapDegrees = 0,
+): number {
+  const safeScale = scale > 0 ? scale : 1;
+  const dx = pointer.x / safeScale - centre.pos_x;
+  const dy = pointer.y / safeScale - centre.pos_y;
+
+  // Dead zone at the centre: atan2(0, 0) is 0, which would snap the object to
+  // upright the moment the pointer crossed its middle.
+  if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+    return 0;
+  }
+
+  const degrees = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+  const snapped = snapDegrees > 0 ? Math.round(degrees / snapDegrees) * snapDegrees : degrees;
+
+  // Normalised into [0, 359]: 360 is the wrap point, never a stored value.
+  return ((Math.round(snapped) % 360) + 360) % 360;
+}
