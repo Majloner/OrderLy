@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from "astro:env/server";
+import { staffAuthEmail } from "@/lib/staff-identity";
 
 // Creating an auth.users row is inherently privileged — there is no
 // authenticated path to it — so staff provisioning escalates to the
@@ -30,6 +31,9 @@ export type CreateStaffAuthUserResult = { userId: string } | { failure: "duplica
 
 // Supabase reports a taken address as code `email_exists`; older builds only
 // set the message, so match both rather than mapping a duplicate to a 500.
+// Since the address is derived from (venue code, login), a duplicate here means
+// the LOGIN is already taken in this venue — the venue code is the caller's own,
+// so there is no cross-tenant reading of this signal any more.
 function isDuplicateEmail(error: { code?: string; message?: string }): boolean {
   if (error.code === "email_exists") {
     return true;
@@ -41,7 +45,8 @@ function isDuplicateEmail(error: { code?: string; message?: string }): boolean {
 // there is no SMTP configured — the owner hands the password over directly, so
 // the address is never verified by mail.
 export async function createStaffAuthUser(input: {
-  email: string;
+  venueCode: string;
+  login: string;
   password: string;
   fullName: string | null;
 }): Promise<CreateStaffAuthUserResult> {
@@ -50,12 +55,17 @@ export async function createStaffAuthUser(input: {
     return { failure: "failed" };
   }
 
+  // Derived, never supplied by the caller — see src/lib/staff-identity.ts. The
+  // owner's contact email (if any) is stored on profiles and plays no part in
+  // authentication.
+  const authEmail = staffAuthEmail(input.venueCode, input.login);
+
   // GoTrue's admin methods re-throw anything that is not an AuthError, so a
   // transport-level failure on Workers would reject the whole route and lose
   // the mapped Polish message. Catch it and fold it into the result union.
   try {
     const { data, error } = await client.auth.admin.createUser({
-      email: input.email,
+      email: authEmail,
       password: input.password,
       email_confirm: true,
       user_metadata: { full_name: input.fullName },

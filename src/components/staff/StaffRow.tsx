@@ -23,7 +23,12 @@ interface StaffRowProps {
 
 export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowProps) {
   const isActive = member.deactivated_at === null;
-  const displayName = member.full_name ?? member.email;
+  // login before email: email is optional contact data now and may be absent,
+  // while a staff member always has a login. Owners have the reverse.
+  const displayName = member.full_name ?? member.login ?? member.email ?? "—";
+  // What the owner dictates to the staff member, so it is worth showing even
+  // when a full name exists.
+  const secondary = member.login ?? member.email;
 
   return (
     <li
@@ -45,7 +50,7 @@ export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowPro
           )}
           {isSelf && <span className="text-xs text-white/40">(to Ty)</span>}
         </div>
-        {member.full_name && <p className="mt-1 truncate text-sm text-white/50">{member.email}</p>}
+        {secondary && secondary !== displayName && <p className="mt-1 truncate text-sm text-white/50">{secondary}</p>}
       </div>
 
       <div className="flex shrink-0 gap-1">

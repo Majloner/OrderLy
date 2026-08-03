@@ -13,7 +13,7 @@ import type { StaffMember } from "@/types";
 
 export const prerender = false;
 
-const COLUMNS = "user_id, company_id, email, full_name, role, deactivated_at, created_at";
+const COLUMNS = "user_id, company_id, login, email, full_name, role, deactivated_at, created_at";
 
 export const GET: APIRoute = async (context) => {
   const guard = guardStaffRequest(context, { write: false });
@@ -27,7 +27,9 @@ export const GET: APIRoute = async (context) => {
     .from("profiles")
     .select(COLUMNS)
     .order("role")
-    .order("email")
+    // Ordered by login, not email: email is now nullable, and the login is what
+    // the owner dictates to staff, so it is the stable human handle here.
+    .order("login")
     .overrideTypes<StaffMember[], { merge: false }>();
 
   if (error) {
@@ -51,22 +53,31 @@ export const POST: APIRoute = async (context) => {
     return body.error;
   }
 
-  // NOTE: auth.users.email is unique across the WHOLE Supabase project
-  // (auth.users_email_partial_key), not per company, and the check below runs
-  // before any tenant scoping. The 409 is therefore deliberately vague — a
-  // message naming "a staff member in this company" would both be false and
-  // let an owner probe whether an address is registered with another tenant.
-  // Consequences worth knowing: one person cannot work at two venues, and a
-  // departed employee's address can never be re-provisioned. Replacing email
-  // with a per-company login is planned as a separate change.
+  // The venue code comes from the caller's OWN company, never the request body,
+  // so an owner cannot provision into someone else's venue by forging a code.
+  const { data: company, error: companyError } = await guard.supabase
+    .from("companies")
+    .select("code")
+    .eq("id", guard.companyId)
+    .maybeSingle<{ code: string }>();
+
+  if (companyError || !company) {
+    return jsonError("Nie udało się odczytać kodu lokalu", 500);
+  }
+
+  // The auth address is derived from (venue code, login) — see
+  // src/lib/staff-identity.ts. A duplicate therefore means this login is taken
+  // in THIS venue, which is why the message can finally be specific: the old
+  // vague wording existed only because email was globally unique.
   const created = await createStaffAuthUser({
-    email: body.input.email,
+    venueCode: company.code,
+    login: body.input.login,
     password: body.input.password,
     fullName: body.input.full_name,
   });
   if ("failure" in created) {
     if (created.failure === "duplicate") {
-      return jsonError("Tego adresu e-mail nie można użyć", 409);
+      return jsonError("Ten login jest już zajęty w Twoim lokalu", 409);
     }
     return jsonError("Nie udało się utworzyć konta pracownika", 500);
   }
@@ -78,6 +89,7 @@ export const POST: APIRoute = async (context) => {
     .insert({
       user_id: created.userId,
       company_id: guard.companyId,
+      login: body.input.login,
       email: body.input.email,
       full_name: body.input.full_name,
       role: body.input.role,
@@ -93,15 +105,17 @@ export const POST: APIRoute = async (context) => {
     const rolledBack = await deleteStaffAuthUser(created.userId);
     if (!rolledBack) {
       return jsonError(
-        "Nie udało się utworzyć konta, a adres e-mail pozostał zajęty. Użyj innego adresu lub skontaktuj się z pomocą.",
+        "Nie udało się utworzyć konta, a login pozostał zajęty. Użyj innego loginu lub skontaktuj się z pomocą.",
         500,
       );
     }
     if (isInsufficientPrivilege(error)) {
       return jsonError("Tylko właściciel może tworzyć konta personelu", 403);
     }
+    // 23505 here is profiles_company_login_idx — the auth user was created but
+    // the profile collided, which means the login is taken in this venue.
     if (isUniqueViolation(error)) {
-      return jsonError("Tego adresu e-mail nie można użyć", 409);
+      return jsonError("Ten login jest już zajęty w Twoim lokalu", 409);
     }
     return jsonError("Nie udało się utworzyć konta pracownika", 500);
   }

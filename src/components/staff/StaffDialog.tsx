@@ -38,9 +38,9 @@ export function StaffDialog({ open, member, isSelf, onOpenChange, onCreate, onUp
         <DialogHeader>
           <DialogTitle>{member ? "Edytuj pracownika" : "Nowy pracownik"}</DialogTitle>
           <DialogDescription>
-            {!member && "Hasło przekaż pracownikowi osobiście — system nie wysyła e-maili."}
+            {!member && "Login i hasło przekaż pracownikowi osobiście — system nie wysyła e-maili."}
             {member && isSelf && "Możesz zmienić swoje imię i nazwisko. Własnej roli nie można zmienić."}
-            {member && !isSelf && "Adresu e-mail i hasła nie można zmienić."}
+            {member && !isSelf && "Loginu i hasła nie można zmienić."}
           </DialogDescription>
         </DialogHeader>
         {/* Radix unmounts the content on close, so the form state resets on
@@ -68,6 +68,7 @@ interface StaffFormProps {
 }
 
 function StaffForm({ member, isSelf, onCreate, onUpdate, onDone }: StaffFormProps) {
+  const [login, setLogin] = useState("");
   const [email, setEmail] = useState(member?.email ?? "");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState(member?.full_name ?? "");
@@ -82,9 +83,10 @@ function StaffForm({ member, isSelf, onCreate, onUpdate, onDone }: StaffFormProp
     // omitted: activation is the row's own action, and restating it from this
     // form's possibly-stale copy would resurrect a member deactivated elsewhere.
     // Self-edit omits `role` too — the API and the DB trigger both reject it.
+    // `login` is never sent on edit: the auth address is derived from it.
     const parsed = member
-      ? staffUpdateInputSchema.safeParse(isSelf ? { full_name: fullName } : { full_name: fullName, role })
-      : staffCreateInputSchema.safeParse({ email, password, full_name: fullName, role });
+      ? staffUpdateInputSchema.safeParse(isSelf ? { full_name: fullName, email } : { full_name: fullName, email, role })
+      : staffCreateInputSchema.safeParse({ login, email, password, full_name: fullName, role });
 
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Nieprawidłowe dane");
@@ -111,18 +113,20 @@ function StaffForm({ member, isSelf, onCreate, onUpdate, onDone }: StaffFormProp
       {!member && (
         <>
           <div className="space-y-2">
-            <Label htmlFor="staff-email">Adres e-mail</Label>
+            <Label htmlFor="staff-login">Login</Label>
             <Input
-              id="staff-email"
-              type="email"
-              value={email}
+              id="staff-login"
+              value={login}
               onChange={(event) => {
-                setEmail(event.target.value);
+                setLogin(event.target.value);
               }}
-              placeholder="kelner@twojlokal.pl"
+              placeholder="np. anna"
               autoComplete="off"
               autoFocus
             />
+            <p className="text-xs text-white/50">
+              Tym loginem pracownik zaloguje się do systemu. Nie można go później zmienić.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="staff-password">Hasło tymczasowe</Label>
@@ -153,6 +157,22 @@ function StaffForm({ member, isSelf, onCreate, onUpdate, onDone }: StaffFormProp
           }}
           placeholder="np. Anna Kowalska"
           autoFocus={member !== null}
+        />
+      </div>
+
+      {/* Contact data, not a credential — optional, editable, and free to
+          repeat across staff in the same venue. */}
+      <div className="space-y-2">
+        <Label htmlFor="staff-email">Adres e-mail (opcjonalnie)</Label>
+        <Input
+          id="staff-email"
+          type="email"
+          value={email}
+          onChange={(event) => {
+            setEmail(event.target.value);
+          }}
+          placeholder="kelner@twojlokal.pl"
+          autoComplete="off"
         />
       </div>
 

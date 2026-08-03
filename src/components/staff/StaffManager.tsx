@@ -89,7 +89,7 @@ export default function StaffManager({ currentUserId }: StaffManagerProps) {
   };
 
   const confirmWasActive = confirm?.deactivated_at === null;
-  const confirmName = confirm?.full_name ?? confirm?.email ?? "";
+  const confirmName = confirm?.full_name ?? confirm?.login ?? confirm?.email ?? "";
 
   return (
     <div className="space-y-4">

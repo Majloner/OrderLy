@@ -1,32 +1,48 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { signUpInputSchema } from "@/lib/schemas/auth";
+
+export const prerender = false;
 
 export const POST: APIRoute = async (context) => {
   const form = await context.request.formData();
-  const email = form.get("email") as string;
-  const password = form.get("password") as string;
-  const companyName = ((form.get("company_name") as string) || "").trim();
-  const fullName = ((form.get("full_name") as string) || "").trim();
+
+  // This endpoint is open and unauthenticated, so every field is validated —
+  // most importantly the address, which must not fall inside the derived staff
+  // namespace (impl-review F1). Without that check anyone could register
+  // `<login>@<code>.staff.orderly.invalid` and permanently occupy a login in
+  // another venue.
+  const parsed = signUpInputSchema.safeParse({
+    email: form.get("email"),
+    password: form.get("password"),
+    company_name: form.get("company_name"),
+    full_name: form.get("full_name"),
+  });
+
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Nieprawidłowe dane";
+    return context.redirect(`/auth/signup?error=${encodeURIComponent(message)}`);
+  }
 
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
     return context.redirect(`/auth/signup?error=${encodeURIComponent("Supabase nie jest skonfigurowany")}`);
   }
 
-  if (!companyName) {
-    return context.redirect(`/auth/signup?error=${encodeURIComponent("Nazwa lokalu jest wymagana")}`);
-  }
-
   // company_name/full_name land in raw_user_meta_data; the handle_new_user
   // trigger reads them to create the company + owner profile.
   const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { company_name: companyName, full_name: fullName || null } },
+    email: parsed.data.email,
+    password: parsed.data.password,
+    options: { data: { company_name: parsed.data.company_name, full_name: parsed.data.full_name } },
   });
 
   if (error) {
-    const message = /already registered/i.test(error.message) ? "Ten e-mail jest już zarejestrowany." : error.message;
+    // Never surface error.message — it would put raw GoTrue text into the query
+    // string and onto the page (impl-review F8).
+    const message = /already registered/i.test(error.message)
+      ? "Ten e-mail jest już zarejestrowany."
+      : "Nie udało się utworzyć konta. Spróbuj ponownie.";
     return context.redirect(`/auth/signup?error=${encodeURIComponent(message)}`);
   }
 

@@ -105,7 +105,12 @@ export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
 export interface StaffMember {
   user_id: string;
   company_id: string;
-  email: string;
+  // The credential, unique within the company and immutable after creation.
+  // null for owners, who authenticate with their real email instead.
+  login: string | null;
+  // Optional contact data since the staff-login change — may repeat across
+  // staff in one venue, or be absent. No longer a credential.
+  email: string | null;
   full_name: string | null;
   role: StaffRole;
   // null = active. Set to a timestamp, both resolvers return NULL for this
