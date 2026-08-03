@@ -1,9 +1,9 @@
 ---
 change_id: staff-login-identifiers
 title: Per-venue staff login instead of a globally unique email
-status: planned
+status: impl_reviewed
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
 archived_at: null
 ---
 

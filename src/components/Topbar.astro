@@ -1,5 +1,8 @@
 ---
-const { user } = Astro.locals;
+// display_name, not user.email: staff authenticate under a synthetic
+// …@code.staff.orderly.invalid address that must never be shown back to them.
+// This bar renders on `/`, which is exactly where sign-in redirects.
+const { user, display_name } = Astro.locals;
 ---
 
 <div
@@ -8,7 +11,7 @@ const { user } = Astro.locals;
   {
     user ? (
       <>
-        <span class="text-blue-100/70">{user.email}</span>
+        <span class="text-blue-100/70">{display_name ?? user.email}</span>
         <div class="flex items-center gap-3">
           <a href="/dashboard" class="text-purple-300 transition-colors hover:text-purple-100 hover:underline">
             Dashboard

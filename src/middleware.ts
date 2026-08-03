@@ -23,6 +23,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.user = null;
   context.locals.company_id = null;
   context.locals.role = null;
+  context.locals.display_name = null;
   context.locals.supabase = supabase;
 
   if (supabase) {
@@ -37,12 +38,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("company_id, role")
+        .select("company_id, role, full_name, login")
         .eq("user_id", user.id)
-        .maybeSingle<{ company_id: string; role: StaffRole }>();
+        .maybeSingle<{ company_id: string; role: StaffRole; full_name: string | null; login: string | null }>();
       if (profile) {
         context.locals.company_id = profile.company_id;
         context.locals.role = profile.role;
+        // Staff auth addresses are synthetic (…@code.staff.orderly.invalid), so
+        // user.email must never be shown back to them. Prefer the real name,
+        // then the login; the email fallback only ever applies to owners, whose
+        // address is genuine.
+        context.locals.display_name = profile.full_name ?? profile.login ?? user.email ?? null;
       }
     }
   }
