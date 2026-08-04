@@ -903,10 +903,10 @@ istniejącej tabeli nie została zmieniona.
 
 #### Manual
 
-- [ ] 3.4 `GET /api/room` zwraca `objects` obok `rooms` i `tables`, tylko własnej firmy
-- [ ] 3.5 `POST /api/room/objects` z obcym `room_id` daje 400 z komunikatem PL, nie 500
-- [ ] 3.6 `DELETE /api/room/objects/{id}` na własnym obiekcie daje 200, na cudzym 404
-- [ ] 3.7 `PATCH …/position` poza kanwasem zapisuje wartość przyciętą i nie zmienia `width`/`height`/`rotation`
+- [x] 3.4 `GET /api/room` zwraca `objects` obok `rooms` i `tables`, tylko własnej firmy
+- [x] 3.5 `POST /api/room/objects` z obcym `room_id` daje 400 z komunikatem PL, nie 500
+- [x] 3.6 `DELETE /api/room/objects/{id}` na własnym obiekcie daje 200, na cudzym 404
+- [x] 3.7 `PATCH …/position` poza kanwasem zapisuje wartość przyciętą i nie zmienia `width`/`height`/`rotation`
 - [ ] 3.8 Kelner dostaje 403 na każdym zapisie obiektu i 200 na `GET /api/room`
 
 ### Phase 4: UI — obiekty na kanwasie, dialog, lista, usuwanie
@@ -920,15 +920,15 @@ istniejącej tabeli nie została zmieniona.
 
 #### Manual
 
-- [ ] 4.5 Dodanie ściany daje długi cienki prostokąt, dodanie krzesła mały kwadrat
+- [x] 4.5 Dodanie ściany daje długi cienki prostokąt, dodanie krzesła mały kwadrat
 - [ ] 4.6 Przeciągnięcie myszą zapisuje pozycję i utrzymuje się po odświeżeniu
 - [ ] 4.7 Przeciąganie palcem działa i strona się nie przewija
-- [ ] 4.8 Obiekty rysują się pod stolikami, także w trakcie przeciągania
-- [ ] 4.9 Obrót o 90° utrzymuje się po odświeżeniu; przy 45° narożnik nie wyjeżdża za kanwas
+- [x] 4.8 Obiekty rysują się pod stolikami, także w trakcie przeciągania
+- [x] 4.9 Obrót o 90° utrzymuje się po odświeżeniu; przy 45° narożnik nie wyjeżdża za kanwas
 - [ ] 4.10 Przeciąganie obróconego obiektu idzie prosto pod kursorem, nie po łuku
 - [ ] 4.11 Zwężenie okna skaluje obiekty razem ze stolikami i drag nadal trafia pod kursor
-- [ ] 4.12 Usunięcie wymaga potwierdzenia, po nim obiekt nie wraca po odświeżeniu
-- [ ] 4.13 Cała ścieżka dodaj/edytuj/usuń jest wykonalna z klawiatury przez listę
+- [x] 4.12 Usunięcie wymaga potwierdzenia, po nim obiekt nie wraca po odświeżeniu
+- [x] 4.13 Cała ścieżka dodaj/edytuj/usuń jest wykonalna z klawiatury przez listę
 - [ ] 4.14 Błąd sieci przy upuszczeniu cofa tylko ten obiekt; pozostałe pozycje nietknięte
 
 ### Phase 5: Uchwyty zmiany rozmiaru i obrotu (opcjonalna)
@@ -942,8 +942,8 @@ istniejącej tabeli nie została zmieniona.
 
 #### Manual
 
-- [ ] 5.5 Kliknięcie zaznacza obiekt i pokazuje uchwyty; kliknięcie w tło odznacza
-- [ ] 5.6 Uchwyt narożny zmienia rozmiar, a nie przesuwa obiektu
+- [x] 5.5 Kliknięcie zaznacza obiekt i pokazuje uchwyty; kliknięcie w tło odznacza
+- [x] 5.6 Uchwyt narożny zmienia rozmiar, a nie przesuwa obiektu
 - [ ] 5.7 Uchwyt obrotu obraca wokół środka; `Shift` snapuje do 15°
 - [ ] 5.8 Uchwyty działają palcem i nie przewijają strony
 - [ ] 5.9 Ścieżka klawiaturowa z fazy 4 nadal działa i daje ten sam wynik
