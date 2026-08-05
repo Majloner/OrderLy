@@ -360,9 +360,9 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Automated
 
-- [x] 1.1 Type checking passes: `npm run typecheck`
-- [x] 1.2 Linting passes: `npm run lint`
-- [x] 1.3 Unit tests still pass and remain DB-free: `npm run test`
+- [x] 1.1 Type checking passes: `npm run typecheck` — 40f09e0
+- [x] 1.2 Linting passes: `npm run lint` — 40f09e0
+- [x] 1.3 Unit tests still pass and remain DB-free: `npm run test` — 40f09e0
 - [ ] 1.4 Integration smoke test passes (seed two companies, owner-A scoped read): `npm run test:integration`
 
 #### Manual
@@ -375,8 +375,8 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 #### Automated
 
 - [ ] 2.1 `npm run test:integration` passes full write-matrix + read-authz suites
-- [x] 2.2 Every mutating menu/room/staff route (excl. photo) present as a registry row (completeness guard)
-- [x] 2.3 Linting + typecheck pass
+- [x] 2.2 Every mutating menu/room/staff route (excl. photo) present as a registry row (completeness guard) — 40f09e0
+- [x] 2.3 Linting + typecheck pass — 40f09e0
 
 #### Manual
 
@@ -388,7 +388,7 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 - [ ] 3.1 `npm run test:integration` passes read + write isolation suites for all listed entities
 - [ ] 3.2 `category_id` route-layer rejection test passes and asserts zero rows created
-- [x] 3.3 Linting + typecheck pass
+- [x] 3.3 Linting + typecheck pass — 40f09e0
 
 #### Manual
 
@@ -411,8 +411,8 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Automated
 
-- [x] 5.1 §6.2/§6.4/§6.5 contain no remaining `TBD — see §3 Phase 1`
-- [x] 5.2 Cookbook-referenced commands (`test:integration`, `test:rls:local`) execute as written
+- [x] 5.1 §6.2/§6.4/§6.5 contain no remaining `TBD — see §3 Phase 1` — 40f09e0
+- [x] 5.2 Cookbook-referenced commands (`test:integration`, `test:rls:local`) execute as written — 40f09e0
 
 #### Manual
 
