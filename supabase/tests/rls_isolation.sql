@@ -222,6 +222,46 @@ begin
 end $$;
 reset role;
 
+-- --- KNOWN GAP (Risk #2): anon reads are NOT company_id-scoped ---------------
+-- The four anon SELECT policies below carry no company_id predicate, so the anon
+-- key reads rows ACROSS tenants. Scoping is done only by an app-supplied filter
+-- today, and there is no anon route yet (the public QR menu, S-07/S-08, is
+-- unbuilt), so this is DEMONSTRATED and LABELED here rather than fixed. When
+-- S-07/S-08 moves scoping into RLS, flip each `raise notice` below to a
+-- `raise exception` and this section becomes a hard assertion.
+--   companies_anon_read           using (true)                  minimal_tables_menu.sql:59
+--   tables_anon_read_active       using (is_active)             minimal_tables_menu.sql:64
+--   menu_categories_anon_read     using (true)                  menu_categories_items.sql:68
+--   menu_items_anon_read_visible  using (archived_at is null …) menu_categories_items.sql:106
+-- See context/foundation/lessons.md "Anon RLS reads must be scoped by company_id".
+set local role anon;
+do $$
+-- Rows belonging to company B that an anon caller — holding no company context —
+-- can still see. Each count > 0 IS the cross-tenant leak.
+declare co_b int; tb_b int; mc_b int; mi_b int;
+begin
+  select count(*) into co_b from public.companies
+    where id = 'b2222222-2222-2222-2222-222222222222';
+  select count(*) into tb_b from public.tables
+    where company_id = 'b2222222-2222-2222-2222-222222222222';
+  select count(*) into mc_b from public.menu_categories
+    where company_id = 'b2222222-2222-2222-2222-222222222222';
+  select count(*) into mi_b from public.menu_items
+    where company_id = 'b2222222-2222-2222-2222-222222222222';
+
+  -- Deliberately NOT `raise exception`: these policies are intentionally unscoped
+  -- until S-07/S-08. The notices make the gap visible without failing the suite.
+  if co_b > 0 then raise notice 'KNOWN GAP (Risk #2) companies_anon_read: anon sees % company-B row(s) — using (true)', co_b; end if;
+  if tb_b > 0 then raise notice 'KNOWN GAP (Risk #2) tables_anon_read_active: anon sees % company-B table(s) — using (is_active)', tb_b; end if;
+  if mc_b > 0 then raise notice 'KNOWN GAP (Risk #2) menu_categories_anon_read: anon sees % company-B category(ies) — using (true)', mc_b; end if;
+  if mi_b > 0 then raise notice 'KNOWN GAP (Risk #2) menu_items_anon_read_visible: anon sees % company-B item(s) — no company_id predicate', mi_b; end if;
+
+  if co_b = 0 and tb_b = 0 and mc_b = 0 and mi_b = 0 then
+    raise notice 'Risk #2 CLOSED: anon no longer sees company-B rows — convert these notices to assertions';
+  end if;
+end $$;
+reset role;
+
 -- --- Assertion 6: orphan authenticated user (no profile) sees nothing -------
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"cccccccc-cccc-cccc-cccc-cccccccccccc","role":"authenticated"}';

@@ -12,11 +12,13 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "test": "vitest run",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
     "typecheck": "astro check",
     "db:new": "supabase migration new",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
-    "test:rls": "supabase db query --linked --file supabase/tests/rls_isolation.sql"
+    "test:rls": "supabase db query --linked --file supabase/tests/rls_isolation.sql",
+    "test:rls:local": "supabase db query --local --file supabase/tests/rls_isolation.sql"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",

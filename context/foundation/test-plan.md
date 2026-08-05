@@ -148,7 +148,11 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 
 ### 6.2 Adding an integration test
 
-- TBD — see §3 Phase 1.
+- **Location**: `tests/integration/**` (poza glob unitów `src/**/*.test.ts`, więc `npm run test` zostaje bez bazy).
+- **Naming**: `<obszar>/<co>.test.ts` (np. `authz/write-routes.test.ts`, `isolation/cross-tenant-read.test.ts`).
+- **Reference test**: `tests/integration/authz/write-routes.test.ts`.
+- **Fixtures**: `seedTwoCompanies()` z `tests/integration/helpers/fixtures.ts` daje 2 firmy × owner/waiter/kitchen + anon + `resources` (kategoria/pozycja/sala/stolik). Sprzątaj w `afterAll` przez `seed.cleanup()`.
+- **Run locally**: `npm run test:integration` (wymaga `npx supabase start` + skopiowanego `.env.test`).
 
 ### 6.3 Adding an e2e test
 
@@ -156,16 +160,31 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 
 ### 6.4 Adding a test for a new API endpoint
 
-- TBD — see §3 Phase 1 (route API: middleware → guard → RLS → odpowiedź, jako 2 firmy × role; mock tylko krawędzi service-role/Storage).
+- **Autoryzacja (Ryzyko #3)**: dodaj wiersz do `WRITE_ROUTES` (lub `READ_ROUTES`) w `tests/integration/authz/route-matrix.ts`. Parametryczna macierz automatycznie sprawdza anon→401, kelner/kuchnia→403, owner dopuszczony. `registry-completeness.test.ts` wymusza obecność wiersza (nowa trasa bez wpisu = czerwone).
+- **Izolacja (Ryzyko #1)**: jeśli endpoint dotyka nowej encji, dodaj test w `tests/integration/isolation/` — odczyt: zbiór odpowiedzi nie zawiera id firmy B; zapis: firma A celuje w zasób B → 404 **plus weryfikacja w DB** klientem `service-role`, że wiersz B się nie zmienił.
+- **Jak wywoływać**: `buildContext(principal, { method, params, body })` (`tests/integration/helpers/context.ts`) buduje syntetyczny `APIContext` — ćwiczy prawdziwy guard + RLS bez serwera HTTP (middleware NIE jest na ścieżce `/api/*`). Mockuj tylko krawędź service-role/Storage, nigdy modułów wewnętrznych.
 
 ### 6.5 Adding an RLS isolation assertion
 
-- TBD — see §3 Phase 1 (rozszerzenie `supabase/tests/rls_isolation.sql` o nową encję; anon key oraz 2 firmy).
+- **Gdzie**: rozszerz `supabase/tests/rls_isolation.sql` (plain SQL, transakcja `begin;…rollback;`, brak pgTAP). Dosiej encję dla obu firm w sekcji fixtures.
+- **Jak**: symuluj tożsamość przez `set local role authenticated` + `set local request.jwt.claims = '{"sub":"…","role":"authenticated"}'`, potem `reset role`. Dla ścieżki publicznej: `set local role anon`. Asertuj przez `raise exception` (porażka aborcuje transakcję → `supabase db query` kończy się kodem ≠ 0). Skaluj liczby do UUID-ów fixture’ów, nie do wartości absolutnych (baza może mieć realne wiersze).
+- **Run**: `npm run test:rls:local` (lokalne Supabase) lub `npm run test:rls` (hostowane `--linked`).
+- **Uwaga (Ryzyko #2)**: sekcja `KNOWN GAP (Risk #2)` używa `raise notice`, nie `raise exception` — polityki anon są świadomie nieszczelne do S-07/S-08. Zamknięcie luki = flip `notice`→`exception`.
 
 ### 6.6 Per-rollout-phase notes
 
 (Opcjonalne. Po wylądowaniu fazy `/10x-implement` dopisuje tu 2–3 linie o tym,
 co faza nauczyła — np. gdzie mieszkają fixture’y firm/ról.)
+
+**Faza 1–3 (harness + izolacja).** Fixture’y i helpery żyją w `tests/integration/helpers/`:
+`fixtures.ts` (2 firmy × owner/waiter/kitchen + anon + `resources`), `clients.ts`
+(anon / per-rola / service-role, budowane z `process.env`), `context.ts` (syntetyczny `APIContext`).
+- **Pułapka `locals.role` vs JWT**: guard czyta `context.locals.role`, a RLS czyta JWT z
+  `context.locals.supabase`. Oba muszą pochodzić z tego samego zasianego usera, inaczej test
+  przechodzi guard, a RLS widzi inny tenant → fałszywa zieleń.
+- **`astro:env/server` stub** (`tests/integration/stubs/`, alias w `vitest.integration.config.ts`)
+  pozwala importować route’y, które sięgają po sekrety (np. `staff` przez `staff-admin.ts`) pod Vitest.
+- **Znane luki** z fazy izolacji: `context/changes/testing-tenant-isolation-integration/KNOWN-GAPS.md`.
 
 ## 7. What We Deliberately Don't Test
 
