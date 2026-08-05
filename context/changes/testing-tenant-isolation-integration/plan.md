@@ -363,7 +363,7 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 - [x] 1.1 Type checking passes: `npm run typecheck` — 40f09e0
 - [x] 1.2 Linting passes: `npm run lint` — 40f09e0
 - [x] 1.3 Unit tests still pass and remain DB-free: `npm run test` — 40f09e0
-- [x] 1.4 Integration smoke test passes (seed two companies, owner-A scoped read): `npm run test:integration`
+- [x] 1.4 Integration smoke test passes (seed two companies, owner-A scoped read): `npm run test:integration` — 8dd336d
 
 #### Manual
 
@@ -374,7 +374,7 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Automated
 
-- [x] 2.1 `npm run test:integration` passes full write-matrix + read-authz suites
+- [x] 2.1 `npm run test:integration` passes full write-matrix + read-authz suites — 8dd336d
 - [x] 2.2 Every mutating menu/room/staff route (excl. photo) present as a registry row (completeness guard) — 40f09e0
 - [x] 2.3 Linting + typecheck pass — 40f09e0
 
@@ -386,8 +386,8 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Automated
 
-- [x] 3.1 `npm run test:integration` passes read + write isolation suites for all listed entities
-- [x] 3.2 `category_id` route-layer rejection test passes and asserts zero rows created
+- [x] 3.1 `npm run test:integration` passes read + write isolation suites for all listed entities — 8dd336d
+- [x] 3.2 `category_id` route-layer rejection test passes and asserts zero rows created — 8dd336d
 - [x] 3.3 Linting + typecheck pass — 40f09e0
 
 #### Manual
@@ -399,8 +399,8 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Automated
 
-- [x] 4.1 `npm run test:rls:local` runs to completion (exit 0) against local Supabase, printing Risk #2 notices
-- [x] 4.2 Existing 23 RLS assertions still pass unchanged
+- [x] 4.1 `npm run test:rls:local` runs to completion (exit 0) against local Supabase, printing Risk #2 notices — 8dd336d
+- [x] 4.2 Existing 23 RLS assertions still pass unchanged — 8dd336d
 
 #### Manual
 
