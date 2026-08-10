@@ -149,12 +149,15 @@ seeding in `handle_new_user()`, `src/lib/api.ts` not in the branch diff at all.
     PUT still clobbers. Leaves objects diverging from the tables pattern.
   - Confidence: MEDIUM — narrows the race without removing the class.
   - Blind spot: None significant.
-- **Decision**: FIXED via Fix B. Added a `layoutRef` mirror and the PUT body is now built
-  inside the queued request from the freshest row rather than from the prop captured at
-  gesture end. The comment states plainly that this SHRINKS the window to the request's
-  own flight time and does not close it — a write landing mid-flight still loses, and
-  closing it properly needs the transform-only PATCH from Fix A. Worth revisiting if the
-  dialog and the handles ever get used concurrently in earnest.
+- **Decision**: FIXED via Fix B first, then SUPERSEDED BY Fix A — the window is now closed,
+  not merely narrowed. `PATCH /api/room/objects/[id]/transform` takes geometry only, so
+  `room_id`, `kind` and `label` are never in the body and a concurrent rename or room move
+  cannot be reverted by a queued gesture. `roomObjectTransformSchema` is `.pick()`ed from
+  the input schema so the bounds cannot drift apart, and a test asserts the three
+  ownership columns are stripped rather than written. The route needs no read-before-write
+  either, unlike `./position`, because the request already carries width, height and
+  rotation — one round trip instead of two. Both Fix B scaffolds (`objectToInput`, the
+  `layoutRef` mirror) were deleted as dead.
 
 ### F4 — Handle gesture can leak: unmount mid-gesture leaves `draft` and `gestureRef` armed
 

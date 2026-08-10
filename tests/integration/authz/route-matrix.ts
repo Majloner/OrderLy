@@ -14,6 +14,7 @@ import { PATCH as tablePositionPatch } from "@/pages/api/room/tables/[id]/positi
 import { POST as objectsPost } from "@/pages/api/room/objects";
 import { PUT as objectPut, DELETE as objectDelete } from "@/pages/api/room/objects/[id]";
 import { PATCH as objectPositionPatch } from "@/pages/api/room/objects/[id]/position";
+import { PATCH as objectTransformPatch } from "@/pages/api/room/objects/[id]/transform";
 import { GET as menuGet } from "@/pages/api/menu/index";
 import { GET as roomGet } from "@/pages/api/room/index";
 import { GET as staffGet, POST as staffPost } from "@/pages/api/staff/index";
@@ -134,6 +135,13 @@ export const WRITE_ROUTES: WriteRouteCase[] = [
     path: "/api/room/objects/[id]/position",
     method: "PATCH",
     handler: objectPositionPatch,
+    params: withId,
+  },
+  {
+    label: "PATCH /api/room/objects/[id]/transform",
+    path: "/api/room/objects/[id]/transform",
+    method: "PATCH",
+    handler: objectTransformPatch,
     params: withId,
   },
   { label: "POST /api/staff", path: "/api/staff", method: "POST", handler: staffPost },

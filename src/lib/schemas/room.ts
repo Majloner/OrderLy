@@ -115,9 +115,23 @@ export const roomObjectPositionSchema = z.object({
   pos_y: posYSchema,
 });
 
+// End of a resize or rotate gesture: geometry only, never room_id / kind / label.
+// A gesture that sent the whole row would rewrite those three from client state
+// captured when the gesture began, silently reverting a rename or a room move that
+// landed while the request was queued — the impl-review F5 failure, one layer up.
+// Picked from the input schema so the bounds cannot drift apart.
+export const roomObjectTransformSchema = roomObjectInputSchema.pick({
+  pos_x: true,
+  pos_y: true,
+  width: true,
+  height: true,
+  rotation: true,
+});
+
 export type RoomInput = z.output<typeof roomInputSchema>;
 export type TableInput = z.output<typeof tableInputSchema>;
 export type TablePositionInput = z.output<typeof tablePositionSchema>;
 export type TableActivationInput = z.output<typeof tableActivationSchema>;
 export type RoomObjectInput = z.output<typeof roomObjectInputSchema>;
 export type RoomObjectPositionInput = z.output<typeof roomObjectPositionSchema>;
+export type RoomObjectTransformInput = z.output<typeof roomObjectTransformSchema>;
