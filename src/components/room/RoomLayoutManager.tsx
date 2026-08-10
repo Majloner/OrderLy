@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import {
   AlertDialog,
@@ -47,22 +47,6 @@ function patchObject(payload: RoomLayoutPayload, objectId: string, fields: Parti
   };
 }
 
-// Full PUT body for an object, so a handle gesture can reuse the same endpoint the
-// dialog does without inventing a partial-update route for size and rotation.
-function objectToInput(object: RoomObject, override: Partial<RoomObjectInput> = {}): RoomObjectInput {
-  return {
-    room_id: object.room_id,
-    kind: object.kind,
-    label: object.label,
-    pos_x: object.pos_x,
-    pos_y: object.pos_y,
-    width: object.width,
-    height: object.height,
-    rotation: object.rotation,
-    ...override,
-  };
-}
-
 export default function RoomLayoutManager() {
   const { layout, setLayout, loadError, refetch, reload } = useRoomLayout();
   const [actionError, setActionError] = useState<string | null>(null);
@@ -84,17 +68,6 @@ export default function RoomLayoutManager() {
   // position in the map only by id, and mixing the two would let a table's chain
   // block an object's for no reason.
   const objectPositionQueue = useRef(new Map<string, Promise<void>>());
-
-  // A mirror of the current layout, readable from inside a queued request. A queued
-  // write fires long after the closure that enqueued it was created, so the props it
-  // captured are stale by then; this ref is what "the freshest row" means below.
-  // Written in an effect, not during render — refs are not readable or writable during
-  // render in React 19 (react-hooks/refs). Lagging by one commit is harmless here: it
-  // is only ever read from an async request that runs well after the commit.
-  const layoutRef = useRef<RoomLayoutPayload | null>(null);
-  useEffect(() => {
-    layoutRef.current = layout;
-  }, [layout]);
 
   // Full-screen error only when there is nothing to show yet (initial load).
   // A failed refetch after a successful mutation surfaces as actionError below.
@@ -288,9 +261,11 @@ export default function RoomLayoutManager() {
     });
   };
 
-  // End of a resize or rotate gesture. Goes through PUT rather than the position
-  // PATCH because size and rotation change too, and shares persistObjectPosition's
-  // queue so a gesture and a drag of the SAME object cannot commit out of order.
+  // End of a resize or rotate gesture. Goes through the transform PATCH rather than a
+  // full PUT: geometry is all that changed, so room_id, kind and label are never in the
+  // body and a rename or room move that lands while this sits in the queue cannot be
+  // reverted by it. Shares persistObjectPosition's queue so a gesture and a drag of the
+  // SAME object still commit in send order.
   const persistObjectTransform = (object: RoomObject, next: RoomObjectTransform) => {
     setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, next)));
     setActionError(null);
@@ -300,20 +275,7 @@ export default function RoomLayoutManager() {
       .catch(() => undefined)
       .then(async () => {
         try {
-          // Built HERE, not at enqueue time, and from the mirror rather than the
-          // captured prop. A full PUT rewrites room_id, kind and label too, so a
-          // body frozen at gesture end would carry pre-rename values and silently
-          // revert a dialog save that landed while this request sat in the queue —
-          // the clobber this file warns about twenty lines below. Reading the
-          // freshest row shrinks that window to the request's own flight time.
-          // It does not close it: a write landing mid-flight still loses. Closing it
-          // needs a transform-only PATCH, the way position already has one.
-          const fresh = layoutRef.current?.objects.find((candidate) => candidate.id === object.id);
-          const saved = await callRoomApi<RoomObject>(
-            "PUT",
-            `/api/room/objects/${object.id}`,
-            objectToInput(fresh ?? object, next),
-          );
+          const saved = await callRoomApi<RoomObject>("PATCH", `/api/room/objects/${object.id}/transform`, next);
           setLayout((prev) =>
             prev === null
               ? prev

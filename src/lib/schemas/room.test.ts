@@ -4,6 +4,7 @@ import {
   roomInputSchema,
   roomObjectInputSchema,
   roomObjectPositionSchema,
+  roomObjectTransformSchema,
   tableInputSchema,
   tablePositionSchema,
 } from "@/lib/schemas/room";
@@ -222,6 +223,37 @@ describe("roomObjectInputSchema", () => {
     const overY = { ...validObject, pos_y: LOGICAL_CANVAS.height + 1 };
     expect(roomObjectInputSchema.safeParse(overX).success).toBe(false);
     expect(roomObjectInputSchema.safeParse(overY).success).toBe(false);
+  });
+});
+
+describe("roomObjectTransformSchema", () => {
+  const validTransform = { pos_x: 240, pos_y: 160, width: 400, height: 20, rotation: 45 };
+
+  it("accepts a geometry-only payload", () => {
+    expect(roomObjectTransformSchema.safeParse(validTransform).success).toBe(true);
+  });
+
+  // The whole reason the route exists: a resize must not be able to carry the three
+  // columns a concurrent rename or room move owns.
+  it("strips room_id, kind and label rather than writing them", () => {
+    const parsed = roomObjectTransformSchema.parse({
+      ...validTransform,
+      room_id: "9f3c2a10-6d4e-4b8a-9c1d-2e5f7a8b9c0d",
+      kind: "bar",
+      label: "smuggled",
+    });
+    expect(parsed).toEqual(validTransform);
+  });
+
+  it("keeps the bounds of the full input schema", () => {
+    expect(roomObjectTransformSchema.safeParse({ ...validTransform, rotation: 360 }).success).toBe(false);
+    expect(roomObjectTransformSchema.safeParse({ ...validTransform, width: 9 }).success).toBe(false);
+    expect(roomObjectTransformSchema.safeParse({ ...validTransform, height: 801 }).success).toBe(false);
+  });
+
+  it("rejects a partial payload", () => {
+    const { rotation: _rotation, ...withoutRotation } = validTransform;
+    expect(roomObjectTransformSchema.safeParse(withoutRotation).success).toBe(false);
   });
 });
 
