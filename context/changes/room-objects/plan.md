@@ -907,7 +907,7 @@ istniejącej tabeli nie została zmieniona.
 - [x] 3.5 `POST /api/room/objects` z obcym `room_id` daje 400 z komunikatem PL, nie 500
 - [x] 3.6 `DELETE /api/room/objects/{id}` na własnym obiekcie daje 200, na cudzym 404
 - [x] 3.7 `PATCH …/position` poza kanwasem zapisuje wartość przyciętą i nie zmienia `width`/`height`/`rotation`
-- [ ] 3.8 Kelner dostaje 403 na każdym zapisie obiektu i 200 na `GET /api/room`
+- [x] 3.8 Kelner dostaje 403 na każdym zapisie obiektu i 200 na `GET /api/room`
 
 ### Phase 4: UI — obiekty na kanwasie, dialog, lista, usuwanie
 
