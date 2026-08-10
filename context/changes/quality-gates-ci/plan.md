@@ -119,11 +119,11 @@ that the scripts/paths the workflow calls all exist.
 
 #### Automated
 
-- [x] 1.1 `npm run lint` passes
-- [x] 1.2 `npm run typecheck` passes
-- [x] 1.3 `npm run test` passes (unit, DB-free)
-- [x] 1.4 `.github/workflows/ci.yml` is valid YAML referencing only existing npm scripts
-- [x] 1.5 `.github.scaffold/` removed
+- [x] 1.1 `npm run lint` passes — b3a0c8b
+- [x] 1.2 `npm run typecheck` passes — b3a0c8b
+- [x] 1.3 `npm run test` passes (unit, DB-free) — b3a0c8b
+- [x] 1.4 `.github/workflows/ci.yml` is valid YAML referencing only existing npm scripts — b3a0c8b
+- [x] 1.5 `.github.scaffold/` removed — b3a0c8b
 
 #### Manual
 
