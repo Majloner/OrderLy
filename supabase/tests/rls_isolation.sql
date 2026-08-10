@@ -79,25 +79,11 @@ values
 
 -- Furnishing objects. Same composite-FK requirement as tables: (company_id, room_id)
 -- must match an existing room of the SAME company, so rooms come first.
---
--- Gated on the table existing, for the reason this file cares about elsewhere: an
--- unconditional insert aborts the transaction with 42P01 on any database that has not
--- had 20260804120000 pushed, BEFORE a single assertion runs — hiding all twenty-odd of
--- them behind an unrelated red. feat/room-objects is not merged yet, so a fresh clone of
--- main is exactly that database. Drop this gate once the migration reaches main.
-do $$
-begin
-  if to_regclass('public.room_objects') is null then
-    raise notice 'SKIP room_objects fixtures: migration 20260804120000 not applied yet';
-    return;
-  end if;
-
-  insert into public.room_objects (company_id, room_id, kind, label, pos_x, pos_y, width, height, rotation)
-  values
-    ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'wall',  'Obj-A1', 600, 10,  400, 20, 0),
-    ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'chair', 'Obj-A2', 200, 300, 40,  40, 90),
-    ('b2222222-2222-2222-2222-222222222222', 'f0b22222-2222-2222-2222-222222222222', 'bar',   'Obj-B1', 400, 400, 240, 60, 0);
-end $$;
+insert into public.room_objects (company_id, room_id, kind, label, pos_x, pos_y, width, height, rotation)
+values
+  ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'wall',  'Obj-A1', 600, 10,  400, 20, 0),
+  ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'chair', 'Obj-A2', 200, 300, 40,  40, 90),
+  ('b2222222-2222-2222-2222-222222222222', 'f0b22222-2222-2222-2222-222222222222', 'bar',   'Obj-B1', 400, 400, 240, 60, 0);
 
 insert into public.menu_categories (id, company_id, name, sort_order)
 values
@@ -224,15 +210,8 @@ begin
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into rm from public.rooms             -- no anon policy at all (0)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
-  -- Same gate as the fixture: an absent table means the migration is not applied here,
-  -- and a hard 42P01 would take the other twelve anon checks down with it. PL/pgSQL
-  -- plans a statement on first execution, so the untaken branch is never planned.
-  if to_regclass('public.room_objects') is null then
-    ro := 0;
-  else
-    select count(*) into ro from public.room_objects   -- no anon policy at all (0)
-      where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
-  end if;
+  select count(*) into ro from public.room_objects     -- no anon policy at all (0)
+    where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into mi from public.menu_items        -- available+sold_out, non-archived (3)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into mc from public.menu_categories   -- categories are public (2)
@@ -857,11 +836,6 @@ set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","r
 do $$
 declare n int; new_object_id uuid;
 begin
-  if to_regclass('public.room_objects') is null then
-    raise notice 'SKIP owner object writes: migration 20260804120000 not applied yet';
-    return;
-  end if;
-
   insert into public.room_objects (company_id, room_id, kind, label, pos_x, pos_y, width, height, rotation)
     values ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111',
             'door', 'Obj-A-New', 500, 400, 80, 20, 45)
@@ -889,11 +863,6 @@ do $$
 -- as assertion 10).
 declare ob int; n int; leaked boolean := false;
 begin
-  if to_regclass('public.room_objects') is null then
-    raise notice 'SKIP waiter object denial: migration 20260804120000 not applied yet';
-    return;
-  end if;
-
   select count(*) into ob from public.room_objects where label in ('Obj-A1', 'Obj-A2');
   if ob <> 2 then raise exception 'FAIL waiter read objects: saw %, expected 2', ob; end if;
 
@@ -924,11 +893,6 @@ set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","r
 do $$
 declare ob_b int; n int; state text; leaked boolean := false; spare_room_id uuid; left_over int;
 begin
-  if to_regclass('public.room_objects') is null then
-    raise notice 'SKIP object isolation: migration 20260804120000 not applied yet';
-    return;
-  end if;
-
   select count(*) into ob_b from public.room_objects
     where company_id = 'b2222222-2222-2222-2222-222222222222';
   if ob_b <> 0 then raise exception 'FAIL A cross-tenant objects: owner A sees % objects of Firma B', ob_b; end if;

@@ -227,11 +227,13 @@ seeding in `handle_new_user()`, `src/lib/api.ts` not in the branch diff at all.
   applied — but it bites the next person with a fresh database.
 - **Fix**: Gate the object fixture and assertions 24–26 on
   `to_regclass('public.room_objects') is not null`, mirroring :672-684.
-- **Decision**: FIXED — the fixture, the anon count in assertion 5, and assertions 24–26
-  all gate on `to_regclass` now, each emitting a SKIP notice. The anon count uses an
-  if/else rather than an early return because `ro` is asserted later; PL/pgSQL plans a
-  statement on first execution, so the untaken branch is never planned. Comment records
-  that the gate should come out once this branch reaches main.
+- **Decision**: FIXED, then REVERTED by decision — and the reverted state is the right one.
+  The gates were added first (fixture, the anon count in assertion 5, assertions 24–26,
+  each emitting a SKIP notice), then removed once it was clear they protected a window
+  that closes the moment PR #24 merges: main will carry the migration, and any fresh local
+  Supabase applies it on `db reset`. Keeping them would have reproduced exactly the smell
+  F10 was raised about — a permanently-true condition that reads as "this assertion is
+  optional". The suite is unconditional again and passes end to end.
 
 ### F7 — Native `min`/`max` validation preempts the Polish zod messages
 
