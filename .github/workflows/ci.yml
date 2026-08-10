@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR branch).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast lane: no database, quick feedback. A lint/type/unit failure never waits
+  # on the Supabase boot in the db job.
+  fast:
+    name: lint · typecheck · unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # astro check (typecheck) needs the generated .astro/types.d.ts, incl.
+      # the astro:env virtual module types.
+      - run: npx astro sync
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test
+
+  # DB lane: boots the full local Supabase (GoTrue included — the integration
+  # fixtures seed users via the admin API) and runs the request-chain + RLS suites.
+  db:
+    name: integration · rls
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Use the CLI version pinned in package-lock (via npx), NOT
+      # supabase/setup-cli@latest: a newer local stack changes the API-key system
+      # and PostgREST role grants, which breaks service-role seeding
+      # ("permission denied for table profiles"). CI must reproduce the version
+      # the suite was validated against locally.
+      - name: Start local Supabase (pinned CLI)
+        run: npx supabase start
+      - name: Write .env.test from local Supabase (JWT keys)
+        # The integration harness seeds via GoTrue admin, which requires the
+        # JWT-format service_role key — ANON_KEY/SERVICE_ROLE_KEY here, never the
+        # sb_publishable_/sb_secret_ keys. Values are quoted in `-o env` output.
+        run: |
+          env_line() { npx supabase status -o env | grep "^$1=" | cut -d= -f2- | tr -d '"'; }
+          {
+            echo "SUPABASE_URL=$(env_line API_URL)"
+            echo "SUPABASE_KEY=$(env_line ANON_KEY)"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(env_line SERVICE_ROLE_KEY)"
+          } > .env.test
+      - run: npm run test:integration
+      - run: npm run test:rls:local

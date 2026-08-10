@@ -127,9 +127,9 @@ tej fazy; wcześniej jest `planned`.
 
 | Gate | Where | Required? | Catches |
 |------|-------|-----------|---------|
-| lint + typecheck | local + CI | required | dryf składni / typów |
-| unit + integration | local + CI | required after §3 Phase 1 | regresje logiki i łańcucha żądań |
-| RLS isolation (SQL) | CI | required after §3 Phase 1 | rozjazd polityk RLS / wyciek między najemcami |
+| lint + typecheck | local + CI | required — wired (`.github/workflows/ci.yml`, job `fast`) | dryf składni / typów |
+| unit + integration | local + CI | required — wired (ci.yml: `fast` unit + `db` integration, Phase 3) | regresje logiki i łańcucha żądań |
+| RLS isolation (SQL) | CI | required — wired (ci.yml job `db`, Phase 3) | rozjazd polityk RLS / wyciek między najemcami |
 | post-edit hook | local (agent loop) | recommended after §3 Phase 3 | regresje w momencie edycji |
 | multimodal visual review | CI on PR | optional after §3 Phase 4 | problemy wizualne, których nie łapie diff — 1–3 ekrany |
 | pre-prod smoke | między merge a prod | optional | błędy specyficzne dla środowiska (Cloudflare Workers) |
