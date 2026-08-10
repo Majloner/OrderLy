@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { LOGICAL_CANVAS } from "@/lib/room-geometry";
-import { roomInputSchema, tableInputSchema, tablePositionSchema } from "@/lib/schemas/room";
+import { LOGICAL_CANVAS, OBJECT_SIZE_BOUNDS } from "@/lib/room-geometry";
+import {
+  roomInputSchema,
+  roomObjectInputSchema,
+  roomObjectPositionSchema,
+  tableInputSchema,
+  tablePositionSchema,
+} from "@/lib/schemas/room";
 
 const validTable = {
   room_id: "9f3c2a10-6d4e-4b8a-9c1d-2e5f7a8b9c0d",
@@ -133,5 +139,102 @@ describe("tablePositionSchema", () => {
 
   it("rejects a missing coordinate", () => {
     expect(tablePositionSchema.safeParse({ pos_x: 100 }).success).toBe(false);
+  });
+});
+
+const validObject = {
+  room_id: "9f3c2a10-6d4e-4b8a-9c1d-2e5f7a8b9c0d",
+  kind: "wall",
+  label: "Ściana od kuchni",
+  pos_x: 240,
+  pos_y: 160,
+  width: 400,
+  height: 20,
+  rotation: 0,
+};
+
+describe("roomObjectInputSchema", () => {
+  it("accepts a valid object", () => {
+    expect(roomObjectInputSchema.safeParse(validObject).success).toBe(true);
+  });
+
+  it("accepts every known kind", () => {
+    for (const kind of ["wall", "chair", "door", "window", "bar", "plant", "stairs", "toilet", "till"]) {
+      expect(roomObjectInputSchema.safeParse({ ...validObject, kind }).success).toBe(true);
+    }
+  });
+
+  it("rejects an unknown kind", () => {
+    expect(roomObjectInputSchema.safeParse({ ...validObject, kind: "aquarium" }).success).toBe(false);
+  });
+
+  it("accepts rotation at both ends of the range", () => {
+    expect(roomObjectInputSchema.safeParse({ ...validObject, rotation: 0 }).success).toBe(true);
+    expect(roomObjectInputSchema.safeParse({ ...validObject, rotation: 359 }).success).toBe(true);
+  });
+
+  // 360 is the wrap point, not a value — otherwise two distinct numbers mean the
+  // same angle and the DB check has to allow a duplicate.
+  it("rejects rotation of 360 or more", () => {
+    expect(roomObjectInputSchema.safeParse({ ...validObject, rotation: 360 }).success).toBe(false);
+    expect(roomObjectInputSchema.safeParse({ ...validObject, rotation: 900 }).success).toBe(false);
+  });
+
+  it("rejects negative rotation", () => {
+    expect(roomObjectInputSchema.safeParse({ ...validObject, rotation: -1 }).success).toBe(false);
+  });
+
+  it("rejects fractional rotation", () => {
+    expect(roomObjectInputSchema.safeParse({ ...validObject, rotation: 45.5 }).success).toBe(false);
+  });
+
+  it("accepts the size bounds and rejects just outside them", () => {
+    const { minWidth, maxWidth, minHeight, maxHeight } = OBJECT_SIZE_BOUNDS;
+    expect(roomObjectInputSchema.safeParse({ ...validObject, width: minWidth }).success).toBe(true);
+    expect(roomObjectInputSchema.safeParse({ ...validObject, width: maxWidth }).success).toBe(true);
+    expect(roomObjectInputSchema.safeParse({ ...validObject, width: minWidth - 1 }).success).toBe(false);
+    expect(roomObjectInputSchema.safeParse({ ...validObject, width: maxWidth + 1 }).success).toBe(false);
+    expect(roomObjectInputSchema.safeParse({ ...validObject, height: minHeight }).success).toBe(true);
+    expect(roomObjectInputSchema.safeParse({ ...validObject, height: maxHeight }).success).toBe(true);
+    expect(roomObjectInputSchema.safeParse({ ...validObject, height: maxHeight + 1 }).success).toBe(false);
+  });
+
+  it("rejects a fractional size", () => {
+    expect(roomObjectInputSchema.safeParse({ ...validObject, width: 100.5 }).success).toBe(false);
+  });
+
+  it("normalizes an empty or missing label to null", () => {
+    const { label: _label, ...rest } = validObject;
+    expect(roomObjectInputSchema.parse(rest).label).toBeNull();
+    expect(roomObjectInputSchema.parse({ ...validObject, label: "   " }).label).toBeNull();
+  });
+
+  it("trims the label", () => {
+    expect(roomObjectInputSchema.parse({ ...validObject, label: "  Bar  " }).label).toBe("Bar");
+  });
+
+  it("rejects a non-uuid room id", () => {
+    expect(roomObjectInputSchema.safeParse({ ...validObject, room_id: "not-a-uuid" }).success).toBe(false);
+  });
+
+  it("rejects a centre beyond the logical canvas", () => {
+    const overX = { ...validObject, pos_x: LOGICAL_CANVAS.width + 1 };
+    const overY = { ...validObject, pos_y: LOGICAL_CANVAS.height + 1 };
+    expect(roomObjectInputSchema.safeParse(overX).success).toBe(false);
+    expect(roomObjectInputSchema.safeParse(overY).success).toBe(false);
+  });
+});
+
+describe("roomObjectPositionSchema", () => {
+  it("accepts a bare centre", () => {
+    expect(roomObjectPositionSchema.safeParse({ pos_x: 120, pos_y: 240 }).success).toBe(true);
+  });
+
+  it("rejects a centre beyond the canvas", () => {
+    expect(roomObjectPositionSchema.safeParse({ pos_x: LOGICAL_CANVAS.width + 1, pos_y: 0 }).success).toBe(false);
+  });
+
+  it("rejects a missing coordinate", () => {
+    expect(roomObjectPositionSchema.safeParse({ pos_x: 100 }).success).toBe(false);
   });
 });

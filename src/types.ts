@@ -162,8 +162,67 @@ export interface RoomTable {
   created_at: string;
 }
 
+// ---------------------------------------------------------------------------
+// Room furnishing objects. A separate relation from `tables` on purpose — the
+// two differ in the one way that matters most: an object CAN be deleted. No QR
+// code is ever pinned to a chair, so the "deactivate, never delete" guardrail
+// that shapes `tables` (no delete policy in RLS at all) does not apply here.
+// Objects also carry their own width/height instead of a fixed per-shape
+// footprint, carry a free rotation, and have no guest-visible number.
+// ---------------------------------------------------------------------------
+
+export const ROOM_OBJECT_KINDS = [
+  "wall",
+  "chair",
+  "door",
+  "window",
+  "bar",
+  "plant",
+  "stairs",
+  "toilet",
+  "till",
+] as const;
+
+export type RoomObjectKind = (typeof ROOM_OBJECT_KINDS)[number];
+
+export const ROOM_OBJECT_KIND_LABELS: Record<RoomObjectKind, string> = {
+  wall: "Ściana",
+  chair: "Krzesło",
+  door: "Drzwi",
+  window: "Okno",
+  bar: "Bar",
+  plant: "Roślina",
+  stairs: "Schody",
+  toilet: "Toaleta",
+  till: "Kasa",
+};
+
+export interface RoomObject {
+  id: string;
+  company_id: string;
+  room_id: string;
+  kind: RoomObjectKind;
+  label: string | null;
+  // CAUTION: unlike RoomTable, these are the object's CENTRE, not its top-left
+  // corner. Rotation happens about the centre, and clamping a rotated rectangle
+  // by its corner would yield legitimate NEGATIVE coordinates (a wall rotated
+  // 90° and pushed left has its unrotated corner off-canvas) — values no sane
+  // zod bound or CHECK constraint would accept. See src/lib/room-geometry.ts.
+  pos_x: number;
+  pos_y: number;
+  // Logical pixels, per-row rather than derived from a shape: a wall is a long
+  // thin rectangle and a chair is a small square.
+  width: number;
+  height: number;
+  // Degrees, 0-359. Free rather than quarter-turns so bars and walls can sit at
+  // an angle; the clamp accounts for the rotated bounding box.
+  rotation: number;
+  created_at: string;
+}
+
 // Single payload served by GET /api/room.
 export interface RoomLayoutPayload {
   rooms: Room[];
   tables: RoomTable[];
+  objects: RoomObject[];
 }

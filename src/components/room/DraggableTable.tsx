@@ -13,7 +13,12 @@ interface DraggableTableProps {
 // useDraggable, not useSortable: this is free 2D placement, so there is no list
 // order to compute and no arrayMove involved.
 export function DraggableTable({ table, scale, onActivate }: DraggableTableProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: table.id });
+  // `data.entity` lets the shared onDragEnd in RoomCanvas split tables from room
+  // objects without looking the id up across two collections.
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: table.id,
+    data: { entity: "table" },
+  });
   const footprint = SHAPE_FOOTPRINTS[table.shape];
 
   return (
@@ -32,7 +37,9 @@ export function DraggableTable({ table, scale, onActivate }: DraggableTableProps
         table.is_active
           ? "border-purple-300/50 bg-purple-500/30 text-white"
           : "border-dashed border-white/20 bg-white/5 text-white/40",
-        isDragging ? "z-10 cursor-grabbing opacity-80" : "cursor-grab",
+        // Above the room objects (z-0/z-10) at all times: a table must stay
+        // readable over the furnishing, even while a wall is being dragged.
+        isDragging ? "z-30 cursor-grabbing opacity-80" : "z-20 cursor-grab",
       )}
       style={{
         left: table.pos_x * scale,

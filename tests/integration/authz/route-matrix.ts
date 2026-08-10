@@ -11,6 +11,9 @@ import { POST as tablesPost } from "@/pages/api/room/tables";
 import { PUT as tablePut } from "@/pages/api/room/tables/[id]";
 import { PATCH as tableActivationPatch } from "@/pages/api/room/tables/[id]/activation";
 import { PATCH as tablePositionPatch } from "@/pages/api/room/tables/[id]/position";
+import { POST as objectsPost } from "@/pages/api/room/objects";
+import { PUT as objectPut, DELETE as objectDelete } from "@/pages/api/room/objects/[id]";
+import { PATCH as objectPositionPatch } from "@/pages/api/room/objects/[id]/position";
 import { GET as menuGet } from "@/pages/api/menu/index";
 import { GET as roomGet } from "@/pages/api/room/index";
 import { GET as staffGet, POST as staffPost } from "@/pages/api/staff/index";
@@ -107,6 +110,30 @@ export const WRITE_ROUTES: WriteRouteCase[] = [
     path: "/api/room/tables/[id]/position",
     method: "PATCH",
     handler: tablePositionPatch,
+    params: withId,
+  },
+  // room_objects. DELETE is the one method that has no table counterpart: an object
+  // carries no permanent QR code, so unlike a table it may be removed outright.
+  { label: "POST /api/room/objects", path: "/api/room/objects", method: "POST", handler: objectsPost },
+  {
+    label: "PUT /api/room/objects/[id]",
+    path: "/api/room/objects/[id]",
+    method: "PUT",
+    handler: objectPut,
+    params: withId,
+  },
+  {
+    label: "DELETE /api/room/objects/[id]",
+    path: "/api/room/objects/[id]",
+    method: "DELETE",
+    handler: objectDelete,
+    params: withId,
+  },
+  {
+    label: "PATCH /api/room/objects/[id]/position",
+    path: "/api/room/objects/[id]/position",
+    method: "PATCH",
+    handler: objectPositionPatch,
     params: withId,
   },
   { label: "POST /api/staff", path: "/api/staff", method: "POST", handler: staffPost },
