@@ -127,5 +127,5 @@ that the scripts/paths the workflow calls all exist.
 
 #### Manual
 
-- [ ] 1.6 First PR to `main`: both `fast` and `db` jobs pass (Supabase boot + integration + RLS green)
+- [x] 1.6 First PR to `main`: both `fast` and `db` jobs pass (Supabase boot + integration + RLS green) — c11d2be (PR #25, run 31435209291)
 - [ ] 1.7 (Optional) Branch protection on `main` requires the `fast` and `db` checks

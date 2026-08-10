@@ -1,7 +1,7 @@
 ---
 change_id: quality-gates-ci
 title: Quality gates wiring — CI for lint/typecheck/unit/integration/RLS (test-plan Phase 3)
-status: implementing
+status: implemented
 created: 2026-08-10
 updated: 2026-08-10
 archived_at: null
