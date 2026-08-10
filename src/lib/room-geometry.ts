@@ -224,6 +224,12 @@ function clampSize(value: number, min: number, max: number): number {
   return Math.min(Math.max(Math.round(value), min), max);
 }
 
+// Math.round breaks .5 toward +Infinity. This breaks it toward -Infinity, so a
+// value rounded by both lands back where it began — see applyResizeDelta.
+function roundHalfDown(value: number): number {
+  return -Math.round(-value);
+}
+
 // Resize about the dragged corner, keeping the OPPOSITE corner still.
 //
 // Two rotations are involved and mixing them up is the whole difficulty. The
@@ -261,17 +267,37 @@ export function applyResizeDelta(
     OBJECT_SIZE_BOUNDS.maxHeight,
   );
 
-  // Derive the shift from the CLAMPED sizes, not the raw ones: at the minimum or
-  // maximum the size stops changing, and the centre has to stop moving with it.
-  const localShiftX = (handle.x * (width - footprint.width)) / 2;
-  const localShiftY = (handle.y * (height - footprint.height)) / 2;
+  // Rebuild the centre from the ANCHOR — the corner opposite the handle — rather
+  // than nudging it by half the size change.
+  //
+  // Both formulations are identical in exact arithmetic, but not in integers, and
+  // that difference is a real bug. pos_* is stored as an int while a size may be
+  // odd, so a corner necessarily lands on a half pixel and SOMETHING has to round.
+  // Rounding the centre by Math.round alone makes the error monotonic, because JS
+  // breaks .5 toward +Infinity regardless of sign: growing a corner by 1px and then
+  // shrinking it back by 1px returns the size exactly but leaves the object
+  // translated by 1px, every time. Fifty nudges walk it 50px across the canvas.
+  //
+  // Anchoring fixes that only if the two roundings disagree on .5. The anchor is
+  // rounded DOWN and the centre UP, so the half-pixel introduced when growing is
+  // taken back when shrinking and a round trip lands exactly where it started.
+  const anchorLocalX = (-handle.x * footprint.width) / 2;
+  const anchorLocalY = (-handle.y * footprint.height) / 2;
+  const anchor = {
+    pos_x: roundHalfDown(centre.pos_x + anchorLocalX * cos - anchorLocalY * sin),
+    pos_y: roundHalfDown(centre.pos_y + anchorLocalX * sin + anchorLocalY * cos),
+  };
 
-  // Local shift -> world (rotate back by +rotation).
-  const shiftX = localShiftX * cos - localShiftY * sin;
-  const shiftY = localShiftX * sin + localShiftY * cos;
+  // ...and back out to the centre the CLAMPED size implies. Deriving it from the
+  // clamped size is what keeps the object still once it hits a size bound.
+  const nextLocalX = (handle.x * width) / 2;
+  const nextLocalY = (handle.y * height) / 2;
 
   const moved = clampObjectCenter(
-    { pos_x: centre.pos_x + shiftX, pos_y: centre.pos_y + shiftY },
+    {
+      pos_x: anchor.pos_x + nextLocalX * cos - nextLocalY * sin,
+      pos_y: anchor.pos_y + nextLocalX * sin + nextLocalY * cos,
+    },
     { width, height },
     rotation,
   );
@@ -289,15 +315,19 @@ export function applyRotateDelta(
   pointer: { x: number; y: number },
   scale: number,
   snapDegrees = 0,
+  fallback = 0,
 ): number {
   const safeScale = scale > 0 ? scale : 1;
   const dx = pointer.x / safeScale - centre.pos_x;
   const dy = pointer.y / safeScale - centre.pos_y;
 
-  // Dead zone at the centre: atan2(0, 0) is 0, which would snap the object to
-  // upright the moment the pointer crossed its middle.
+  // Dead zone at the centre, where atan2(0, 0) would answer 0 and there is no
+  // meaningful bearing to read. Returning the CURRENT angle rather than 0 matters at
+  // commit time: dragging the handle across the object's own middle used to snap the
+  // preview upright, and releasing there persisted rotation 0, throwing away the angle
+  // the owner had been aiming at.
   if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-    return 0;
+    return ((Math.round(fallback) % 360) + 360) % 360;
   }
 
   const degrees = (Math.atan2(dy, dx) * 180) / Math.PI + 90;

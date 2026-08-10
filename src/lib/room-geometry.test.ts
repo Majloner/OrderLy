@@ -275,6 +275,48 @@ describe("applyResizeDelta", () => {
     expect(result.pos_x).toBe(600);
   });
 
+  // The regression the "keeps the opposite corner still" case above cannot catch,
+  // because it uses EVEN deltas. With an odd size change the corner lands on a half
+  // pixel, and if both roundings went the same way the error would be monotonic:
+  // grow-then-shrink would return the size but leave the object translated 1px,
+  // every cycle, unbounded (measured at 50px over 50 nudges before the fix).
+  it("returns to the exact starting geometry after an odd grow/shrink cycle", () => {
+    const square = { width: 100, height: 100 };
+    const start = { pos_x: 600, pos_y: 400 };
+
+    let state = applyResizeDelta(start, square, 0, BOTTOM_RIGHT, { x: 1, y: 1 }, 1);
+    expect(state).toEqual({ pos_x: 601, pos_y: 401, width: 101, height: 101 });
+
+    state = applyResizeDelta(state, { width: state.width, height: state.height }, 0, BOTTOM_RIGHT, { x: -1, y: -1 }, 1);
+    expect(state).toEqual({ pos_x: 600, pos_y: 400, width: 100, height: 100 });
+  });
+
+  it("does not drift over many odd grow/shrink cycles", () => {
+    const square = { width: 100, height: 100 };
+    let state = { pos_x: 600, pos_y: 400, width: 100, height: 100 };
+
+    for (let i = 0; i < 25; i += 1) {
+      const grown = applyResizeDelta(
+        state,
+        { width: state.width, height: state.height },
+        0,
+        BOTTOM_RIGHT,
+        { x: 1, y: 1 },
+        1,
+      );
+      state = applyResizeDelta(
+        grown,
+        { width: grown.width, height: grown.height },
+        0,
+        BOTTOM_RIGHT,
+        { x: -1, y: -1 },
+        1,
+      );
+    }
+
+    expect(state).toEqual({ pos_x: 600, pos_y: 400, ...square });
+  });
+
   it("returns integer sizes and coordinates", () => {
     const result = applyResizeDelta(centre, WALL, 33, BOTTOM_RIGHT, { x: 37, y: 11 }, 0.7);
     for (const value of [result.pos_x, result.pos_y, result.width, result.height]) {
@@ -314,5 +356,12 @@ describe("applyRotateDelta", () => {
 
   it("returns 0 inside the dead zone rather than snapping wildly", () => {
     expect(applyRotateDelta(centre, { x: 600, y: 400 }, 1)).toBe(0);
+  });
+
+  // Dragging the handle across the object's own middle must not throw the angle away:
+  // a pointerup there would otherwise commit rotation 0.
+  it("holds the supplied angle inside the dead zone", () => {
+    expect(applyRotateDelta(centre, { x: 600, y: 400 }, 1, 0, 137)).toBe(137);
+    expect(applyRotateDelta(centre, { x: 600, y: 400 }, 1, 0, -1)).toBe(359);
   });
 });

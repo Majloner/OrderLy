@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import {
   AlertDialog,
@@ -84,6 +84,17 @@ export default function RoomLayoutManager() {
   // position in the map only by id, and mixing the two would let a table's chain
   // block an object's for no reason.
   const objectPositionQueue = useRef(new Map<string, Promise<void>>());
+
+  // A mirror of the current layout, readable from inside a queued request. A queued
+  // write fires long after the closure that enqueued it was created, so the props it
+  // captured are stale by then; this ref is what "the freshest row" means below.
+  // Written in an effect, not during render — refs are not readable or writable during
+  // render in React 19 (react-hooks/refs). Lagging by one commit is harmless here: it
+  // is only ever read from an async request that runs well after the commit.
+  const layoutRef = useRef<RoomLayoutPayload | null>(null);
+  useEffect(() => {
+    layoutRef.current = layout;
+  }, [layout]);
 
   // Full-screen error only when there is nothing to show yet (initial load).
   // A failed refetch after a successful mutation surfaces as actionError below.
@@ -242,8 +253,6 @@ export default function RoomLayoutManager() {
   // collection to the payload is precisely what would have made a snapshot rollback
   // worse — it would now discard concurrent writes to tables as well.
   const persistObjectPosition = (object: RoomObject, next: { pos_x: number; pos_y: number }) => {
-    const before = { pos_x: object.pos_x, pos_y: object.pos_y };
-
     setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, next)));
     setActionError(null);
 
@@ -259,8 +268,15 @@ export default function RoomLayoutManager() {
             prev === null ? prev : patchObject(prev, object.id, { pos_x: saved.pos_x, pos_y: saved.pos_y }),
           );
         } catch (error) {
-          setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, before)));
           setActionError(error instanceof Error ? error.message : "Nie udało się zapisać pozycji elementu");
+          // Resync instead of restoring a remembered value. Any "before" a client can
+          // hold is itself optimistic once a second gesture is queued behind the first:
+          // if drag A (P0->P1) and drag B (P1->P2) both fail, A rolls back to P0 and B
+          // then rolls FORWARD to P1 — a position the server never accepted, under a
+          // banner saying the save failed. The server is the only thing that knows.
+          // If the refetch fails too we are offline; the banner already says so and the
+          // canvas keeps the optimistic value, which is no worse than a wrong rollback.
+          await refetch().catch(() => undefined);
         }
       });
 
@@ -276,14 +292,6 @@ export default function RoomLayoutManager() {
   // PATCH because size and rotation change too, and shares persistObjectPosition's
   // queue so a gesture and a drag of the SAME object cannot commit out of order.
   const persistObjectTransform = (object: RoomObject, next: RoomObjectTransform) => {
-    const before = {
-      pos_x: object.pos_x,
-      pos_y: object.pos_y,
-      width: object.width,
-      height: object.height,
-      rotation: object.rotation,
-    };
-
     setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, next)));
     setActionError(null);
 
@@ -292,10 +300,19 @@ export default function RoomLayoutManager() {
       .catch(() => undefined)
       .then(async () => {
         try {
+          // Built HERE, not at enqueue time, and from the mirror rather than the
+          // captured prop. A full PUT rewrites room_id, kind and label too, so a
+          // body frozen at gesture end would carry pre-rename values and silently
+          // revert a dialog save that landed while this request sat in the queue —
+          // the clobber this file warns about twenty lines below. Reading the
+          // freshest row shrinks that window to the request's own flight time.
+          // It does not close it: a write landing mid-flight still loses. Closing it
+          // needs a transform-only PATCH, the way position already has one.
+          const fresh = layoutRef.current?.objects.find((candidate) => candidate.id === object.id);
           const saved = await callRoomApi<RoomObject>(
             "PUT",
             `/api/room/objects/${object.id}`,
-            objectToInput(object, next),
+            objectToInput(fresh ?? object, next),
           );
           setLayout((prev) =>
             prev === null
@@ -309,8 +326,9 @@ export default function RoomLayoutManager() {
                 }),
           );
         } catch (error) {
-          setLayout((prev) => (prev === null ? prev : patchObject(prev, object.id, before)));
           setActionError(error instanceof Error ? error.message : "Nie udało się zapisać elementu");
+          // Resync rather than restore — see the note in persistObjectPosition.
+          await refetch().catch(() => undefined);
         }
       });
 

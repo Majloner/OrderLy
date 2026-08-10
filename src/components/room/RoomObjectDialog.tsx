@@ -12,8 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OBJECT_SIZE_BOUNDS, ROOM_OBJECT_DEFAULT_SIZES } from "@/lib/room-geometry";
-import { MAX_ROTATION_DEGREES, roomObjectInputSchema, type RoomObjectInput } from "@/lib/schemas/room";
+import { ROOM_OBJECT_DEFAULT_SIZES } from "@/lib/room-geometry";
+import { roomObjectInputSchema, type RoomObjectInput } from "@/lib/schemas/room";
 import { ROOM_OBJECT_KIND_LABELS, ROOM_OBJECT_KINDS, type Room, type RoomObject, type RoomObjectKind } from "@/types";
 
 interface RoomObjectDialogProps {
@@ -149,12 +149,14 @@ function RoomObjectForm({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="object-width">Szerokość</Label>
+          {/* inputMode rather than type="number" with min/max, matching TableDialog.
+              Native constraint validation would block submit with a browser bubble
+              before handleSubmit runs, making the Polish messages in schemas/room.ts
+              unreachable for exactly the values they were written for. zod stays the
+              single validation authority. */}
           <Input
             id="object-width"
-            type="number"
             inputMode="numeric"
-            min={OBJECT_SIZE_BOUNDS.minWidth}
-            max={OBJECT_SIZE_BOUNDS.maxWidth}
             value={width}
             onChange={(event) => {
               setWidth(event.target.value);
@@ -165,10 +167,7 @@ function RoomObjectForm({
           <Label htmlFor="object-height">Wysokość</Label>
           <Input
             id="object-height"
-            type="number"
             inputMode="numeric"
-            min={OBJECT_SIZE_BOUNDS.minHeight}
-            max={OBJECT_SIZE_BOUNDS.maxHeight}
             value={height}
             onChange={(event) => {
               setHeight(event.target.value);
@@ -182,10 +181,7 @@ function RoomObjectForm({
         <div className="flex gap-2">
           <Input
             id="object-rotation"
-            type="number"
             inputMode="numeric"
-            min={0}
-            max={MAX_ROTATION_DEGREES}
             value={rotation}
             onChange={(event) => {
               setRotation(event.target.value);

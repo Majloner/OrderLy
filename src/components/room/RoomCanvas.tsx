@@ -61,6 +61,15 @@ export function RoomCanvas({
     draggedIdRef.current = String(event.active.id);
   };
 
+  // Cleared on a macrotask, not synchronously: the browser fires `click` after the
+  // drag settles, and onActivate consults this ref to tell a real click apart from
+  // the tail of a finished drag (the 5px threshold separates them).
+  const releaseDraggedId = () => {
+    setTimeout(() => {
+      draggedIdRef.current = null;
+    }, 0);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, delta } = event;
 
@@ -86,16 +95,21 @@ export function RoomCanvas({
       }
     }
 
-    // Cleared on a macrotask, not synchronously: the browser fires `click` after
-    // dragEnd, and onActivate consults this ref to tell a real click apart from
-    // the tail of a finished drag (5px threshold separates them).
-    setTimeout(() => {
-      draggedIdRef.current = null;
-    }, 0);
+    releaseDraggedId();
   };
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      // dnd-kit routes Escape, pointercancel, window resize and visibilitychange to
+      // onDragCancel and NEVER falls through to onDragEnd. Without this the ref stays
+      // pinned to the cancelled id and every later click on that element is swallowed
+      // by the guards below — it can no longer be selected or opened. Window resize is
+      // the likeliest trigger, since this canvas is deliberately responsive.
+      onDragCancel={releaseDraggedId}
+    >
       <div
         ref={surfaceRef}
         className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5"

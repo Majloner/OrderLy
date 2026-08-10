@@ -79,11 +79,25 @@ values
 
 -- Furnishing objects. Same composite-FK requirement as tables: (company_id, room_id)
 -- must match an existing room of the SAME company, so rooms come first.
-insert into public.room_objects (company_id, room_id, kind, label, pos_x, pos_y, width, height, rotation)
-values
-  ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'wall',  'Obj-A1', 600, 10,  400, 20, 0),
-  ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'chair', 'Obj-A2', 200, 300, 40,  40, 90),
-  ('b2222222-2222-2222-2222-222222222222', 'f0b22222-2222-2222-2222-222222222222', 'bar',   'Obj-B1', 400, 400, 240, 60, 0);
+--
+-- Gated on the table existing, for the reason this file cares about elsewhere: an
+-- unconditional insert aborts the transaction with 42P01 on any database that has not
+-- had 20260804120000 pushed, BEFORE a single assertion runs — hiding all twenty-odd of
+-- them behind an unrelated red. feat/room-objects is not merged yet, so a fresh clone of
+-- main is exactly that database. Drop this gate once the migration reaches main.
+do $$
+begin
+  if to_regclass('public.room_objects') is null then
+    raise notice 'SKIP room_objects fixtures: migration 20260804120000 not applied yet';
+    return;
+  end if;
+
+  insert into public.room_objects (company_id, room_id, kind, label, pos_x, pos_y, width, height, rotation)
+  values
+    ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'wall',  'Obj-A1', 600, 10,  400, 20, 0),
+    ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111', 'chair', 'Obj-A2', 200, 300, 40,  40, 90),
+    ('b2222222-2222-2222-2222-222222222222', 'f0b22222-2222-2222-2222-222222222222', 'bar',   'Obj-B1', 400, 400, 240, 60, 0);
+end $$;
 
 insert into public.menu_categories (id, company_id, name, sort_order)
 values
@@ -210,8 +224,15 @@ begin
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into rm from public.rooms             -- no anon policy at all (0)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
-  select count(*) into ro from public.room_objects      -- no anon policy at all (0)
-    where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
+  -- Same gate as the fixture: an absent table means the migration is not applied here,
+  -- and a hard 42P01 would take the other twelve anon checks down with it. PL/pgSQL
+  -- plans a statement on first execution, so the untaken branch is never planned.
+  if to_regclass('public.room_objects') is null then
+    ro := 0;
+  else
+    select count(*) into ro from public.room_objects   -- no anon policy at all (0)
+      where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
+  end if;
   select count(*) into mi from public.menu_items        -- available+sold_out, non-archived (3)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into mc from public.menu_categories   -- categories are public (2)
@@ -663,26 +684,12 @@ end $$;
 -- left Firma B unable to delete a room holding tables it could not even see.
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
--- Gated on the constraint's existence: migration 20260728120000 cannot be pushed
--- until the S-02 branch merges (the shared hosted DB holds S-02 migrations absent
--- from this branch, so `supabase db push` refuses). Without the gate this
--- assertion would fail the whole suite until then, training everyone to ignore a
--- red test:rls and hiding the other twelve assertions. It starts enforcing by
--- itself the moment the migration lands — no further edit needed.
+-- This used to be gated on the constraint existing, because 20260728120000 could not
+-- be pushed until S-02 merged. It has since merged and the constraint is on main, so
+-- the gate always passed and only read as "this assertion is optional". Removed.
 do $$
-declare state text; has_fk boolean;
+declare state text;
 begin
-  select exists (
-    select 1 from pg_constraint
-    where conrelid = 'public.tables'::regclass
-      and conname = 'tables_company_id_room_id_fkey'
-  ) into has_fk;
-
-  if not has_fk then
-    raise notice 'SKIP cross-tenant room_id: migration 20260728120000 not applied yet (impl-review F1)';
-    return;
-  end if;
-
   begin
     insert into public.tables (company_id, room_id, number)
       values ('a1111111-1111-1111-1111-111111111111', 'f0b22222-2222-2222-2222-222222222222', 77);
@@ -810,6 +817,11 @@ set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","r
 do $$
 declare n int; new_object_id uuid;
 begin
+  if to_regclass('public.room_objects') is null then
+    raise notice 'SKIP owner object writes: migration 20260804120000 not applied yet';
+    return;
+  end if;
+
   insert into public.room_objects (company_id, room_id, kind, label, pos_x, pos_y, width, height, rotation)
     values ('a1111111-1111-1111-1111-111111111111', 'f0a11111-1111-1111-1111-111111111111',
             'door', 'Obj-A-New', 500, 400, 80, 20, 45)
@@ -837,6 +849,11 @@ do $$
 -- as assertion 10).
 declare ob int; n int; leaked boolean := false;
 begin
+  if to_regclass('public.room_objects') is null then
+    raise notice 'SKIP waiter object denial: migration 20260804120000 not applied yet';
+    return;
+  end if;
+
   select count(*) into ob from public.room_objects where label in ('Obj-A1', 'Obj-A2');
   if ob <> 2 then raise exception 'FAIL waiter read objects: saw %, expected 2', ob; end if;
 
@@ -867,6 +884,11 @@ set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","r
 do $$
 declare ob_b int; n int; state text; leaked boolean := false; spare_room_id uuid; left_over int;
 begin
+  if to_regclass('public.room_objects') is null then
+    raise notice 'SKIP object isolation: migration 20260804120000 not applied yet';
+    return;
+  end if;
+
   select count(*) into ob_b from public.room_objects
     where company_id = 'b2222222-2222-2222-2222-222222222222';
   if ob_b <> 0 then raise exception 'FAIL A cross-tenant objects: owner A sees % objects of Firma B', ob_b; end if;

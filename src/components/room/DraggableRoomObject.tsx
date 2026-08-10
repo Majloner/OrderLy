@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { applyResizeDelta, applyRotateDelta, type ResizeHandle } from "@/lib/room-geometry";
@@ -51,7 +51,19 @@ export function DraggableRoomObject({
   // Live preview while a handle gesture is in flight. The row itself is only
   // written on pointerup, so a gesture costs exactly one request.
   const [draft, setDraft] = useState<RoomObjectTransform | null>(null);
-  const gestureRef = useRef<{ startX: number; startY: number } | null>(null);
+  // pointerId is part of the gesture, not decoration: on a touch screen a second
+  // finger produces its own pointermove stream over the same handle, and without
+  // this the two would fight over one startX/startY.
+  const gestureRef = useRef<{ pointerId: number; startX: number; startY: number } | null>(null);
+
+  // A draft SHADOWS the prop (see `shown` below), so one left behind survives even a
+  // refetch and pins the object at a size nobody saved. Drop it if this unmounts
+  // mid-gesture — a room switch or a concurrent delete can do that.
+  useEffect(() => {
+    return () => {
+      gestureRef.current = null;
+    };
+  }, []);
 
   const shown: RoomObjectTransform = draft ?? object;
   const Icon = ROOM_OBJECT_ICONS[object.kind];
@@ -75,11 +87,19 @@ export function DraggableRoomObject({
     event.stopPropagation();
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    gestureRef.current = { startX: event.clientX, startY: event.clientY };
+    gestureRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
   };
 
+  // Also wired to onLostPointerCapture. The browser releases capture silently when a
+  // capturing element leaves the document, WITHOUT firing pointerup — so without this
+  // an interrupted gesture would leave gestureRef armed, and since onPointerMove fires
+  // on plain hover, merely passing the mouse over a handle would then resize the object
+  // against a dead origin.
   const endGesture = (event: React.PointerEvent<HTMLButtonElement>) => {
     event.stopPropagation();
+    if (gestureRef.current && gestureRef.current.pointerId !== event.pointerId) {
+      return;
+    }
     gestureRef.current = null;
     if (draft) {
       onTransform(draft);
@@ -87,8 +107,18 @@ export function DraggableRoomObject({
     }
   };
 
-  const handleResizeMove = (event: React.PointerEvent<HTMLButtonElement>, handle: ResizeHandle) => {
+  // Shared entry check for both move handlers: a gesture must be armed, and the event
+  // must belong to the pointer that armed it.
+  const gestureStart = (event: React.PointerEvent<HTMLButtonElement>) => {
     const start = gestureRef.current;
+    if (start?.pointerId !== event.pointerId) {
+      return null;
+    }
+    return start;
+  };
+
+  const handleResizeMove = (event: React.PointerEvent<HTMLButtonElement>, handle: ResizeHandle) => {
+    const start = gestureStart(event);
     if (!start) {
       return;
     }
@@ -105,7 +135,7 @@ export function DraggableRoomObject({
   };
 
   const handleRotateMove = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (!gestureRef.current) {
+    if (!gestureStart(event)) {
       return;
     }
     event.stopPropagation();
@@ -124,6 +154,9 @@ export function DraggableRoomObject({
       { x: offsetX, y: offsetY },
       1,
       event.shiftKey ? SNAP_DEGREES : 0,
+      // Hold the angle we are already showing when the pointer crosses the centre,
+      // instead of collapsing to upright and committing that.
+      shown.rotation,
     );
     setDraft({ pos_x: object.pos_x, pos_y: object.pos_y, width: object.width, height: object.height, rotation });
   };
@@ -189,12 +222,19 @@ export function DraggableRoomObject({
         <Icon style={{ width: iconSize, height: iconSize }} aria-hidden="true" />
       </div>
 
-      {selected && !isDragging && (
-        <>
+      {/* HIDDEN during a body drag rather than unmounted. Unmounting a capturing
+          element releases its pointer capture without firing pointerup, which is how a
+          two-finger touch (one on a handle, one dragging the body) used to strand a
+          gesture. Kept in the tree, the handle still receives its own pointerup. */}
+      {selected && (
+        <div className={cn("contents", isDragging && "invisible")} aria-hidden={isDragging}>
           {CORNERS.map(({ handle, label: cornerLabel, className }) => (
             <button
               key={cornerLabel}
               type="button"
+              // Not a keyboard target: these do nothing without a pointer, and the
+              // dialog is the documented keyboard path for size and rotation.
+              tabIndex={-1}
               aria-label={`Zmień rozmiar: ${cornerLabel} narożnik`}
               className={cn(
                 "absolute size-3 touch-none rounded-sm border border-white/80 bg-white/90",
@@ -209,18 +249,21 @@ export function DraggableRoomObject({
               }}
               onPointerUp={endGesture}
               onPointerCancel={endGesture}
+              onLostPointerCapture={endGesture}
             />
           ))}
           <button
             type="button"
+            tabIndex={-1}
             aria-label="Obróć element"
             className="absolute top-0 left-1/2 size-3 translate-x-[-50%] translate-y-[-200%] touch-none rounded-full border border-white/80 bg-sky-300/90"
             onPointerDown={beginGesture}
             onPointerMove={handleRotateMove}
             onPointerUp={endGesture}
             onPointerCancel={endGesture}
+            onLostPointerCapture={endGesture}
           />
-        </>
+        </div>
       )}
     </div>
   );

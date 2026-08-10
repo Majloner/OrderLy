@@ -1,7 +1,7 @@
 ---
 change_id: room-objects
 title: Room furnishing objects in the layout editor
-status: implementing
+status: impl_reviewed
 created: 2026-07-28
 updated: 2026-08-04
 archived_at: null
