@@ -43,17 +43,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
-      - name: Start local Supabase
-        run: supabase start
+      # Use the CLI version pinned in package-lock (via npx), NOT
+      # supabase/setup-cli@latest: a newer local stack changes the API-key system
+      # and PostgREST role grants, which breaks service-role seeding
+      # ("permission denied for table profiles"). CI must reproduce the version
+      # the suite was validated against locally.
+      - name: Start local Supabase (pinned CLI)
+        run: npx supabase start
       - name: Write .env.test from local Supabase (JWT keys)
         # The integration harness seeds via GoTrue admin, which requires the
         # JWT-format service_role key — ANON_KEY/SERVICE_ROLE_KEY here, never the
         # sb_publishable_/sb_secret_ keys. Values are quoted in `-o env` output.
         run: |
-          env_line() { supabase status -o env | grep "^$1=" | cut -d= -f2- | tr -d '"'; }
+          env_line() { npx supabase status -o env | grep "^$1=" | cut -d= -f2- | tr -d '"'; }
           {
             echo "SUPABASE_URL=$(env_line API_URL)"
             echo "SUPABASE_KEY=$(env_line ANON_KEY)"
