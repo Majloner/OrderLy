@@ -231,13 +231,13 @@ Record what Phase 2 added so the next contributor can extend it.
 ### Phase 2: Risk #4 — IDOR
 
 #### Automated
-- [x] 2.1 `npm run test:integration` passes photo-IDOR + cross-entity-pointer + object cross-tenant suites — 2973192
-- [x] 2.2 `npm run test:rls:local` exit 0 and prints the `KNOWN GAP (#4)` notice — 2973192
-- [x] 2.3 Lint + typecheck pass — 2973192
+- [x] 2.1 `npm run test:integration` passes photo-IDOR + cross-entity-pointer + object cross-tenant suites — 8608992
+- [x] 2.2 `npm run test:rls:local` exit 0 and prints the `KNOWN GAP (#4)` notice — 8608992
+- [x] 2.3 Lint + typecheck pass — 8608992
 
 #### Manual
-- [x] 2.4 Photo tests assert mock NOT called on 403/404 and called with server-built path on happy path — 2973192
-- [x] 2.5 Flipping one cross-entity assertion to expect success fails loudly — 2973192
+- [x] 2.4 Photo tests assert mock NOT called on 403/404 and called with server-built path on happy path — 8608992
+- [x] 2.5 Flipping one cross-entity assertion to expect success fails loudly — 8608992
 
 ### Phase 3: Risk #5 — input-validation parity
 
