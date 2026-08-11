@@ -220,24 +220,24 @@ Record what Phase 2 added so the next contributor can extend it.
 ### Phase 1: Fixture + harness extension
 
 #### Automated
-- [x] 1.1 Type checking passes: `npm run typecheck`
-- [x] 1.2 Linting passes: `npm run lint`
-- [x] 1.3 Unit tests still pass, DB-free: `npm run test`
-- [x] 1.4 `objectId` populated for both companies (integration smoke): `npm run test:integration`
+- [x] 1.1 Type checking passes: `npm run typecheck` — a54d1c5
+- [x] 1.2 Linting passes: `npm run lint` — a54d1c5
+- [x] 1.3 Unit tests still pass, DB-free: `npm run test` — a54d1c5
+- [x] 1.4 `objectId` populated for both companies (integration smoke): `npm run test:integration` — a54d1c5
 
 #### Manual
-- [x] 1.5 Two consecutive integration runs leave no `room_objects` residue
+- [x] 1.5 Two consecutive integration runs leave no `room_objects` residue — a54d1c5
 
 ### Phase 2: Risk #4 — IDOR
 
 #### Automated
-- [ ] 2.1 `npm run test:integration` passes photo-IDOR + cross-entity-pointer + object cross-tenant suites
-- [ ] 2.2 `npm run test:rls:local` exit 0 and prints the `KNOWN GAP (#4)` notice
-- [ ] 2.3 Lint + typecheck pass
+- [x] 2.1 `npm run test:integration` passes photo-IDOR + cross-entity-pointer + object cross-tenant suites — 2973192
+- [x] 2.2 `npm run test:rls:local` exit 0 and prints the `KNOWN GAP (#4)` notice — 2973192
+- [x] 2.3 Lint + typecheck pass — 2973192
 
 #### Manual
-- [ ] 2.4 Photo tests assert mock NOT called on 403/404 and called with server-built path on happy path
-- [ ] 2.5 Flipping one cross-entity assertion to expect success fails loudly
+- [x] 2.4 Photo tests assert mock NOT called on 403/404 and called with server-built path on happy path — 2973192
+- [x] 2.5 Flipping one cross-entity assertion to expect success fails loudly — 2973192
 
 ### Phase 3: Risk #5 — input-validation parity
 

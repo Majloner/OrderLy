@@ -275,6 +275,41 @@ begin
 end $$;
 reset role;
 
+-- --- KNOWN GAP (Risk #4): menu_items.category_id is not company-scoped at the DB
+-- category_id is an id-only FK (20260708124756_menu_categories_items.sql:78) with
+-- no (company_id, id) composite on menu_categories, and the write policies pin only
+-- menu_items.company_id. FK validation runs BELOW RLS, so an authenticated owner can
+-- stamp their own item with ANOTHER company's category by raw insert. The route layer
+-- blocks it (categoryExistsInCompany, src/lib/api.ts) — proven in
+-- tests/integration/isolation/cross-entity-pointer.test.ts — but the DB does not.
+--
+-- tables.room_id had exactly this shape and was closed with a composite FK in
+-- 20260728120000_room_tables_composite_fk.sql; room_objects shipped composite from
+-- day one. When menu_categories gets `unique (company_id, id)` + a composite FK,
+-- flip the notice below to a `raise exception` and this becomes a hard assertion.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
+do $$
+declare leaked_id uuid;
+begin
+  begin
+    insert into public.menu_items (company_id, name, price, availability, category_id)
+    values ('a1111111-1111-1111-1111-111111111111', 'GAP-probe', 9.99, 'available',
+            'cb222222-2222-2222-2222-222222222222')   -- company B's category
+    returning id into leaked_id;
+  exception when others then
+    leaked_id := null;
+  end;
+
+  if leaked_id is not null then
+    raise notice 'KNOWN GAP (Risk #4) menu_items.category_id: owner A stamped an item with company B''s category (no composite FK) — app-layer check is the only defence';
+    delete from public.menu_items where id = leaked_id;
+  else
+    raise notice 'Risk #4 category_id CLOSED: the DB now rejects a foreign category_id — convert this notice to an assertion';
+  end if;
+end $$;
+reset role;
+
 -- --- Assertion 6: orphan authenticated user (no profile) sees nothing -------
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"cccccccc-cccc-cccc-cccc-cccccccccccc","role":"authenticated"}';
