@@ -1,7 +1,7 @@
 ---
 change_id: phase2-ownership-input
 title: Ownership + input boundaries (test-plan Phase 2 — Risks #4/#5/#6)
-status: preparing
+status: implementing
 created: 2026-08-11
 updated: 2026-08-11
 archived_at: null
