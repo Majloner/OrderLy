@@ -242,11 +242,11 @@ Record what Phase 2 added so the next contributor can extend it.
 ### Phase 3: Risk #5 — input-validation parity
 
 #### Automated
-- [x] 3.1 `npm run test:integration` passes parity + clamp/partial guardrail suites
-- [x] 3.2 Lint + typecheck pass
+- [x] 3.1 `npm run test:integration` passes parity + clamp/partial guardrail suites — aecedda
+- [x] 3.2 Lint + typecheck pass — aecedda
 
 #### Manual
-- [x] 3.3 Registry covers every JSON-body mutating route (spot-check vs route-matrix.ts)
+- [x] 3.3 Registry covers every JSON-body mutating route (spot-check vs route-matrix.ts) — aecedda
 
 ### Phase 4: Risk #6 — staff self-privilege invariant
 
