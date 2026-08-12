@@ -260,7 +260,7 @@ Record what Phase 2 added so the next contributor can extend it.
 ### Phase 5: Cookbook §6 + phase note
 
 #### Automated
-- [ ] 5.1 `test-plan.md` references the new suites + mock pattern; no stale Phase-2 `TBD`
+- [x] 5.1 `test-plan.md` references the new suites + mock pattern; no stale Phase-2 `TBD`
 
 #### Manual
-- [ ] 5.2 A contributor can add a photo/object test by following §6
+- [x] 5.2 A contributor can add a photo/object test by following §6
