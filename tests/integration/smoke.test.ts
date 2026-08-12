@@ -31,6 +31,25 @@ describe("integration harness smoke", () => {
     }
   });
 
+  it("seeds one reference row per entity, including a room_object, for both companies", async () => {
+    for (const company of [seed.companyA, seed.companyB]) {
+      const { categoryId, itemId, roomId, tableId, objectId } = company.resources;
+      for (const id of [categoryId, itemId, roomId, tableId, objectId]) {
+        expect(id).toBeTruthy();
+      }
+    }
+    expect(seed.companyA.resources.objectId).not.toBe(seed.companyB.resources.objectId);
+
+    // The seeded object really belongs to its company (composite FK on room).
+    const { data, error } = await serviceRoleClient()
+      .from("room_objects")
+      .select("company_id")
+      .eq("id", seed.companyB.resources.objectId)
+      .single<{ company_id: string }>();
+    expect(error).toBeNull();
+    expect(data?.company_id).toBe(seed.companyB.company_id);
+  });
+
   it("scopes an owner-A read to company A (RLS engaged)", async () => {
     const { data, error } = await seed.companyA.owner.client
       .from("menu_categories")

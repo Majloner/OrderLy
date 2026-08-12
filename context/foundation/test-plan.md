@@ -151,7 +151,8 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 - **Location**: `tests/integration/**` (poza glob unitów `src/**/*.test.ts`, więc `npm run test` zostaje bez bazy).
 - **Naming**: `<obszar>/<co>.test.ts` (np. `authz/write-routes.test.ts`, `isolation/cross-tenant-read.test.ts`).
 - **Reference test**: `tests/integration/authz/write-routes.test.ts`.
-- **Fixtures**: `seedTwoCompanies()` z `tests/integration/helpers/fixtures.ts` daje 2 firmy × owner/waiter/kitchen + anon + `resources` (kategoria/pozycja/sala/stolik). Sprzątaj w `afterAll` przez `seed.cleanup()`.
+- **Fixtures**: `seedTwoCompanies()` z `tests/integration/helpers/fixtures.ts` daje 2 firmy × owner/waiter/kitchen + anon + `resources` (kategoria/pozycja/sala/stolik/obiekt). Sprzątaj w `afterAll` przez `seed.cleanup()`.
+- **Mockowanie**: tylko krawędź zewnętrzna. Wzorzec dla Storage: `vi.mock("@/lib/storage")` ze szpiegami na `mintPhotoUploadUrls`/`removePhotoObjects` (referencja: `tests/integration/isolation/photo-idor.test.ts`). Nigdy nie mockuj guardów ani modułów wewnętrznych — to one są przedmiotem testu.
 - **Run locally**: `npm run test:integration` (wymaga `npx supabase start` + skopiowanego `.env.test`).
 
 ### 6.3 Adding an e2e test
@@ -162,6 +163,9 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 
 - **Autoryzacja (Ryzyko #3)**: dodaj wiersz do `WRITE_ROUTES` (lub `READ_ROUTES`) w `tests/integration/authz/route-matrix.ts`. Parametryczna macierz automatycznie sprawdza anon→401, kelner/kuchnia→403, owner dopuszczony. `registry-completeness.test.ts` wymusza obecność wiersza (nowa trasa bez wpisu = czerwone).
 - **Izolacja (Ryzyko #1)**: jeśli endpoint dotyka nowej encji, dodaj test w `tests/integration/isolation/` — odczyt: zbiór odpowiedzi nie zawiera id firmy B; zapis: firma A celuje w zasób B → 404 **plus weryfikacja w DB** klientem `service-role`, że wiersz B się nie zmienił.
+- **Własność / IDOR (Ryzyko #4)**: jeśli endpoint przyjmuje id zasobu od klienta (wskaźnik `category_id`/`room_id`, `[id]` zdjęcia), dodaj przypadek „firma A celuje w zasób firmy B" → oczekiwane 400 (wskaźnik) lub 404 (własny `[id]` innego tenanta), plus dowód braku efektu w DB. Referencje: `isolation/cross-entity-pointer.test.ts`, `isolation/photo-idor.test.ts`. Ścieżkę do Storage **buduje serwer** z `company_id` — asertuj argument mocka, nie sam status.
+- **Walidacja (Ryzyko #5)**: dodaj wiersz do rejestru w `tests/integration/validation/input-parity.test.ts` — jeden reprezentatywny zły input → 400. Pola per-constraint pokrywają unity schem (`src/lib/schemas/*.test.ts`), więc ich nie powielaj. `badBody` jest funkcją seeda, bo `parseBody` zwraca **tylko pierwszy** błąd zod — pozostałe pola muszą być poprawne, inaczej 400 przyjdzie z innego constraintu. W `params` używaj **realnych, posiadanych id**, bo zły uuid daje 400 ze sprawdzenia ścieżki i test przechodzi z niewłaściwego powodu.
+- **Uwaga: klamp ≠ odrzucenie.** Pozycja/transform stolika i obiektu **klampują** współrzędne w kanwie (→200), a odrzucają dopiero poza `[0,1200]×[0,800]`. Schematy nie są `.strict()`, więc nieznane klucze są ucinane (→200), nie odrzucane. Te celowe nie-400 pilnuje `validation/clamp-and-partial.test.ts`.
 - **Jak wywoływać**: `buildContext(principal, { method, params, body })` (`tests/integration/helpers/context.ts`) buduje syntetyczny `APIContext` — ćwiczy prawdziwy guard + RLS bez serwera HTTP (middleware NIE jest na ścieżce `/api/*`). Mockuj tylko krawędź service-role/Storage, nigdy modułów wewnętrznych.
 
 ### 6.5 Adding an RLS isolation assertion
@@ -170,6 +174,7 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 - **Jak**: symuluj tożsamość przez `set local role authenticated` + `set local request.jwt.claims = '{"sub":"…","role":"authenticated"}'`, potem `reset role`. Dla ścieżki publicznej: `set local role anon`. Asertuj przez `raise exception` (porażka aborcuje transakcję → `supabase db query` kończy się kodem ≠ 0). Skaluj liczby do UUID-ów fixture’ów, nie do wartości absolutnych (baza może mieć realne wiersze).
 - **Run**: `npm run test:rls:local` (lokalne Supabase) lub `npm run test:rls` (hostowane `--linked`).
 - **Uwaga (Ryzyko #2)**: sekcja `KNOWN GAP (Risk #2)` używa `raise notice`, nie `raise exception` — polityki anon są świadomie nieszczelne do S-07/S-08. Zamknięcie luki = flip `notice`→`exception`.
+- **Uwaga (Ryzyko #4)**: analogiczna sekcja `KNOWN GAP (#4)` dokumentuje, że `menu_items.category_id` nie ma złożonego FK `(company_id, id)` — surowy insert autoryzowany z obcą kategorią dziś przechodzi, a jedyną obroną jest `categoryExistsInCompany` na trasie. Też `notice`; flip na `exception`, gdy dojdzie composite FK.
 
 ### 6.6 Per-rollout-phase notes
 
@@ -185,6 +190,16 @@ co faza nauczyła — np. gdzie mieszkają fixture’y firm/ról.)
 - **`astro:env/server` stub** (`tests/integration/stubs/`, alias w `vitest.integration.config.ts`)
   pozwala importować route’y, które sięgają po sekrety (np. `staff` przez `staff-admin.ts`) pod Vitest.
 - **Znane luki** z fazy izolacji: `context/changes/testing-tenant-isolation-integration/KNOWN-GAPS.md`.
+
+**Faza 2 rolloutu (#4/#5/#6 — własność i wejście).** Testy tras w `tests/integration/{isolation,validation}/`.
+- **Mock tylko krawędzi Storage** (`vi.mock("@/lib/storage")`). Nie osłabia dowodu IDOR, bo bramka
+  własności działa **przed** wywołaniem service-role — dlatego asercje brzmią „mock NIE wołany na
+  403/404" i „wołany raz ze ścieżką `{companyId}/{itemId}`". Prefiks RLS jest już dowiedziony w SQL.
+- **Status zależy od warstwy, która łapie.** To samo „zrób mnie właścicielem" daje 400 (enum schematu),
+  403 (self-guard trasy) albo 42501 (surowy SQL). Asertuj faktyczny status danego przypadku, nie ogólne
+  „odmowa" — i zawsze dokładaj dowód efektu w DB.
+- **Trigger `42501→403` jest nieosiągalny przez trasę** (schemat i self-guard łapią wcześniej) — zostaje
+  dowiedziony w SQL, nie forsujemy go na warstwie HTTP.
 
 ## 7. What We Deliberately Don't Test
 

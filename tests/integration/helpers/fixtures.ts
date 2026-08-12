@@ -31,12 +31,13 @@ export interface Principal {
 
 // One representative row per domain entity, so the isolation suite has concrete
 // company-B ids to try (and fail) to reach from company A. categoryId/roomId are
-// trigger-seeded defaults; itemId/tableId are inserted here.
+// trigger-seeded defaults; itemId/tableId/objectId are inserted here.
 export interface CompanyResources {
   categoryId: string;
   itemId: string;
   roomId: string;
   tableId: string;
+  objectId: string;
 }
 
 export interface CompanyFixture {
@@ -189,7 +190,25 @@ async function seedResources(service: TestClient, companyId: string): Promise<Co
     throw new Error(`seedResources: table insert failed: ${tableError.message}`);
   }
 
-  return { categoryId: category.id, itemId: item.id, roomId: room.id, tableId: table.id };
+  // room_objects (#27) requires kind/width/height; pos_x/pos_y/rotation default to 0.
+  // The composite (company_id, room_id) FK means the room must be this company's.
+  const objectRow = { company_id: companyId, room_id: room.id, kind: "chair", width: 40, height: 40 };
+  const { data: object, error: objectError } = await service
+    .from("room_objects")
+    .insert(objectRow as never)
+    .select("id")
+    .single<{ id: string }>();
+  if (objectError) {
+    throw new Error(`seedResources: room_object insert failed: ${objectError.message}`);
+  }
+
+  return {
+    categoryId: category.id,
+    itemId: item.id,
+    roomId: room.id,
+    tableId: table.id,
+    objectId: object.id,
+  };
 }
 
 export async function seedTwoCompanies(): Promise<SeedResult> {
@@ -257,7 +276,9 @@ export async function seedTwoCompanies(): Promise<SeedResult> {
     // Explicit child → parent order so it works regardless of ON DELETE rules.
     // service-role bypasses RLS, so it can delete tables that have no DELETE
     // policy for authenticated roles (e.g. public.tables, QR-permanence).
-    for (const table of ["menu_items", "menu_categories", "tables", "rooms", "profiles"] as const) {
+    // room_objects before rooms: the composite FK cascades on room delete, but an
+    // explicit delete keeps cleanup deterministic and independent of cascade rules.
+    for (const table of ["menu_items", "menu_categories", "room_objects", "tables", "rooms", "profiles"] as const) {
       await service.from(table).delete().in("company_id", createdCompanyIds);
     }
     await service.from("companies").delete().in("id", createdCompanyIds);
