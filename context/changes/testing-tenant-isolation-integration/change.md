@@ -1,7 +1,7 @@
 ---
 change_id: testing-tenant-isolation-integration
 title: Integration harness + tenant isolation (test-plan Phase 1)
-status: implementing
+status: implemented
 created: 2026-08-04
 updated: 2026-08-05
 archived_at: null

@@ -367,8 +367,8 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Manual
 
-- [ ] 1.5 Fresh clone runs `npm run test:integration` green after `.env.test.example` → `.env.test` (Docker + `supabase start`)
-- [ ] 1.6 `resetDb()` leaves no cross-suite residue (two consecutive runs identical)
+- [x] 1.5 Fresh clone runs `npm run test:integration` green after `.env.test.example` → `.env.test` (Docker + `supabase start`)
+- [x] 1.6 `resetDb()` leaves no cross-suite residue (two consecutive runs identical)
 
 ### Phase 2: Risk #3 — Request-layer Authorization Matrix
 
@@ -380,7 +380,7 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Manual
 
-- [ ] 2.4 Removing a guard call turns that route's matrix rows red (real exercise, not mocked)
+- [x] 2.4 Removing a guard call turns that route's matrix rows red (real exercise, not mocked)
 
 ### Phase 3: Risk #1 — Cross-tenant Isolation (verify effect in DB)
 
@@ -392,8 +392,8 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Manual
 
-- [ ] 3.4 DB-gap note exists, points at the exact migration line + proposed follow-up
-- [ ] 3.5 Flipping one cross-tenant write assertion to expect success fails loudly
+- [x] 3.4 DB-gap note exists, points at the exact migration line + proposed follow-up
+- [x] 3.5 Flipping one cross-tenant write assertion to expect success fails loudly
 
 ### Phase 4: Risk #2 — Anon RLS Scoping (SQL layer)
 
@@ -404,8 +404,8 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Manual
 
-- [ ] 4.3 Known-gap block is labeled so S-07/S-08 flips a single `notice` → `exception`
-- [ ] 4.4 All four unscoped policies represented in the block
+- [x] 4.3 Known-gap block is labeled so S-07/S-08 flips a single `notice` → `exception`
+- [x] 4.4 All four unscoped policies represented in the block
 
 ### Phase 5: Cookbook (§6) + Run Scripts
 
@@ -416,4 +416,4 @@ Fill the test-plan cookbook so "how do I add a test for X here?" is answerable, 
 
 #### Manual
 
-- [ ] 5.3 A contributor can add a passing endpoint test by following §6.4 alone
+- [x] 5.3 A contributor can add a passing endpoint test by following §6.4 alone
