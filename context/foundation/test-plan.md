@@ -79,9 +79,9 @@ orkiestrator aktualizuje Status w miarę pojawiania się artefaktów na dysku.
 
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|------------|-----------------|---------------|------------|--------|---------------|
-| 1 | Integration harness + tenant isolation | Postawić warstwę integration (lokalne Supabase, route API jako 2 firmy × role) i przejść cały łańcuch middleware → guard → RLS → odpowiedź | #1, #2, #3 | integration, SQL RLS | change opened | context/changes/testing-tenant-isolation-integration/ |
-| 2 | Ownership + input boundaries | Obronić IDOR na zasobach, parytet walidacji serwera i niezmiennik uprawnień personelu | #4, #5, #6 | integration, unit/contract | not started | — |
-| 3 | Quality gates wiring | Zabetonować podłogę: lint + typecheck + unit+integration w CI; lokalny post-edit hook | cross-cutting | gates, hook | not started | — |
+| 1 | Integration harness + tenant isolation | Postawić warstwę integration (lokalne Supabase, route API jako 2 firmy × role) i przejść cały łańcuch middleware → guard → RLS → odpowiedź | #1, #2, #3 | integration, SQL RLS | complete | context/changes/testing-tenant-isolation-integration/ |
+| 2 | Ownership + input boundaries | Obronić IDOR na zasobach, parytet walidacji serwera i niezmiennik uprawnień personelu | #4, #5, #6 | integration, unit/contract | complete | context/changes/phase2-ownership-input/ |
+| 3 | Quality gates wiring | Zabetonować podłogę: lint + typecheck + unit+integration w CI; lokalny post-edit hook | cross-cutting | gates, hook | complete | context/changes/quality-gates-ci/ |
 | 4 | AI-native selective visual | Multimodalny przegląd wizualny 1–3 krytycznych ekranów właściciela po redesignie „Karta/bistro" | cross-cutting | multimodal visual review | not started | — |
 
 **Status vocabulary** (fixed — parser literals):
