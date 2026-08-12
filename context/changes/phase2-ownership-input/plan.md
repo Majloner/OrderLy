@@ -251,11 +251,11 @@ Record what Phase 2 added so the next contributor can extend it.
 ### Phase 4: Risk #6 — staff self-privilege invariant
 
 #### Automated
-- [x] 4.1 `npm run test:integration` passes the staff-invariant suite
-- [x] 4.2 Lint + typecheck pass
+- [x] 4.1 `npm run test:integration` passes the staff-invariant suite — d5b9a11
+- [x] 4.2 Lint + typecheck pass — d5b9a11
 
 #### Manual
-- [x] 4.3 Each case asserts the DB effect (role/deactivated_at unchanged), not just status
+- [x] 4.3 Each case asserts the DB effect (role/deactivated_at unchanged), not just status — d5b9a11
 
 ### Phase 5: Cookbook §6 + phase note
 
