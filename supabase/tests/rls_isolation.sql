@@ -275,38 +275,54 @@ begin
 end $$;
 reset role;
 
--- --- KNOWN GAP (Risk #4): menu_items.category_id is not company-scoped at the DB
--- category_id is an id-only FK (20260708124756_menu_categories_items.sql:78) with
--- no (company_id, id) composite on menu_categories, and the write policies pin only
--- menu_items.company_id. FK validation runs BELOW RLS, so an authenticated owner can
--- stamp their own item with ANOTHER company's category by raw insert. The route layer
--- blocks it (categoryExistsInCompany, src/lib/api.ts) — proven in
--- tests/integration/isolation/cross-entity-pointer.test.ts — but the DB does not.
+-- --- Assertion 5b: menu_items.category_id is company-scoped at the DB ----------
+-- Was a KNOWN GAP until 20260812220000_menu_item_category_composite_fk.sql: category_id
+-- used to be an id-only FK, and since FK validation runs BELOW RLS an authenticated
+-- owner could stamp their own item with ANOTHER company's category by raw insert. The
+-- route layer blocked it (categoryExistsInCompany, src/lib/api.ts) but the schema did
+-- not, so any write path that forgot that call reopened the hole.
 --
--- tables.room_id had exactly this shape and was closed with a composite FK in
--- 20260728120000_room_tables_composite_fk.sql; room_objects shipped composite from
--- day one. When menu_categories gets `unique (company_id, id)` + a composite FK,
--- flip the notice below to a `raise exception` and this becomes a hard assertion.
+-- The composite FK (company_id, category_id) -> menu_categories (company_id, id) makes
+-- it an invariant, matching tables.room_id (20260728120000) and room_objects.
+--
+-- Three properties are asserted, not one: the cross-tenant reference is refused, a NULL
+-- category stays legal (an item may sit in no section), and deleting an own category
+-- still SET NULLs rather than blocking — the behaviour DELETE /api/menu/categories/[id]
+-- depends on. The last two are what a careless composite FK would have broken.
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
 do $$
-declare leaked_id uuid;
+declare leaked_id uuid; own_id uuid; still_filed boolean;
 begin
   begin
     insert into public.menu_items (company_id, name, price, availability, category_id)
     values ('a1111111-1111-1111-1111-111111111111', 'GAP-probe', 9.99, 'available',
             'cb222222-2222-2222-2222-222222222222')   -- company B's category
     returning id into leaked_id;
-  exception when others then
+  exception when foreign_key_violation then
     leaked_id := null;
   end;
-
   if leaked_id is not null then
-    raise notice 'KNOWN GAP (Risk #4) menu_items.category_id: owner A stamped an item with company B''s category (no composite FK) — app-layer check is the only defence';
     delete from public.menu_items where id = leaked_id;
-  else
-    raise notice 'Risk #4 category_id CLOSED: the DB now rejects a foreign category_id — convert this notice to an assertion';
+    raise exception 'FAIL menu_items.category_id: owner A stamped an item with company B''s category (composite FK missing or bypassed)';
   end if;
+
+  -- An item may legitimately sit in no section; MATCH SIMPLE must skip the FK on NULL.
+  insert into public.menu_items (company_id, name, price, availability, category_id)
+  values ('a1111111-1111-1111-1111-111111111111', 'GAP-probe-null', 9.99, 'available', null);
+
+  -- Deleting an own category must re-file its items, not block on the FK.
+  insert into public.menu_items (company_id, name, price, availability, category_id)
+  values ('a1111111-1111-1111-1111-111111111111', 'GAP-probe-filed', 9.99, 'available',
+          'ca111111-1111-1111-1111-111111111111')
+  returning id into own_id;
+  delete from public.menu_categories where id = 'ca111111-1111-1111-1111-111111111111';
+  select category_id is not null into still_filed from public.menu_items where id = own_id;
+  if still_filed then
+    raise exception 'FAIL menu_items.category_id: deleting a category did not null category_id (on delete set null lost)';
+  end if;
+
+  raise notice 'OK menu_items.category_id is company-scoped; null allowed and category delete re-files';
 end $$;
 reset role;
 

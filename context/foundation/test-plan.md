@@ -174,7 +174,7 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 - **Jak**: symuluj tożsamość przez `set local role authenticated` + `set local request.jwt.claims = '{"sub":"…","role":"authenticated"}'`, potem `reset role`. Dla ścieżki publicznej: `set local role anon`. Asertuj przez `raise exception` (porażka aborcuje transakcję → `supabase db query` kończy się kodem ≠ 0). Skaluj liczby do UUID-ów fixture’ów, nie do wartości absolutnych (baza może mieć realne wiersze).
 - **Run**: `npm run test:rls:local` (lokalne Supabase) lub `npm run test:rls` (hostowane `--linked`).
 - **Uwaga (Ryzyko #2)**: sekcja `KNOWN GAP (Risk #2)` używa `raise notice`, nie `raise exception` — polityki anon są świadomie nieszczelne do S-07/S-08. Zamknięcie luki = flip `notice`→`exception`.
-- **Uwaga (Ryzyko #4)**: analogiczna sekcja `KNOWN GAP (#4)` dokumentuje, że `menu_items.category_id` nie ma złożonego FK `(company_id, id)` — surowy insert autoryzowany z obcą kategorią dziś przechodzi, a jedyną obroną jest `categoryExistsInCompany` na trasie. Też `notice`; flip na `exception`, gdy dojdzie composite FK.
+- **Wzorzec zamknięcia luki (Ryzyko #4)**: `menu_items.category_id` był drugim takim `notice` — luka została domknięta migracją `20260812220000_menu_item_category_composite_fk.sql`, a blok zamieniony w twardą asercję („Assertion 5b"). Domykając kolejną lukę: dodaj składowy FK, przełącz `notice`→`exception` i **udowodnij, że asercja nie jest tautologiczna** (usuń ograniczenie → suite ma sczerwienieć). Asertuj też to, co łatwo zepsuć przy okazji: przy nullowalnym wskaźniku zostaw legalny `NULL` i zachowaj `on delete set null` (forma z listą kolumn, gdy druga kolumna jest `NOT NULL`).
 
 ### 6.6 Per-rollout-phase notes
 
