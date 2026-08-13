@@ -184,35 +184,35 @@ with no data change and no downtime. If S-07/S-08 later needs public reads, it m
 ### Phase 1: Migration — drop the four unscoped anon policies
 
 #### Automated
-- [x] 1.1 Migration applies cleanly on a fresh database (`npx supabase db reset`)
-- [x] 1.2 Direct anon-role query returns 0 rows on all four tables
-- [x] 1.3 Authenticated staff reads unaffected (`npm run test:integration`)
+- [x] 1.1 Migration applies cleanly on a fresh database (`npx supabase db reset`) — 1397f70
+- [x] 1.2 Direct anon-role query returns 0 rows on all four tables — 1397f70
+- [x] 1.3 Authenticated staff reads unaffected (`npm run test:integration`) — 1397f70
 
 #### Manual
-- [x] 1.4 No app behaviour change (no anon consumer to break)
+- [x] 1.4 No app behaviour change (no anon consumer to break) — 1397f70
 
 ### Phase 2: SQL suite — re-baseline Assertion 5 and flip the gap
 
 #### Automated
-- [x] 2.1 `npm run test:rls:local` exits 0 with no `KNOWN GAP (Risk #2)` notices remaining
-- [x] 2.2 No block still asserts anon sees tenant rows
+- [x] 2.1 `npm run test:rls:local` exits 0 with no `KNOWN GAP (Risk #2)` notices remaining — 1397f70
+- [x] 2.2 No block still asserts anon sees tenant rows — 1397f70
 
 #### Manual
-- [x] 2.3 Non-tautology: reinstating one policy turns the suite red; dropping it returns green
+- [x] 2.3 Non-tautology: reinstating one policy turns the suite red; dropping it returns green — 1397f70
 
 ### Phase 3: Integration — the real attacker path
 
 #### Automated
-- [x] 3.1 `npm run test:integration` passes including the new anon suite
-- [x] 3.2 Lint + typecheck pass
+- [x] 3.1 `npm run test:integration` passes including the new anon suite — 1397f70
+- [x] 3.2 Lint + typecheck pass — 1397f70
 
 #### Manual
-- [x] 3.3 The service-role control proves zero-rows is the policy, not an empty database
+- [x] 3.3 The service-role control proves zero-rows is the policy, not an empty database — 1397f70
 
 ### Phase 4: Backport the corrected premise
 
 #### Automated
-- [x] 4.1 No remaining claim that Risk #2 waits on S-07/S-08 (test-plan, lessons, KNOWN-GAPS)
+- [x] 4.1 No remaining claim that Risk #2 waits on S-07/S-08 (test-plan, lessons, KNOWN-GAPS) — 1397f70
 
 #### Manual
-- [x] 4.2 `lessons.md` alone no longer reads as "gap still open"
+- [x] 4.2 `lessons.md` alone no longer reads as "gap still open" — 1397f70
