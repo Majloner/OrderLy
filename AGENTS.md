@@ -24,7 +24,17 @@ OrderLY is a multi-tenant SaaS for small/medium restaurants (active menu with ph
   `.wrangler/deploy/config.json`, which points wrangler at the adapter-generated
   `dist/server/wrangler.json`. Without it wrangler falls back to the root `wrangler.jsonc`, whose
   `main` is a package specifier rather than a file, and fails with "entry-point file … was not found".
-- Pre-commit: husky + lint-staged auto-fix staged files. No test framework is configured yet — add one before the first feature.
+  **The "Workers Builds: orderly" check on every PR fails for exactly this reason** — Cloudflare's
+  Git integration deploys through the root `wrangler.jsonc` instead of the config `astro build`
+  generates. Reproduced locally: `npx wrangler deploy --dry-run` succeeds, the same run forced onto
+  the root config fails with the entry-point error. Fix is in the Cloudflare dashboard, not this repo
+  (Workers & Pages → `orderly` → Settings → Build): set the deploy command to `npm run deploy`, or
+  build with `npm run build` and deploy with a bare `npx wrangler deploy` in the same workspace.
+  It is unrelated to the GitHub Actions CI in `.github/workflows/ci.yml`, which is green.
+- Pre-commit: husky + lint-staged auto-fix staged files.
+- Tests: `npm run test` (unit, DB-free) · `npm run test:integration` (needs `npx supabase start` +
+  `.env.test`) · `npm run test:rls:local` (SQL RLS suite). Read `context/foundation/test-plan.md` §6
+  before adding a test — it carries the cookbook, the fixtures, and the traps.
 
 ## Coding Style & Conventions
 
