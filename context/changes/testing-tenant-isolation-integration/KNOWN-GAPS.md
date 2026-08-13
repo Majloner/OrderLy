@@ -22,12 +22,24 @@ change (test rollout Phase 1). Each names a follow-up.
   reference refused, NULL still legal, category delete still re-files. Verified
   non-tautological: dropping the composite FK turns the suite red.
 
-## 2. Anon-read policies are not `company_id`-scoped (Risk #2)
+## 2. ~~Anon-read policies are not `company_id`-scoped (Risk #2)~~ — **CLOSED 2026-08-13**
 
-- **Where**: `companies_anon_read using (true)`, `tables_anon_read_active using (is_active)`,
+- **Was**: `companies_anon_read using (true)`, `tables_anon_read_active using (is_active)`,
   `menu_categories_anon_read using (true)`, `menu_items_anon_read_visible` (availability
-  predicate only) — see `context/changes/testing-tenant-isolation-integration/research.md`.
-- **Gap**: the anon key can read rows across tenants; scoping is done by an app-supplied
-  `company_id` filter, not by RLS. There is no anon route to exercise yet (the public QR
-  menu, S-07/S-08, is unbuilt), so this is demonstrated at the SQL layer in Phase 4 and
-  left as a labeled known gap until S-07/S-08 moves scoping into RLS.
+  predicate only). The anon key read rows across every tenant — venue codes, floor-plan
+  geometry, prices, and `photo_path` (which also undid the Storage anti-enumeration defence).
+- **Fixed by**: `supabase/migrations/20260813010000_drop_unscoped_anon_read_policies.sql` —
+  the four policies were **dropped**, not narrowed. A `company_id` predicate is not
+  expressible for anon (no session identity: `current_company_id()` is NULL, nothing mints
+  anon JWTs, GUCs don't survive PostgREST's per-request transaction), and research found the
+  surface had **no consumer at all**, so removing it broke nothing. Matches the
+  `rooms` / `room_objects` / `storage.objects` precedent.
+- **This gap's premise was wrong.** It said the fix "waits for S-07/S-08". That only holds
+  if something already consumes the anon surface; nothing did. The belief cost a full
+  rollout phase. See `context/foundation/lessons.md`.
+- **Now asserted**: `rls_isolation.sql` Assertion 5 (re-baselined to zero) + Assertion 5c,
+  and `tests/integration/isolation/anon-read-scoping.test.ts` on the real anon-key path with
+  a service-role control. Verified non-tautological: reinstating one policy turns both the
+  SQL suite and the integration suite red.
+- **For S-07/S-08**: do not re-add `using (true)`. Add a `SECURITY DEFINER` RPC taking the
+  venue code and returning a column projection.
