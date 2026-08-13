@@ -12,12 +12,24 @@
   i opublikowane pozycje wszystkich najemców — scoping robi dopiero aplikacja na
   podstawie firmy rozwiązanej z QR. Łamie zasadę „tenant isolation is
   non-negotiable" na poziomie DB dla ścieżki anon.
-- **Rule**: Polityki anon SELECT muszą zawężać po company_id (rozwiązanym z
-  kontekstu skanowanego stołu/QR), nie `using (true)`. Przy budowie publicznego
-  menu QR (S-07/S-08) zrewidować anon-read wszystkich tabel menu i przenieść
-  scoping z aplikacji do RLS.
+- **Rule**: Polityka anon SELECT bez predykatu `company_id` nie ma prawa istnieć.
+  Jeśli **żaden konsument jej nie potrzebuje — nie nadawaj jej wcale**. Nienadana
+  powierzchnia to czysta powierzchnia ataku: nikomu nie służy, a wszystkim szkodzi.
+  Gdy publiczny odczyt będzie realnie potrzebny (menu QR, S-07/S-08), dodaj funkcję
+  `SECURITY DEFINER` biorącą kod lokalu i zwracającą **projekcję kolumn** — RLS działa
+  na wierszach i nie potrafi ukryć `companies.address` ani `companies.code`, więc
+  polityka jest złym narzędziem do publicznego endpointu.
+- **Rozstrzygnięte 2026-08-13** (migracja `20260813010000_drop_unscoped_anon_read_policies.sql`):
+  cztery nieszczelne polityki **usunięto**, a nie zawężono. Wcześniejszy zapis tej lekcji
+  mówił, że naprawa czeka na S-07/S-08 — to było **błędne** i zablokowało naprawę na całą
+  fazę rolloutu. Przesłanka „musimy czekać na kontekst QR" trzyma się tylko wtedy, gdy coś
+  tę powierzchnię już konsumuje. Nic jej nie konsumowało (brak klienta przeglądarkowego,
+  klucze `access: "secret"`, brak tras publicznych), więc usunięcie niczego nie zepsuło.
+  **Zanim uznasz lukę bezpieczeństwa za zablokowaną przez przyszły slice, sprawdź, czy
+  dziurawa funkcjonalność ma w ogóle użytkownika.**
 - **Applies to**: nowe polityki RLS `to anon` na tabelach z danymi najemcy
   (menu_categories, menu_items, companies, tables) — Supabase/Postgres RLS.
+  Precedens „nie nadawaj nic anon": `rooms`, `room_objects`, `storage.objects`.
 
 ## Supabase Storage nie honoruje tokenu użytkownika — operacje przez service_role
 

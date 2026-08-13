@@ -196,31 +196,38 @@ begin
 end $$;
 reset role;
 
--- --- Assertion 5: anonymous reads only visible rows, cannot write -----------
+-- --- Assertion 5: anonymous reads NOTHING, cannot write ---------------------
+-- Re-baselined by 20260813010000_drop_unscoped_anon_read_policies.sql. This block
+-- used to assert that anon SEES 2 companies / 2 active tables / 3 items / 2
+-- categories — the leak itself, encoded as the expectation. With the four unscoped
+-- policies dropped, RLS default-deny applies to the anon role and every count is 0.
+--
+-- The hidden-row and anon-write checks are kept even though zero rows makes them
+-- trivially true: they cost nothing and they guard the reverse direction if a
+-- policy is ever reinstated. They are not, on their own, evidence of anything now.
 set local role anon;
 do $$
 -- Counts are scoped to the two fixture companies: the hosted DB may hold real
--- (dev) companies whose rows are also anon-visible; absolute counts would be
--- brittle against that pre-existing data.
+-- (dev) companies, and absolute counts would be brittle against that data.
 declare co int; tb int; mi int; mc int; rm int; ro int; hidden int; leaked boolean := false;
 begin
   select count(*) into co from public.companies
     where id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
-  select count(*) into tb from public.tables            -- active only (2)
+  select count(*) into tb from public.tables            -- policy dropped (0)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into rm from public.rooms             -- no anon policy at all (0)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into ro from public.room_objects     -- no anon policy at all (0)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
-  select count(*) into mi from public.menu_items        -- available+sold_out, non-archived (3)
+  select count(*) into mi from public.menu_items        -- policy dropped (0)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
-  select count(*) into mc from public.menu_categories   -- categories are public (2)
+  select count(*) into mc from public.menu_categories   -- policy dropped (0)
     where company_id in ('a1111111-1111-1111-1111-111111111111', 'b2222222-2222-2222-2222-222222222222');
   select count(*) into hidden from public.menu_items where name in ('A-Hidden', 'A-Archived');
-  if co <> 2 then raise exception 'FAIL anon.companies: saw %, expected 2', co; end if;
-  if tb <> 2 then raise exception 'FAIL anon.tables: saw % active, expected 2', tb; end if;
-  if mi <> 3 then raise exception 'FAIL anon.menu_items: saw %, expected 3 (available+sold_out, non-archived)', mi; end if;
-  if mc <> 2 then raise exception 'FAIL anon.menu_categories: saw %, expected 2', mc; end if;
+  if co <> 0 then raise exception 'FAIL anon.companies: saw %, expected 0 (anon must read no tenant row)', co; end if;
+  if tb <> 0 then raise exception 'FAIL anon.tables: saw %, expected 0 (floor plan must not be public)', tb; end if;
+  if mi <> 0 then raise exception 'FAIL anon.menu_items: saw %, expected 0', mi; end if;
+  if mc <> 0 then raise exception 'FAIL anon.menu_categories: saw %, expected 0', mc; end if;
   if rm <> 0 then raise exception 'FAIL anon.rooms: saw %, expected 0 (no anon policy)', rm; end if;
   if ro <> 0 then raise exception 'FAIL anon.room_objects: saw %, expected 0 (no anon policy)', ro; end if;
   if hidden <> 0 then raise exception 'FAIL anon leak: unavailable/archived item visible'; end if;
@@ -231,26 +238,28 @@ begin
   exception when others then leaked := false;
   end;
   if leaked then raise exception 'FAIL anon write: INSERT succeeded (should be denied)'; end if;
-  raise notice 'OK anon reads visible only and cannot write';
+  raise notice 'OK anon reads nothing and cannot write';
 end $$;
 reset role;
 
--- --- KNOWN GAP (Risk #2): anon reads are NOT company_id-scoped ---------------
--- The four anon SELECT policies below carry no company_id predicate, so the anon
--- key reads rows ACROSS tenants. Scoping is done only by an app-supplied filter
--- today, and there is no anon route yet (the public QR menu, S-07/S-08, is
--- unbuilt), so this is DEMONSTRATED and LABELED here rather than fixed. When
--- S-07/S-08 moves scoping into RLS, flip each `raise notice` below to a
--- `raise exception` and this section becomes a hard assertion.
---   companies_anon_read           using (true)                  minimal_tables_menu.sql:59
---   tables_anon_read_active       using (is_active)             minimal_tables_menu.sql:64
---   menu_categories_anon_read     using (true)                  menu_categories_items.sql:68
---   menu_items_anon_read_visible  using (archived_at is null …) menu_categories_items.sql:106
--- See context/foundation/lessons.md "Anon RLS reads must be scoped by company_id".
+-- --- Assertion 5c: the anon key has no cross-tenant read surface (Risk #2) ----
+-- Was a KNOWN GAP until 20260813010000_drop_unscoped_anon_read_policies.sql. Four
+-- SELECT policies granted `to anon` carried no company_id predicate, so the anon
+-- key read rows across every tenant: each venue's name, address and VENUE CODE,
+-- every active table with its floor-plan coordinates, and every published menu
+-- item with prices and live sold_out state. The policies were dropped rather than
+-- narrowed — an RLS USING clause cannot observe whether the client filtered by
+-- anything, so with no anon session identity a "scoped" anon policy is not
+-- expressible; and nothing consumed the surface, so removing it broke nothing.
+--
+-- This block names each dropped policy so a reinstated one fails here by name.
+-- If S-07/S-08 needs public reads, it must add a SECURITY DEFINER function taking
+-- the venue code and returning a COLUMN PROJECTION — not re-add `using (true)`,
+-- which cannot withhold companies.address or companies.code.
 set local role anon;
 do $$
--- Rows belonging to company B that an anon caller — holding no company context —
--- can still see. Each count > 0 IS the cross-tenant leak.
+-- Company B is the probe: an anon caller holds no company context at all, so any
+-- non-zero count here is a cross-tenant leak.
 declare co_b int; tb_b int; mc_b int; mi_b int;
 begin
   select count(*) into co_b from public.companies
@@ -262,16 +271,12 @@ begin
   select count(*) into mi_b from public.menu_items
     where company_id = 'b2222222-2222-2222-2222-222222222222';
 
-  -- Deliberately NOT `raise exception`: these policies are intentionally unscoped
-  -- until S-07/S-08. The notices make the gap visible without failing the suite.
-  if co_b > 0 then raise notice 'KNOWN GAP (Risk #2) companies_anon_read: anon sees % company-B row(s) — using (true)', co_b; end if;
-  if tb_b > 0 then raise notice 'KNOWN GAP (Risk #2) tables_anon_read_active: anon sees % company-B table(s) — using (is_active)', tb_b; end if;
-  if mc_b > 0 then raise notice 'KNOWN GAP (Risk #2) menu_categories_anon_read: anon sees % company-B category(ies) — using (true)', mc_b; end if;
-  if mi_b > 0 then raise notice 'KNOWN GAP (Risk #2) menu_items_anon_read_visible: anon sees % company-B item(s) — no company_id predicate', mi_b; end if;
+  if co_b <> 0 then raise exception 'FAIL companies_anon_read reinstated: anon sees % company-B row(s) incl. the venue code', co_b; end if;
+  if tb_b <> 0 then raise exception 'FAIL tables_anon_read_active reinstated: anon sees % company-B table(s) incl. floor-plan geometry', tb_b; end if;
+  if mc_b <> 0 then raise exception 'FAIL menu_categories_anon_read reinstated: anon sees % company-B category(ies)', mc_b; end if;
+  if mi_b <> 0 then raise exception 'FAIL menu_items_anon_read_visible reinstated: anon sees % company-B item(s) incl. price and photo_path', mi_b; end if;
 
-  if co_b = 0 and tb_b = 0 and mc_b = 0 and mi_b = 0 then
-    raise notice 'Risk #2 CLOSED: anon no longer sees company-B rows — convert these notices to assertions';
-  end if;
+  raise notice 'OK anon has no cross-tenant read surface (Risk #2 closed)';
 end $$;
 reset role;
 
