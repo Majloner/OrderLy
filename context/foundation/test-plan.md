@@ -84,6 +84,15 @@ orkiestrator aktualizuje Status w miarę pojawiania się artefaktów na dysku.
 | 3 | Quality gates wiring | Zabetonować podłogę: lint + typecheck + unit+integration w CI; lokalny post-edit hook | cross-cutting | gates, hook | complete | context/changes/quality-gates-ci/ |
 | 4 | AI-native selective visual | Multimodalny przegląd wizualny 1–3 krytycznych ekranów właściciela po redesignie „Karta/bistro" | cross-cutting | multimodal visual review | not started | — |
 
+**Faza 4 jest zablokowana — nie zaczynaj jej „bo została".** Dwa niezależne powody,
+oba sprawdzalne: (1) jej cel to przegląd ekranów **po** redesignie „Karta/bistro", a
+ta zmiana ma status `planned` i 0/55 pozycji Progress (`context/changes/ui-redesign/`)
+— nie ma czego przeglądać, co potwierdza też §4 („When NOT to use: ekrany bez zmiany
+wizualnej"); (2) `CLAUDE.md` przypisuje multimodal scenario code do Lekcji 4, poza
+zakresem bieżącej. Status zostaje `not started`, bo słownik poniżej nie ma wartości
+„blocked", a wpisanie `complete` fazie, która się nie odbyła, byłoby nieprawdą w
+artefakcie. Odblokowanie: dowieźć redesign, potem `/10x-test-plan`.
+
 **Status vocabulary** (fixed — parser literals):
 
 | Value | Meaning |

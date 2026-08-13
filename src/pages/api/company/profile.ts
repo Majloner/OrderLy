@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 
+export const prerender = false;
+
 export const POST: APIRoute = async (context) => {
   const { user, company_id, role } = context.locals;
 
