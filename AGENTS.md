@@ -24,12 +24,18 @@ OrderLY is a multi-tenant SaaS for small/medium restaurants (active menu with ph
   `.wrangler/deploy/config.json`, which points wrangler at the adapter-generated
   `dist/server/wrangler.json`. Without it wrangler falls back to the root `wrangler.jsonc`, whose
   `main` is a package specifier rather than a file, and fails with "entry-point file … was not found".
-  **The "Workers Builds: orderly" check on every PR fails for exactly this reason** — Cloudflare's
-  Git integration deploys through the root `wrangler.jsonc` instead of the config `astro build`
-  generates. Reproduced locally: `npx wrangler deploy --dry-run` succeeds, the same run forced onto
-  the root config fails with the entry-point error. Fix is in the Cloudflare dashboard, not this repo
-  (Workers & Pages → `orderly` → Settings → Build): set the deploy command to `npm run deploy`, or
-  build with `npm run build` and deploy with a bare `npx wrangler deploy` in the same workspace.
+  **The "Workers Builds: orderly" check on every PR fails for exactly this reason.** Confirmed from
+  the build records via the Workers Builds API (2026-08-13): the project's **build command is empty**
+  and the deploy commands are the defaults — `npx wrangler deploy` on `main`, `npx wrangler versions
+  upload` on PR branches. Dependencies install and the deploy runs immediately with no build in
+  between, so `dist/` never exists, `.wrangler/deploy/config.json` is never written, and wrangler
+  falls back to the root config. The build log ends with wrangler's own hint: "please run your
+  project's build command and try again".
+  **Fix (Cloudflare dashboard, not this repo — Workers & Pages → `orderly` → Settings → Build): set
+  the BUILD command to `npm run build`; leave the deploy commands at their defaults.** The build step
+  runs before whichever deploy command applies, so one setting fixes production and preview alike.
+  Setting the *deploy* command to `npm run deploy` instead would fix only `main` — PR branches use
+  `versions upload`, which that change does not touch.
   It is unrelated to the GitHub Actions CI in `.github/workflows/ci.yml`, which is green.
 - Pre-commit: husky + lint-staged auto-fix staged files.
 - Tests: `npm run test` (unit, DB-free) · `npm run test:integration` (needs `npx supabase start` +
