@@ -263,21 +263,21 @@ Brak migracji DB. Zmiana zachowania produkcyjnego: kelner/kuchnia na `/settings`
 
 #### Automated
 
-- [x] 1.1 `npm run test:integration` zielony z nowym plikiem dymnym (anon `/dashboard` → signin; anon `/` → pass-through)
-- [x] 1.2 `npm run test` (unit) bez zmian zielony
-- [x] 1.3 `npm run lint` zielony
+- [x] 1.1 `npm run test:integration` zielony z nowym plikiem dymnym (anon `/dashboard` → signin; anon `/` → pass-through) — 005aca2
+- [x] 1.2 `npm run test` (unit) bez zmian zielony — 005aca2
+- [x] 1.3 `npm run lint` zielony — 005aca2
 
 ### Phase 2: Oracle fixes — `/settings` owner-only i globalny check dezaktywacji
 
 #### Automated
 
-- [ ] 2.1 Testy kontraktowe (a)–(d) zielone; (a) i (b) czerwone przed poprawkami (dowód nie-tautologiczności)
-- [ ] 2.2 Istniejące suity integration bez regresu
-- [ ] 2.3 `npm run test` i `npm run lint` zielone
+- [x] 2.1 Testy kontraktowe (a)–(d) zielone; (a) i (b) czerwone przed poprawkami (dowód nie-tautologiczności)
+- [x] 2.2 Istniejące suity integration bez regresu
+- [x] 2.3 `npm run test` i `npm run lint` zielone
 
 #### Manual
 
-- [ ] 2.4 Dev server: kelner na `/settings` → `/dashboard`; zdezaktywowany po zalogowaniu natychmiast wylogowany
+- [x] 2.4 Dev server: kelner na `/settings` → `/dashboard`; zdezaktywowany po zalogowaniu natychmiast wylogowany
 
 ### Phase 3: Pełna macierz bramkowania tras
 

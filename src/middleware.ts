@@ -3,12 +3,12 @@ import { createClient } from "@/lib/supabase";
 import type { StaffRole } from "@/types";
 
 const PROTECTED_ROUTES = ["/dashboard", "/settings", "/menu", "/staff", "/room"];
-// Menu management, staff provisioning and the room layout are owner-only (PRD
-// Access Control); waiter/kitchen land back on the dashboard. RLS enforces this
-// on the data layer regardless. Keep every owner route in PROTECTED_ROUTES too —
-// one listed only here would bounce anonymous visitors to /dashboard instead of
-// signin.
-const OWNER_ROUTES = ["/menu", "/staff", "/room"];
+// Menu management, staff provisioning, the room layout and the company profile
+// are owner-only (PRD Access Control, FR-002); waiter/kitchen land back on the
+// dashboard. RLS enforces this on the data layer regardless. Keep every owner
+// route in PROTECTED_ROUTES too — one listed only here would bounce anonymous
+// visitors to /dashboard instead of signin.
+const OWNER_ROUTES = ["/menu", "/staff", "/room", "/settings"];
 
 // Match a route exactly or as a path prefix (`/menu` matches `/menu` and
 // `/menu/x`, but not `/menus` — that would silently gate a future public
@@ -53,22 +53,26 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
+  // Signed in but no profile resolved: either an orphan user or a deactivated
+  // staff member — current_company_id()/current_staff_role() return NULL for
+  // the latter, so the SELECT above finds nothing. Either way every query
+  // default-denies, so end the session instead of rendering an empty shell
+  // they could sit on until the cookie expires. Runs on EVERY route, not just
+  // protected ones: sign-in lands on `/`, which is public, so a deactivated
+  // session used to be able to sit there indefinitely. No redirect loop on
+  // /auth/signin — the redirect carries the cookie-clearing headers, so the
+  // follow-up request arrives anonymous and renders.
+  if (context.locals.user && !context.locals.role && supabase) {
+    await supabase.auth.signOut();
+    const params = new URLSearchParams({
+      error: "Twoje konto jest nieaktywne. Skontaktuj się z właścicielem lokalu.",
+    });
+    return context.redirect(`/auth/signin?${params.toString()}`);
+  }
+
   if (PROTECTED_ROUTES.some((route) => matchesRoute(context.url.pathname, route))) {
     if (!context.locals.user) {
       return context.redirect("/auth/signin");
-    }
-
-    // Signed in but no profile resolved: either an orphan user or a deactivated
-    // staff member — current_company_id()/current_staff_role() return NULL for
-    // the latter, so the SELECT above finds nothing. Either way every query
-    // default-denies, so end the session instead of rendering an empty shell
-    // they could sit on until the cookie expires.
-    if (!context.locals.role && supabase) {
-      await supabase.auth.signOut();
-      const params = new URLSearchParams({
-        error: "Twoje konto jest nieaktywne. Skontaktuj się z właścicielem lokalu.",
-      });
-      return context.redirect(`/auth/signin?${params.toString()}`);
     }
   }
 

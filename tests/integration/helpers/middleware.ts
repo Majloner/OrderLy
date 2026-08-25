@@ -2,7 +2,7 @@ import type { APIContext, MiddlewareNext } from "astro";
 import { createContext } from "astro/middleware";
 import { serializeCookieHeader, stringToBase64URL } from "@supabase/ssr";
 import { onRequest } from "@/middleware";
-import { anonClient } from "./clients";
+import { anonClient, type TestClient } from "./clients";
 
 // Drives src/middleware.ts `onRequest` directly — no HTTP server, no e2e.
 // `astro:middleware` resolves via the alias in vitest.integration.config.ts;
@@ -14,6 +14,11 @@ import { anonClient } from "./clients";
 export interface MiddlewareRun {
   response: Response;
   locals: App.Locals;
+  // The context's AstroCookies after the run — the sign-out branch clears the
+  // session cookie through it, so tests assert the clearing here (the raw
+  // Response from a direct onRequest call does not carry Set-Cookie headers;
+  // Astro's app pipeline merges them in after the middleware returns).
+  cookies: import("astro").AstroCookies;
   nextCalled: boolean;
 }
 
@@ -46,6 +51,19 @@ export async function sessionCookieFor(credentials: { email: string; password: s
   return serializeCookieHeader(sessionCookieName(), value, {});
 }
 
+// Serializes the in-memory session of an already-signed-in test client (e.g. a
+// seeded Principal's client) into the same cookie shape. Avoids a second
+// sign-in round-trip per test; the session survives inside the client instance
+// even with persistSession: false.
+export async function sessionCookieFromClient(client: TestClient): Promise<string> {
+  const { data, error } = await client.auth.getSession();
+  if (error || !data.session) {
+    throw new Error(`sessionCookieFromClient: no session available${error ? `: ${error.message}` : ""}`);
+  }
+  const value = `base64-${stringToBase64URL(JSON.stringify(data.session))}`;
+  return serializeCookieHeader(sessionCookieName(), value, {});
+}
+
 export async function runMiddleware(path: string, opts: { cookie?: string } = {}): Promise<MiddlewareRun> {
   const headers = new Headers();
   if (opts.cookie) {
@@ -70,5 +88,5 @@ export async function runMiddleware(path: string, opts: { cookie?: string } = {}
   if (!(response instanceof Response)) {
     throw new Error("middleware returned no Response");
   }
-  return { response, locals: context.locals, nextCalled };
+  return { response, locals: context.locals, cookies: context.cookies, nextCalled };
 }
