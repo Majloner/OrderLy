@@ -33,6 +33,10 @@ updated: 2026-07-28
   `tables`, (b) `/room` was added to the same `OWNER_ROUTES` array that already gates `/menu`, adding
   an entry rather than new logic, and (c) `guardTablesRequest` mirrors `guardMenuRequest` check for
   check. Re-verify when S-02 lands and can provision a waiter.
+  **Closed 2026-08-25**: both halves are now continuously observed by
+  `context/changes/middleware-route-protection/` — the authz route matrix covers the API 403,
+  and `tests/integration/authz/middleware.test.ts` asserts a real waiter session on `/room`
+  is redirected to `/dashboard`.
 - **Row 2.8 (position clamping) was closed in phase 4**: verified by dragging past the canvas edge
   and observing the snap to the footprint boundary, which exercises the same server-side
   `clampPosition` the console `PATCH` would have.

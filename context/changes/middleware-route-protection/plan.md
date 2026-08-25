@@ -283,17 +283,17 @@ Brak migracji DB. Zmiana zachowania produkcyjnego: kelner/kuchnia na `/settings`
 
 #### Automated
 
-- [x] 3.1 Macierz parametryczna zielona (anon/kelner/kuchnia/owner × trasy + podścieżki + publiczne + `/menus`)
-- [x] 3.2 Sabotaż kontrolny czerwieni macierz (nie-tautologiczność), przywrócony
-- [x] 3.3 Wariant `supabase === null`: `/dashboard` → `/auth/signin` w izolacji modułów
-- [x] 3.4 `npm run lint` zielony
+- [x] 3.1 Macierz parametryczna zielona (anon/kelner/kuchnia/owner × trasy + podścieżki + publiczne + `/menus`) — a1dc1c6
+- [x] 3.2 Sabotaż kontrolny czerwieni macierz (nie-tautologiczność), przywrócony — a1dc1c6
+- [x] 3.3 Wariant `supabase === null`: `/dashboard` → `/auth/signin` w izolacji modułów — a1dc1c6
+- [x] 3.4 `npm run lint` zielony — a1dc1c6
 
 ### Phase 4: Synchronizacja dokumentacji
 
 #### Automated
 
-- [ ] 4.1 Pre-commit hook przechodzi na zmianach dokumentacyjnych
+- [x] 4.1 Pre-commit hook przechodzi na zmianach dokumentacyjnych
 
 #### Manual
 
-- [ ] 4.2 Cookbook §6 + adnotacja Ryzyka #3 w §2; adnotacje w `room-layout-tables/change.md` i review S-09 wskazują tę zmianę
+- [x] 4.2 Cookbook §6 + adnotacja Ryzyka #3 w §2; adnotacje w `room-layout-tables/change.md` i review S-09 wskazują tę zmianę

@@ -39,7 +39,7 @@ zadanie research, patrz §1 zasada #3).
 |---|------------------------------|--------|------------|------------------------------|
 | 1 | Zalogowany użytkownik firmy A czyta lub modyfikuje wiersze firmy B (menu, personel, stoliki) — RLS albo rozwiązanie `company_id` zawodzi | High | High | wywiad Q1; PRD Access Control + NFR („żadne żądanie nie ujawnia danych innej firmy"); hot-spot dir `supabase/tests/` (11 zmian/30d) + `src/` `middleware.ts` (7/30d); lekcja „anon RLS reads must be scoped by company_id" |
 | 2 | Anonimowy klucz czyta cudze wiersze (pozycje menu, stoliki wraz z geometrią sali), bo polityka anon-read nie ma predykatu `company_id` | High | Medium | PRD Access Control (anon dostęp tylko do ścieżki stolika) + guardrail sesji; lekcja anon-RLS. **CHRONIONE od 2026-08-13**: powierzchnia anon usunięta (nie miała konsumenta), asercje na dwóch warstwach — patrz `context/changes/anon-read-scoping/` |
-| 3 | Nie-właściciel (kelner/kuchnia) wykonuje write owner-only (edycja menu, provisioning personelu, układ sali), albo niezalogowany dosięga trasy chronionej | High | High | wywiad Q3; PRD Access Control (role właściciel/kelner/kuchnia); hot-spot dir `src/pages/api` (38/30d) + `src/lib/` (`api.ts` 6/30d, `middleware.ts` 7/30d) |
+| 3 | Nie-właściciel (kelner/kuchnia) wykonuje write owner-only (edycja menu, provisioning personelu, układ sali), albo niezalogowany dosięga trasy chronionej | High | High | wywiad Q3; PRD Access Control (role właściciel/kelner/kuchnia); hot-spot dir `src/pages/api` (38/30d) + `src/lib/` (`api.ts` 6/30d, `middleware.ts` 7/30d). **CHRONIONE (obie połowy) od 2026-08-25**: API — macierz authz (Fazy 1–2); trasy stron (middleware, w tym signOut zdezaktywowanych) — patrz `context/changes/middleware-route-protection/` i §6.7. Przy okazji naprawiono dwa rozjazdy oracle↔kod: `/settings` nie było w `OWNER_ROUTES`, a check dezaktywacji nie obejmował publicznego `/` |
 | 4 | IDOR: właściciel mintuje URL uploadu / podpina zdjęcie / wskazuje kategorię dla zasobu innej firmy (id z klienta, ścieżka z serwera) → osierocone obiekty lub cudzy zasób | High | Medium | wywiad Q2; lekcja „Supabase Storage nie honoruje tokenu użytkownika → service_role"; PRD FR-005; hot-spot dir `src/pages/api` (38/30d) |
 | 5 | Serwer przyjmuje wejście, które UI odrzuciłoby (ujemna/olbrzymia cena, pusty `name`, zły enum roli/dostępności/kształtu, obcy MIME lub rozmiar zdjęcia) — brak walidacji zod lub jej rozjazd z kontraktem | Medium | Medium | wywiad Q3; hot-spot dir `src/lib/schemas` (21/30d); PRD FR-004/FR-005; AGENTS.md („validate input with zod") |
 | 6 | Właściciel blokuje sam siebie lub następuje eskalacja: self-demote, self-deactivate albo awans personelu do `owner` omija trigger ochronny | High | Low | roadmap S-02 (dowiezione); PRD Access Control (rola `owner` niegrantowalna); hot-spot dir `src/pages/api` (staff, 38/30d) + `src/lib/schemas` (`staff` 4/30d) |
@@ -209,6 +209,31 @@ co faza nauczyła — np. gdzie mieszkają fixture’y firm/ról.)
   „odmowa" — i zawsze dokładaj dowód efektu w DB.
 - **Trigger `42501→403` jest nieosiągalny przez trasę** (schemat i self-guard łapią wcześniej) — zostaje
   dowiedziony w SQL, nie forsujemy go na warstwie HTTP.
+
+**Middleware stron (2026-08-25, `middleware-route-protection`).** Połowa „trasy stron" Ryzyka #3 była
+zamknięta na papierze bez testu — Faza 1 odłożyła ją „do e2e" na fałszywej przesłance technicznej
+(wystarczył jeden alias Vite; wzorzec identyczny jak lekcja anon-RLS: sprawdź przesłankę, zanim uznasz
+za zablokowane). Wzorzec testowania: §6.7. Pułapka: globalny `signOut()` middleware'u unieważnia
+w GoTrue **wszystkie** sesje usera — testy używają świeżego `signInWithPassword` per test, nigdy
+recyklingu sesji z seeda.
+
+### 6.7 Adding a middleware page-gating test
+
+- **Gdzie**: `tests/integration/authz/middleware.test.ts`; helper `tests/integration/helpers/middleware.ts`
+  (`runMiddleware` = `createContext` z `astro/middleware` + bezpośrednie wywołanie `onRequest` — bez
+  serwera HTTP; `sessionCookieFor`/`sessionCookieFromClient` serializują sesję do cookie
+  `sb-<pierwszy człon hosta>-auth-token` jako `"base64-" + base64url(JSON(session))`).
+- **Nowa trasa strony**: dopisz ją do `PROTECTED_ROUTES`/`OWNER_ROUTES` w `src/middleware.ts` (trasa
+  owner-only MUSI być w obu — tylko w drugiej wysłałaby anonima na `/dashboard` zamiast na signin)
+  **oraz** do tablic `PROTECTED_PAGES`/`OWNER_PAGES` w macierzy testowej. Macierz asertuje dokładny
+  `Location`, więc łapie też złamanie niezmiennika `OWNER ⊆ PROTECTED`.
+- **Pułapki**: (1) świeże logowanie per test — `signOut()` middleware'u unieważnia wszystkie sesje
+  usera w GoTrue; (2) nie asertuj brzmienia polskiego komunikatu (istnieje tylko w implementacji) —
+  asertuj obecność parametru `error` w `Location`; (3) `Response` z bezpośredniego `onRequest` nie
+  niesie `Set-Cookie` — czyszczenie sesji asertuj przez `ctx.cookies` (pole `cookies` w wyniku
+  `runMiddleware`); (4) wariant `supabase === null` wymaga `vi.resetModules()` + `vi.stubEnv` +
+  dynamicznego importu, bo stub `astro:env/server` czyta `process.env` w momencie importu modułu.
+- **Run**: `npm run test:integration` (wymaga `npx supabase start` + `.env.test`).
 
 ## 7. What We Deliberately Don't Test
 
