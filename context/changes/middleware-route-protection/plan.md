@@ -292,8 +292,8 @@ Brak migracji DB. Zmiana zachowania produkcyjnego: kelner/kuchnia na `/settings`
 
 #### Automated
 
-- [x] 4.1 Pre-commit hook przechodzi na zmianach dokumentacyjnych
+- [x] 4.1 Pre-commit hook przechodzi na zmianach dokumentacyjnych — e5c3aaa
 
 #### Manual
 
-- [x] 4.2 Cookbook §6 + adnotacja Ryzyka #3 w §2; adnotacje w `room-layout-tables/change.md` i review S-09 wskazują tę zmianę
+- [x] 4.2 Cookbook §6 + adnotacja Ryzyka #3 w §2; adnotacje w `room-layout-tables/change.md` i review S-09 wskazują tę zmianę — e5c3aaa
