@@ -271,22 +271,22 @@ Brak migracji DB. Zmiana zachowania produkcyjnego: kelner/kuchnia na `/settings`
 
 #### Automated
 
-- [x] 2.1 Testy kontraktowe (a)–(d) zielone; (a) i (b) czerwone przed poprawkami (dowód nie-tautologiczności)
-- [x] 2.2 Istniejące suity integration bez regresu
-- [x] 2.3 `npm run test` i `npm run lint` zielone
+- [x] 2.1 Testy kontraktowe (a)–(d) zielone; (a) i (b) czerwone przed poprawkami (dowód nie-tautologiczności) — 9dd5459
+- [x] 2.2 Istniejące suity integration bez regresu — 9dd5459
+- [x] 2.3 `npm run test` i `npm run lint` zielone — 9dd5459
 
 #### Manual
 
-- [x] 2.4 Dev server: kelner na `/settings` → `/dashboard`; zdezaktywowany po zalogowaniu natychmiast wylogowany
+- [x] 2.4 Dev server: kelner na `/settings` → `/dashboard`; zdezaktywowany po zalogowaniu natychmiast wylogowany — 9dd5459
 
 ### Phase 3: Pełna macierz bramkowania tras
 
 #### Automated
 
-- [ ] 3.1 Macierz parametryczna zielona (anon/kelner/kuchnia/owner × trasy + podścieżki + publiczne + `/menus`)
-- [ ] 3.2 Sabotaż kontrolny czerwieni macierz (nie-tautologiczność), przywrócony
-- [ ] 3.3 Wariant `supabase === null`: `/dashboard` → `/auth/signin` w izolacji modułów
-- [ ] 3.4 `npm run lint` zielony
+- [x] 3.1 Macierz parametryczna zielona (anon/kelner/kuchnia/owner × trasy + podścieżki + publiczne + `/menus`)
+- [x] 3.2 Sabotaż kontrolny czerwieni macierz (nie-tautologiczność), przywrócony
+- [x] 3.3 Wariant `supabase === null`: `/dashboard` → `/auth/signin` w izolacji modułów
+- [x] 3.4 `npm run lint` zielony
 
 ### Phase 4: Synchronizacja dokumentacji
 

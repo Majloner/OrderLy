@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { staffAuthEmail } from "@/lib/staff-identity";
 import { PASSWORD, seedTwoCompanies, type SeedResult } from "../helpers/fixtures";
 import { serviceRoleClient, signInAs } from "../helpers/clients";
@@ -26,13 +26,27 @@ afterAll(async () => {
 // every session of the user globally (GoTrue rejects the old JWTs afterwards),
 // so reusing the seeded Principal's session across deactivation tests would
 // poison later tests in this file.
-async function freshWaiterCookie(): Promise<string> {
+async function freshStaffCookie(login: "waiter" | "kitchen"): Promise<string> {
   const client = await signInAs({
-    email: staffAuthEmail(seed.companyA.venue_code, "waiter"),
+    email: staffAuthEmail(seed.companyA.venue_code, login),
     password: PASSWORD,
   });
   return sessionCookieFromClient(client);
 }
+
+function freshWaiterCookie(): Promise<string> {
+  return freshStaffCookie("waiter");
+}
+
+// Route inventories for the matrix. Every route in the middleware's
+// PROTECTED_ROUTES / OWNER_ROUTES gets a row here — the cookbook (test-plan §6)
+// makes adding a row part of adding a protected route. Subpaths prove prefix
+// matching; /menus proves the boundary the middleware comment reserves for a
+// future public client-menu page.
+const PROTECTED_PAGES = ["/dashboard", "/settings", "/menu", "/staff", "/room"];
+const PROTECTED_SUBPATHS = ["/menu/anything", "/room/editor/nested"];
+const OWNER_PAGES = ["/menu", "/staff", "/room", "/settings"];
+const PUBLIC_PAGES = ["/", "/auth/signin", "/auth/signup", "/auth/confirm-email", "/menus"];
 
 describe("middleware harness smoke", () => {
   it("redirects an anonymous request on a protected route to /auth/signin", async () => {
@@ -121,5 +135,81 @@ describe("deactivated staff with a live session (S-02 contract)", () => {
     const { nextCalled, locals } = await runMiddleware("/", { cookie });
     expect(nextCalled).toBe(true);
     expect(locals.role).toBe("waiter");
+  });
+});
+
+describe("route-gating matrix (Risk #3)", () => {
+  // Exact Location doubles as the OWNER ⊆ PROTECTED invariant: a route present
+  // only in OWNER_ROUTES would send anon to /dashboard instead of signin.
+  it.each([...PROTECTED_PAGES, ...PROTECTED_SUBPATHS])(
+    "anon on %s → 302 /auth/signin, never /dashboard",
+    async (path) => {
+      const { response, nextCalled } = await runMiddleware(path);
+      expect(nextCalled).toBe(false);
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe("/auth/signin");
+    },
+  );
+
+  it.each(OWNER_PAGES.flatMap((path) => (["waiter", "kitchen"] as const).map((role) => [role, path] as const)))(
+    "bounces %s from owner route %s to /dashboard",
+    async (role, path) => {
+      const cookie = await freshStaffCookie(role);
+      const { response, nextCalled } = await runMiddleware(path, { cookie });
+      expect(nextCalled).toBe(false);
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe("/dashboard");
+    },
+  );
+
+  it("lets a waiter through to /dashboard (the bounce target renders for them)", async () => {
+    const cookie = await freshWaiterCookie();
+    const { nextCalled, locals } = await runMiddleware("/dashboard", { cookie });
+    expect(nextCalled).toBe(true);
+    expect(locals.role).toBe("waiter");
+  });
+
+  it.each(PROTECTED_PAGES)("lets the owner through to %s", async (path) => {
+    const cookie = await sessionCookieFromClient(seed.companyA.owner.client);
+    const { nextCalled, locals } = await runMiddleware(path, { cookie });
+    expect(nextCalled).toBe(true);
+    expect(locals.role).toBe("owner");
+    expect(locals.company_id).toBe(seed.companyA.company_id);
+  });
+
+  it.each(PUBLIC_PAGES)("passes anon through on public %s", async (path) => {
+    const { nextCalled } = await runMiddleware(path);
+    expect(nextCalled).toBe(true);
+  });
+});
+
+describe("supabase === null (unconfigured worker)", () => {
+  // The env stub (tests/integration/stubs/astro-env-server.ts) reads
+  // process.env at module evaluation, so a fresh module registry is required
+  // for createClient to see the cleared env and return null. Today anon is
+  // bounced because locals.user stays null — this pins that a config outage
+  // fails closed, not open.
+  it("still bounces anon off a protected route when Supabase env is missing", async () => {
+    vi.stubEnv("SUPABASE_URL", "");
+    vi.stubEnv("SUPABASE_KEY", "");
+    vi.resetModules();
+    try {
+      const { onRequest } = await import("@/middleware");
+      const { createContext } = await import("astro/middleware");
+      const context = createContext({
+        request: new Request("http://localhost/dashboard"),
+        defaultLocale: "",
+        locals: { user: null, company_id: null, role: null, display_name: null, supabase: null },
+      });
+      const response = await onRequest(context, () => Promise.resolve(new Response("next-called")));
+      if (!(response instanceof Response)) {
+        throw new Error("middleware returned no Response");
+      }
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe("/auth/signin");
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
   });
 });
