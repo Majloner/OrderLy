@@ -56,6 +56,19 @@ export async function sessionCookieFromClient(client: TestClient): Promise<strin
   return serializeCookieHeader(sessionCookieName(), value, {});
 }
 
+// The Cloudflare adapter augments App.Locals with a runtime-only `cfContext`
+// the middleware never reads — cast it away at the boundary, the same move
+// helpers/context.ts makes for the /api/* harness.
+export function emptyLocals(): App.Locals {
+  return {
+    user: null,
+    company_id: null,
+    role: null,
+    display_name: null,
+    supabase: null,
+  } as unknown as App.Locals;
+}
+
 export async function runMiddleware(path: string, opts: { cookie?: string } = {}): Promise<MiddlewareRun> {
   const headers = new Headers();
   if (opts.cookie) {
@@ -67,7 +80,7 @@ export async function runMiddleware(path: string, opts: { cookie?: string } = {}
     defaultLocale: "",
     // The middleware assigns every field itself; createContext just needs a
     // value satisfying App.Locals (reassigning ctx.locals afterwards throws).
-    locals: { user: null, company_id: null, role: null, display_name: null, supabase: null },
+    locals: emptyLocals(),
   });
 
   let nextCalled = false;

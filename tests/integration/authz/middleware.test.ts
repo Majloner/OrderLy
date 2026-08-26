@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { staffAuthEmail } from "@/lib/staff-identity";
 import { PASSWORD, seedTwoCompanies, type SeedResult } from "../helpers/fixtures";
 import { serviceRoleClient, signInAs } from "../helpers/clients";
-import { runMiddleware, sessionCookieFromClient, sessionCookieName } from "../helpers/middleware";
+import { emptyLocals, runMiddleware, sessionCookieFromClient, sessionCookieName } from "../helpers/middleware";
 
 // Page-route gating (test-plan Risk #3, middleware half). Drives
 // src/middleware.ts onRequest directly — no HTTP server. Oracle sources:
@@ -218,7 +218,7 @@ describe("supabase === null (unconfigured worker)", () => {
       const context = createContext({
         request: new Request("http://localhost/dashboard"),
         defaultLocale: "",
-        locals: { user: null, company_id: null, role: null, display_name: null, supabase: null },
+        locals: emptyLocals(),
       });
       const response = await onRequest(context, () => Promise.resolve(new Response("next-called")));
       if (!(response instanceof Response)) {
