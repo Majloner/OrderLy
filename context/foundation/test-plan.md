@@ -118,6 +118,7 @@ weryfikacji.
 | API mocking | none yet — see §3 Phase 1 | — | mock tylko na krawędzi sieci (Storage/service-role); nigdy modułów wewnętrznych |
 | e2e | none yet — see §3 Phase 4 (opcjonalnie) | — | promować tylko dla ścieżek, których nie łapie integration |
 | accessibility | none yet | — | poza zakresem MVP (patrz §7) |
+| mutation (selective gate) | Stryker (`@stryker-mutator/core` + `vitest-runner`) — checked: 2026-08-26 | ^10.0.0 | **bramka ad hoc po fazie ryzyka, NIE per-commit w CI** — `npx stryker run` z `mutate` zawężonym w `stryker.config.json` (obecnie `src/middleware.ts`, suite zawężony przez `vitest.stryker.config.ts`, `inPlace` bo `.env.test` nie kopiuje się do sandboxa). Przeżywające mutanty oceniaj pytaniem „czy to skrzywdzi użytkownika/biznes?"; nie goń 100% (ekwiwalentne + gałęzie defensywne ignoruj świadomie) |
 | (optional) AI-native | multimodal visual review — checked: 2026-08-04 | n/a | **When NOT to use:** każdy ekran, ekrany bez zmiany wizualnej, cokolwiek co łapie deterministyczny diff lub test integration |
 
 Jeśli wiersz brzmi „none yet — see §3 Phase N", tę lukę domyka wskazana faza.

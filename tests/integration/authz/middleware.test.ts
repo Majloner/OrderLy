@@ -138,7 +138,10 @@ describe("deactivated staff with a live session (S-02 contract)", () => {
       expect(response.status).toBe(401);
       expect(response.headers.get("Content-Type")).toBe("application/json");
       const body = (await response.json()) as { error?: unknown };
+      // Non-empty, not just "a string" — an empty error message would reach
+      // API clients as a blank banner (survived-mutant finding).
       expect(typeof body.error).toBe("string");
+      expect(body.error).toBeTruthy();
     });
   });
 
@@ -147,6 +150,10 @@ describe("deactivated staff with a live session (S-02 contract)", () => {
     const { nextCalled, locals } = await runMiddleware("/", { cookie });
     expect(nextCalled).toBe(true);
     expect(locals.role).toBe("waiter");
+    // Exact display_name pins the fallback chain (full_name first). A mutated
+    // chain can leak user.email — the SYNTHETIC staff address that must never
+    // be rendered (S-09 rule) — so this one assertion guards that rule too.
+    expect(locals.display_name).toBe("Waiter");
   });
 });
 
