@@ -1,4 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
+import { parseCookieHeader } from "@supabase/ssr";
+import { jsonError } from "@/lib/api";
 import { createClient } from "@/lib/supabase";
 import type { StaffRole } from "@/types";
 
@@ -63,7 +65,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // /auth/signin — the redirect carries the cookie-clearing headers, so the
   // follow-up request arrives anonymous and renders.
   if (context.locals.user && !context.locals.role && supabase) {
-    await supabase.auth.signOut();
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      // On a non-auth error GoTrue keeps the local session, so the cookie
+      // would survive and re-trigger this branch on the redirect target.
+      // Drop the auth cookies ourselves; the server-side revocation can wait.
+      for (const { name } of parseCookieHeader(context.request.headers.get("Cookie") ?? "")) {
+        if (name.startsWith("sb-") && name.includes("-auth-token")) {
+          context.cookies.delete(name, { path: "/" });
+        }
+      }
+    }
+    // API routes speak JSON: a 302 here would be followed by fetch clients
+    // (redirect: "follow"), land on the signin page as HTML 200 and read as an
+    // empty success. The session is dead either way; only the shape differs.
+    if (context.url.pathname.startsWith("/api/")) {
+      return jsonError("Konto jest nieaktywne", 401);
+    }
     const params = new URLSearchParams({
       error: "Twoje konto jest nieaktywne. Skontaktuj się z właścicielem lokalu.",
     });

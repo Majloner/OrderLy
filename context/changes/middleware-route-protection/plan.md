@@ -34,7 +34,7 @@ Domykamy nieprzetestowaną połowę test-planowego Ryzyka #3: bramkowanie tras *
 - **Nie eksportujemy `matchesRoute`/tablic tras** — niezmiennik `OWNER ⊆ PROTECTED` dowodzimy behawioralnie.
 - **Nie ruszamy `settings.astro`** — warunkowy render zostaje jako defense-in-depth.
 - **Nie zmieniamy redirectu `signin.ts` na `/dashboard`** — globalny check dezaktywacji domyka scenariusz bez zmiany UX logowania.
-- **Nie dublujemy testów guardów API** — middleware nie działa na `/api/*`; macierz authz już to pokrywa.
+- **Nie dublujemy testów guardów API** — tablice tras middleware'u nie obejmują `/api/*` (sam middleware biegnie na każdym żądaniu i buduje `locals`); macierz authz pokrywa guardy. **Korekta po impl-review (F1)**: pierwotne zdanie „middleware nie działa na `/api/*`" było fałszywe — gałąź dezaktywacji działa też na `/api/*` i zwraca tam JSON 401 zamiast redirectu (przygwożdżone testem w macierzy).
 
 ## Implementation Approach
 

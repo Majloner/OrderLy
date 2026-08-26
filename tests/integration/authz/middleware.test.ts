@@ -16,7 +16,7 @@ let seed: SeedResult;
 
 beforeAll(async () => {
   seed = await seedTwoCompanies();
-}, 120_000);
+});
 
 afterAll(async () => {
   await seed.cleanup();
@@ -127,6 +127,18 @@ describe("deactivated staff with a live session (S-02 contract)", () => {
       // request carries no session cookie — and must render the page.
       const followUp = await runMiddleware("/auth/signin");
       expect(followUp.nextCalled).toBe(true);
+    });
+  });
+
+  it("answers a deactivated session on /api/* with JSON 401, not a redirect", async () => {
+    const cookie = await freshWaiterCookie();
+    await withDeactivatedWaiter(async () => {
+      const { response, nextCalled } = await runMiddleware("/api/menu/items", { cookie });
+      expect(nextCalled).toBe(false);
+      expect(response.status).toBe(401);
+      expect(response.headers.get("Content-Type")).toBe("application/json");
+      const body = (await response.json()) as { error?: unknown };
+      expect(typeof body.error).toBe("string");
     });
   });
 

@@ -2,7 +2,7 @@ import type { APIContext, MiddlewareNext } from "astro";
 import { createContext } from "astro/middleware";
 import { serializeCookieHeader, stringToBase64URL } from "@supabase/ssr";
 import { onRequest } from "@/middleware";
-import { anonClient, type TestClient } from "./clients";
+import { anonClient, requireEnv, type TestClient } from "./clients";
 
 // Drives src/middleware.ts `onRequest` directly — no HTTP server, no e2e.
 // `astro:middleware` resolves via the alias in vitest.integration.config.ts;
@@ -20,14 +20,6 @@ export interface MiddlewareRun {
   // Astro's app pipeline merges them in after the middleware returns).
   cookies: import("astro").AstroCookies;
   nextCalled: boolean;
-}
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`[integration] ${name} is not set (see .env.test.example)`);
-  }
-  return value;
 }
 
 // The @supabase/ssr server client stores its session under
