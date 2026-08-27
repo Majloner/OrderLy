@@ -145,6 +145,46 @@ describe("deactivated staff with a live session (S-02 contract)", () => {
     });
   });
 
+  it("clears the session cookie itself when the sign-out call fails (GoTrue outage)", async () => {
+    // Hermetic failure at the network edge (test-plan §1: partial failures real
+    // infra cannot trigger): only the /logout call fails, everything else goes
+    // through. On such an error GoTrue keeps the local session, so without the
+    // middleware's own cookie cleanup the redirect would loop forever. The
+    // decoy cookie proves the cleanup deletes ONLY auth cookies.
+    // Three decoys pin the cleanup filter exactly: `decoy` matches neither
+    // predicate, `sb-decoy` only the prefix, `my-auth-token` only the suffix —
+    // all three must survive while the real auth cookie dies.
+    const cookie = `${await freshWaiterCookie()}; decoy=keep; sb-decoy=keep; my-auth-token=keep`;
+    await withDeactivatedWaiter(async () => {
+      const realFetch = globalThis.fetch.bind(globalThis);
+      vi.stubGlobal("fetch", async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+        const url = input instanceof Request ? input.url : String(input);
+        if (url.includes("/auth/v1/logout")) {
+          return new Response(JSON.stringify({ error: "boom" }), { status: 503 });
+        }
+        return realFetch(input, init);
+      });
+      try {
+        const { response, cookies, nextCalled } = await runMiddleware("/", { cookie });
+        expect(nextCalled).toBe(false);
+        expect(response.status).toBe(302);
+        expect((response.headers.get("Location") ?? "").startsWith("/auth/signin?")).toBe(true);
+        expect(cookies.get(sessionCookieName())?.value).toBeFalsy();
+        expect(cookies.get("decoy")?.value).toBe("keep");
+        expect(cookies.get("sb-decoy")?.value).toBe("keep");
+        expect(cookies.get("my-auth-token")?.value).toBe("keep");
+        // The removal must carry Path=/ — a browser only drops a cookie when
+        // the deletion path matches the one it was set with; a pathless delete
+        // would leave the session cookie alive and redirect-loop the user.
+        const removal = [...cookies.headers()].find((h) => h.startsWith(`${sessionCookieName()}=`));
+        expect(removal).toBeDefined();
+        expect(removal).toContain("Path=/");
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+  });
+
   it("leaves an active (non-deactivated) waiter alone on public routes", async () => {
     const cookie = await freshWaiterCookie();
     const { nextCalled, locals } = await runMiddleware("/", { cookie });

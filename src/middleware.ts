@@ -38,9 +38,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // The profiles row is readable under RLS (a user's own profile is in their
     // company). Missing profile (orphan user) leaves company_id/role null.
     if (user) {
+      // Hoisted so the equivalent select("") mutant can be suppressed here —
+      // inside the method chain the directive attaches to the wrong AST node.
+      // Stryker disable next-line StringLiteral: select("") behaves like select("*"), an equivalent mutant no behavioral test can distinguish
+      const profileColumns = "company_id, role, full_name, login";
       const { data: profile } = await supabase
         .from("profiles")
-        .select("company_id, role, full_name, login")
+        .select(profileColumns)
         .eq("user_id", user.id)
         .maybeSingle<{ company_id: string; role: StaffRole; full_name: string | null; login: string | null }>();
       if (profile) {
@@ -66,6 +70,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // follow-up request arrives anonymous and renders.
   if (context.locals.user && !context.locals.role && supabase) {
     const { error: signOutError } = await supabase.auth.signOut();
+    // Stryker disable next-line ConditionalExpression: if(true) is observably equivalent (a successful signOut already clears the cookies); the if(false) regression is pinned by the GoTrue-outage test
     if (signOutError) {
       // On a non-auth error GoTrue keeps the local session, so the cookie
       // would survive and re-trigger this branch on the redirect target.
