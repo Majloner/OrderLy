@@ -1,10 +1,10 @@
 ---
 change_id: middleware-route-protection
 title: Test the middleware half of Risk #3 — protected-page gating
-status: impl_reviewed
+status: archived
 created: 2026-08-24
-updated: 2026-08-26
-archived_at: null
+updated: 2026-08-27
+archived_at: 2026-08-27T05:42:16Z
 ---
 
 ## Notes
