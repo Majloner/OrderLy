@@ -16,7 +16,7 @@ const AUTH_OPTS = { auth: { persistSession: false, autoRefreshToken: false } } a
 // setup.ts guarantees these are present at runtime, but TS still sees
 // `string | undefined`; narrow via a throw rather than a `!`/`as` assertion
 // (both are forbidden by the lint config).
-function requireEnv(name: string): string {
+export function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
     throw new Error(`[integration] ${name} is not set (see .env.test.example)`);

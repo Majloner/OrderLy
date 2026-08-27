@@ -90,7 +90,7 @@ application: both `companies.code` selects use the user-scoped client with
 - **Location**: src/components/Topbar.astro:13, src/pages/dashboard.astro:16
 - **Detail**: Both files render `{display_name ?? user.email}` and both carry a comment saying the synthetic address must never be shown back to staff — then keep the fallback that does exactly that. Concrete repro: deactivate a waiter, then have them sign in. Authentication **succeeds**, because deactivation only sets `profiles.deactivated_at` and leaves `auth.users` untouched. `signin.ts:39` redirects to `/`, which is not in `PROTECTED_ROUTES`, so the sign-out guard never fires. `current_company_id()` returns NULL for them, so their own profile row is filtered, `display_name` stays null, and the Topbar renders `anna@h42nam.staff.orderly.invalid`.
 - **Fix**: Fall back to `user.email` only when `role === "owner"`; owners are the only accounts whose address is genuine. Consider adding `/` to the deactivated-session check.
-- **Decision**: PENDING
+- **Decision**: RESOLVED 2026-08-25 by `context/changes/middleware-route-protection/` — the deactivated/orphan sign-out check in `src/middleware.ts` now runs on EVERY route (not just protected ones), so the repro is dead: a deactivated waiter is signed out on the first request after sign-in and never renders a page with the synthetic address. Asserted by `tests/integration/authz/middleware.test.ts` ("signs out a deactivated waiter on their next request to the public /") and verified manually on the dev server.
 
 ### F4 — `companies.code` inherits a blanket anon read policy
 

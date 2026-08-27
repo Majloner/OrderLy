@@ -502,3 +502,7 @@ pnpm-debug.log*
 .wrangler/
 # macOS-specific files
 # jetbrains setting folder
+
+# Stryker mutation testing
+.stryker-tmp/
+reports/

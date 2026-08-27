@@ -19,6 +19,11 @@ export default defineConfig({
       // from `astro:env/server`, which Vitest cannot resolve. Redirect it to a
       // stub that reads the same values from process.env so those modules import.
       "astro:env/server": fileURLToPath(new URL("./tests/integration/stubs/astro-env-server.ts", import.meta.url)),
+      // src/middleware.ts imports `astro:middleware`, another virtual module.
+      // Astro's own dev/build pipeline resolves it with exactly this alias
+      // (astro/dist/core/create-vite.js), so we mirror it rather than stub it:
+      // defineMiddleware is an identity function and the module is real.
+      "astro:middleware": "astro/virtual-modules/middleware.js",
     },
   },
   test: {

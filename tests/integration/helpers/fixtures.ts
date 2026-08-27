@@ -17,7 +17,11 @@ import { ensureLocalSupabase } from "./local-supabase";
 // clients returned in each Principal are user-scoped, so the tests still run
 // through real RLS.
 
-const PASSWORD = "orderly-integration-pass";
+// Exported for tests that need a FRESH session (fresh signInAs) instead of the
+// seeded Principal's one — e.g. the middleware deactivation suite, where the
+// middleware's own signOut() revokes every session of the user globally and
+// would poison the shared client for later tests.
+export const PASSWORD = "orderly-integration-pass";
 
 export interface Principal {
   // The user-scoped client a synthetic request injects as `locals.supabase`;
