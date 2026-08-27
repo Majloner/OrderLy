@@ -627,18 +627,18 @@ starting each phase.
 
 #### Automated
 
-- [ ] 1.1 Linting passes: `npm run lint`
-- [ ] 1.2 Type checking passes: `npm run typecheck`
-- [ ] 1.3 Unit tests pass: `npm run test`
-- [ ] 1.4 Production build succeeds: `npm run build`
-- [ ] 1.5 No `dark:` utility remains outside `src/components/ui/`
+- [x] 1.1 Linting passes: `npm run lint`
+- [x] 1.2 Type checking passes: `npm run typecheck`
+- [x] 1.3 Unit tests pass: `npm run test`
+- [x] 1.4 Production build succeeds: `npm run build`
+- [x] 1.5 No `dark:` utility remains outside `src/components/ui/`
 
 #### Manual
 
-- [ ] 1.6 Every shadcn primitive renders light with no component edit
-- [ ] 1.7 Bricolage Grotesque loads
-- [ ] 1.8 Native scrollbars and autofill render light
-- [ ] 1.9 Recorded contrast ratios meet AA for their intended use
+- [x] 1.6 Every shadcn primitive renders light with no component edit
+- [x] 1.7 Bricolage Grotesque loads
+- [x] 1.8 Native scrollbars and autofill render light
+- [x] 1.9 Recorded contrast ratios meet AA for their intended use
 
 ### Phase 2: Page shells and headings
 

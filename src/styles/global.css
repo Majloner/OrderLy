@@ -1,75 +1,86 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* The app is single-theme light ("Karta / bistro"). This variant definition is
+   kept ONLY to neutralize the `dark:` utilities inside src/components/ui/
+   (vendored shadcn code we do not edit): scoped to a `.dark` ancestor that no
+   longer exists anywhere, they compile but never apply. Deleting the line
+   would revert `dark:` to prefers-color-scheme and hand OS-dark users a
+   half-dark hybrid nobody tests. */
 @custom-variant dark (&:is(.dark *));
+
+/* ── "Karta / bistro" named palette ────────────────────────────────────────
+   Locked direction: context/changes/ui-redesign/change.md. Porcelain canvas,
+   ink text, bottle-green brand, amber accent used sparingly, white cards with
+   warm hairlines. WCAG contrast ratios below were computed for this exact
+   palette; re-run the math if any value changes. */
+@theme {
+  /* canvas & text */
+  --color-porcelain: #f6f3ed; /* page canvas */
+  --color-ink: #211f1b; /* primary text — 14.85:1 on porcelain, 16.45:1 on white (AAA) */
+  --color-ink-muted: #5c5850; /* muted text — 6.39:1 on porcelain, 7.08:1 on white (AA) */
+
+  /* brand & accent */
+  --color-bottle: #1e4a3c; /* brand — 9.03:1 on porcelain; white on bottle 10.00:1 (AAA) */
+  --color-amber: #e0a22b; /* accent — 2.02:1 on porcelain: DECORATIVE ONLY, never text; ink on amber 7.34:1 */
+
+  /* surfaces */
+  --color-hairline: #e7e1d6; /* warm borders/dividers (non-text) */
+  --color-parchment: #efebe2; /* muted/secondary fill — ink on it 13.83:1 */
+
+  /* semantic triples: fill / foreground / border. Five meaning-bearing class
+     maps (availability, staff role, table state, room tab, table row) draw
+     from these — fifteen contrast decisions made once, here. */
+  --color-success-fill: #e3efe6;
+  --color-success-fg: #1f5c38; /* 6.71:1 on fill, 7.94:1 on white (AA) */
+  --color-success-border: #bfdaca;
+  --color-warning-fill: #f9efd8;
+  --color-warning-fg: #7a5310; /* 5.98:1 on fill, 6.84:1 on white (AA) */
+  --color-warning-border: #ead3a0;
+  --color-info-fill: #e7edf3;
+  --color-info-fg: #3a566e; /* 6.51:1 on fill, 7.67:1 on white (AA) */
+  --color-info-border: #c8d5e1;
+  --color-neutral-fill: #ede9df;
+  --color-neutral-fg: #5c5850; /* 5.84:1 on fill (AA) */
+  --color-neutral-border: #ded7c8;
+
+  /* display face for the wordmark and headings; body stays on the system stack */
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+}
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
+  --background: var(--color-porcelain);
+  --foreground: var(--color-ink);
+  --card: #ffffff;
+  --card-foreground: var(--color-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-bottle);
+  --primary-foreground: #ffffff; /* 10.00:1 on bottle (AAA) */
+  --secondary: var(--color-parchment);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-parchment);
+  --muted-foreground: var(--color-ink-muted);
+  --accent: var(--color-parchment);
+  --accent-foreground: var(--color-ink);
+  --destructive: #b3372b; /* white on it 6.00:1, itself on porcelain 5.42:1 (AA) */
+  --border: var(--color-hairline);
+  --input: var(--color-hairline);
+  --ring: var(--color-bottle);
+  --chart-1: var(--color-bottle);
+  --chart-2: var(--color-amber);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: var(--color-ink);
+  --sidebar-primary: var(--color-bottle);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--color-parchment);
+  --sidebar-accent-foreground: var(--color-ink);
+  --sidebar-border: var(--color-hairline);
+  --sidebar-ring: var(--color-bottle);
 }
 
 @theme inline {
@@ -110,8 +121,11 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Kept under its historical name so the nine page-shell call sites can be
+   migrated mechanically in phase 2; now expands to the porcelain canvas
+   instead of the retired three-stop navy gradient. */
 @utility bg-cosmic {
-  background-image: linear-gradient(to bottom, #0a0e1a, #0f1529, #0a0e1a);
+  background-color: var(--color-porcelain);
 }
 
 @layer base {
