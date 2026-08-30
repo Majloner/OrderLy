@@ -506,3 +506,9 @@ pnpm-debug.log*
 # Stryker mutation testing
 .stryker-tmp/
 reports/
+
+# Playwright (E2E)
+.env.e2e
+playwright/.auth/
+playwright-report/
+.playwright-cli/
