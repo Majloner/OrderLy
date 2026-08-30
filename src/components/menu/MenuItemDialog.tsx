@@ -196,7 +196,7 @@ function MenuItemForm({ item, categories, defaultCategoryId, supabaseUrl, onSubm
           {previewUrl ? (
             <img src={previewUrl} alt="" className="size-16 shrink-0 rounded-md object-cover" />
           ) : (
-            <div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/30">
+            <div className="border-border bg-card flex size-16 shrink-0 items-center justify-center rounded-md border text-white/30">
               <ImageIcon className="size-6" />
             </div>
           )}

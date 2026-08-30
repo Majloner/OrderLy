@@ -14,7 +14,9 @@ const priceFormatter = new Intl.NumberFormat("pl-PL", {
 
 const availabilityBadgeClass: Record<MenuItem["availability"], string> = {
   available: "border-green-400/40 bg-green-500/15 text-green-200",
-  unavailable: "border-white/20 bg-white/10 text-white/60",
+  // Neutral entry moved to the semantic tokens in phase 3 (the white-alpha
+  // sweep); the two coloured entries follow in phase 4 with the full map.
+  unavailable: "border-neutral-border bg-neutral-fill text-neutral-fg",
   sold_out: "border-amber-400/40 bg-amber-500/15 text-amber-200",
 };
 
@@ -41,7 +43,7 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 p-3",
+        "border-border bg-card flex items-start gap-2 rounded-lg border p-3",
         isDragging && "z-10 opacity-70",
       )}
     >
@@ -58,7 +60,7 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
       {thumbUrl ? (
         <img src={thumbUrl} alt="" loading="lazy" className="size-12 shrink-0 rounded-md object-cover" />
       ) : (
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/30">
+        <div className="border-border bg-card flex size-12 shrink-0 items-center justify-center rounded-md border text-white/30">
           <ImageIcon className="size-5" />
         </div>
       )}
@@ -75,7 +77,11 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
         {item.allergens.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {item.allergens.map((allergen) => (
-              <Badge key={allergen} variant="outline" className="border-white/15 bg-white/5 text-xs text-white/60">
+              <Badge
+                key={allergen}
+                variant="outline"
+                className="border-neutral-border bg-neutral-fill text-xs text-white/60"
+              >
                 {ALLERGEN_LABELS[allergen]}
               </Badge>
             ))}

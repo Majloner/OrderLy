@@ -8,7 +8,7 @@ const isOwner = role === "owner";
 
 <Layout title="Panel">
   <div class="bg-background flex min-h-screen items-center justify-center p-4">
-    <div class="rounded-2xl border border-white/10 bg-white/10 p-8 text-center text-white backdrop-blur-xl">
+    <div class="border-border bg-card rounded-2xl border p-8 text-center text-white shadow-sm">
       <h1 class="font-display text-primary mb-4 text-3xl font-bold">Panel</h1>
       <p class="text-blue-100/80">
         Witaj, <span class="font-semibold text-white">{display_name ?? user?.email}</span>
@@ -19,7 +19,7 @@ const isOwner = role === "owner";
           isOwner && (
             <a
               href="/menu"
-              class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+              class="border-border bg-card hover:bg-muted inline-block rounded-lg border px-4 py-2 text-sm transition-colors"
             >
               Menu
             </a>
@@ -29,7 +29,7 @@ const isOwner = role === "owner";
           isOwner && (
             <a
               href="/staff"
-              class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+              class="border-border bg-card hover:bg-muted inline-block rounded-lg border px-4 py-2 text-sm transition-colors"
             >
               Pracownicy
             </a>
@@ -39,7 +39,7 @@ const isOwner = role === "owner";
           isOwner && (
             <a
               href="/room"
-              class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+              class="border-border bg-card hover:bg-muted inline-block rounded-lg border px-4 py-2 text-sm transition-colors"
             >
               Schemat sali
             </a>
@@ -47,7 +47,7 @@ const isOwner = role === "owner";
         }
         <a
           href="/settings"
-          class="inline-block rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+          class="border-border bg-card hover:bg-muted inline-block rounded-lg border px-4 py-2 text-sm transition-colors"
         >
           Ustawienia lokalu
         </a>
@@ -55,7 +55,7 @@ const isOwner = role === "owner";
       <form method="POST" action="/api/auth/signout" class="mt-4">
         <button
           type="submit"
-          class="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
+          class="border-border bg-card hover:bg-muted rounded-lg border px-4 py-2 text-sm transition-colors"
         >
           Wyloguj
         </button>

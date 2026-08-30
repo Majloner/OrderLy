@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
 import { CircleAlert } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-
-const inputBase =
-  "w-full rounded-lg bg-white/10 border px-3 py-2 pl-10 text-white placeholder-white/40 focus:outline-none focus:ring-2 transition-colors";
 
 interface FormFieldProps {
   id: string;
@@ -19,6 +17,9 @@ interface FormFieldProps {
   endContent?: ReactNode;
 }
 
+// The field composition (icon, error, hint) lives here; the input itself is the
+// token-driven ui/input primitive — this file used to hand-roll a duplicate
+// recipe. Error styling rides the primitive's aria-invalid states.
 export function FormField({
   id,
   name,
@@ -38,8 +39,10 @@ export function FormField({
         {label}
       </label>
       <div className="relative">
-        <span className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40">{icon}</span>
-        <input
+        <span className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-white/40">
+          {icon}
+        </span>
+        <Input
           id={id}
           name={name ?? id}
           type={type}
@@ -48,10 +51,8 @@ export function FormField({
             onChange(e.target.value);
           }}
           placeholder={placeholder}
-          className={cn(
-            inputBase,
-            error ? "border-red-400/60 focus:ring-red-400" : "border-white/20 focus:ring-purple-400",
-          )}
+          aria-invalid={error ? true : undefined}
+          className={cn("pl-10", endContent && "pr-10")}
         />
         {endContent}
       </div>

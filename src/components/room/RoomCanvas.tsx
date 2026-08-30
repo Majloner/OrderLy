@@ -112,7 +112,7 @@ export function RoomCanvas({
     >
       <div
         ref={surfaceRef}
-        className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+        className="border-border bg-card relative w-full overflow-hidden rounded-2xl border"
         style={{ height: LOGICAL_CANVAS.height * scale }}
         // Clicking the backdrop clears the selection and its handles. Only the
         // surface itself counts: a click that bubbled up from a child would undo

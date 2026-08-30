@@ -38,10 +38,7 @@ export function CategorySection({
     <section
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn(
-        "rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl",
-        isDragging && "z-10 opacity-70",
-      )}
+      className={cn("border-border bg-card rounded-2xl border p-4 shadow-sm", isDragging && "z-10 opacity-70")}
     >
       <header className="mb-3 flex items-center gap-2">
         {category && (

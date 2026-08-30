@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase";
 
 // Authentication is enforced by middleware (PROTECTED_ROUTES includes /settings),
@@ -21,14 +22,11 @@ if (isOwner && supabase && company_id) {
 
 const error = Astro.url.searchParams.get("error");
 const success = Astro.url.searchParams.get("success");
-
-const inputClass =
-  "mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-white placeholder-white/30 focus:border-purple-300 focus:outline-none";
 ---
 
 <Layout title="Ustawienia lokalu">
   <div class="bg-background flex min-h-screen items-center justify-center p-4">
-    <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
+    <div class="border-border bg-card w-full max-w-md rounded-2xl border p-8 text-white shadow-sm">
       <h1 class="font-display text-primary mb-6 text-2xl font-bold">Ustawienia lokalu</h1>
 
       {
@@ -40,34 +38,43 @@ const inputClass =
             {error && <p class="mb-4 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{error}</p>}
 
             <form method="POST" action="/api/company/profile" class="space-y-4">
-              <label class="block text-sm text-blue-100/80">
-                Nazwa lokalu
-                <input
-                  class:list={inputClass}
+              <div>
+                <label for="company-name" class="block text-sm text-blue-100/80">
+                  Nazwa lokalu
+                </label>
+                <Input
+                  id="company-name"
+                  className="mt-1"
                   name="name"
                   value={company?.name ?? ""}
                   placeholder="np. Bistro Roma"
                   required
                 />
-              </label>
-              <label class="block text-sm text-blue-100/80">
-                Adres
-                <input
-                  class:list={inputClass}
+              </div>
+              <div>
+                <label for="company-address" class="block text-sm text-blue-100/80">
+                  Adres
+                </label>
+                <Input
+                  id="company-address"
+                  className="mt-1"
                   name="address"
                   value={company?.address ?? ""}
                   placeholder="ul. Przykładowa 1"
                 />
-              </label>
-              <label class="block text-sm text-blue-100/80">
-                Godziny otwarcia
-                <input
-                  class:list={inputClass}
+              </div>
+              <div>
+                <label for="company-opening-hours" class="block text-sm text-blue-100/80">
+                  Godziny otwarcia
+                </label>
+                <Input
+                  id="company-opening-hours"
+                  className="mt-1"
                   name="opening_hours"
                   value={company?.opening_hours ?? ""}
                   placeholder="Pon–Nd 10:00–22:00"
                 />
-              </label>
+              </div>
               <button
                 type="submit"
                 class="w-full rounded-lg bg-gradient-to-r from-blue-500/80 to-purple-500/80 px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"

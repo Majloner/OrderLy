@@ -9,7 +9,7 @@ interface EmptyStateProps {
 // The dashed empty state repeated across the three managers, collapsed here.
 export function EmptyState({ message, children }: EmptyStateProps) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
+    <div className="border-border bg-muted/40 rounded-2xl border border-dashed p-8 text-center">
       <p className="text-white/70">{message}</p>
       {children}
     </div>

@@ -37,7 +37,7 @@ export function RoomTabs({ rooms, tables, activeRoomId, onSelect, onCreate, onEd
               "rounded-lg border px-3 py-1.5 text-sm transition-colors",
               room.id === activeRoomId
                 ? "border-purple-400/50 bg-purple-500/20 text-white"
-                : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10",
+                : "border-border bg-card hover:bg-muted text-white/70",
             )}
           >
             {room.name}

@@ -660,20 +660,20 @@ starting each phase.
 
 #### Automated
 
-- [ ] 3.1 Linting passes: `npm run lint`
-- [ ] 3.2 Type checking passes: `npm run typecheck`
-- [ ] 3.3 Unit tests pass: `npm run test`
-- [ ] 3.4 Integration tests pass: `npm run test:integration`
-- [ ] 3.5 Production build succeeds: `npm run build`
-- [ ] 3.6 No `backdrop-blur` remains in `src/`
-- [ ] 3.7 No `bg-white/` or `border-white/` remains in `src/`
+- [x] 3.1 Linting passes: `npm run lint`
+- [x] 3.2 Type checking passes: `npm run typecheck`
+- [x] 3.3 Unit tests pass: `npm run test`
+- [x] 3.4 Integration tests pass: `npm run test:integration`
+- [x] 3.5 Production build succeeds: `npm run build`
+- [x] 3.6 No `backdrop-blur` remains in `src/`
+- [x] 3.7 No `bg-white/` or `border-white/` remains in `src/`
 
 #### Manual
 
-- [ ] 3.8 Card boundaries visible on every list and panel
-- [ ] 3.9 Dashed empty states, room canvas and orphan-tables panel are distinguishable
-- [ ] 3.10 Inputs look and behave the same after the `<Input />` swap
-- [ ] 3.11 Dialogs and selects render correctly over the new surfaces
+- [x] 3.8 Card boundaries visible on every list and panel
+- [x] 3.9 Dashed empty states, room canvas and orphan-tables panel are distinguishable
+- [x] 3.10 Inputs look and behave the same after the `<Input />` swap
+- [x] 3.11 Dialogs and selects render correctly over the new surfaces
 
 ### Phase 4: Text tiers and semantic maps
 

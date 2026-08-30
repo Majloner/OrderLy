@@ -31,12 +31,7 @@ export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowPro
   const secondary = member.login ?? member.email;
 
   return (
-    <li
-      className={cn(
-        "flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 p-3",
-        !isActive && "opacity-50",
-      )}
-    >
+    <li className={cn("border-border bg-card flex items-start gap-3 rounded-lg border p-3", !isActive && "opacity-50")}>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-white">{displayName}</span>
@@ -44,7 +39,7 @@ export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowPro
             {STAFF_ROLE_LABELS[member.role]}
           </Badge>
           {!isActive && (
-            <Badge variant="outline" className="border-white/20 bg-white/10 text-white/60">
+            <Badge variant="outline" className="border-neutral-border bg-neutral-fill text-neutral-fg">
               Nieaktywny
             </Badge>
           )}
