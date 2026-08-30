@@ -9,7 +9,7 @@ interface Props {
 const { title, centered = false } = Astro.props;
 ---
 
-<div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
+<div class="bg-background flex min-h-screen items-center justify-center p-4">
   <div
     class:list={[
       "w-full max-w-sm rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl",
@@ -17,9 +17,7 @@ const { title, centered = false } = Astro.props;
     ]}
   >
     <slot name="above" />
-    <h1
-      class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-center text-2xl font-bold text-transparent"
-    >
+    <h1 class="font-display text-primary mb-6 text-center text-2xl font-bold">
       {title}
     </h1>
     <slot />

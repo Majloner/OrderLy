@@ -627,34 +627,34 @@ starting each phase.
 
 #### Automated
 
-- [x] 1.1 Linting passes: `npm run lint`
-- [x] 1.2 Type checking passes: `npm run typecheck`
-- [x] 1.3 Unit tests pass: `npm run test`
-- [x] 1.4 Production build succeeds: `npm run build`
-- [x] 1.5 No `dark:` utility remains outside `src/components/ui/`
+- [x] 1.1 Linting passes: `npm run lint` — c7f8c39
+- [x] 1.2 Type checking passes: `npm run typecheck` — c7f8c39
+- [x] 1.3 Unit tests pass: `npm run test` — c7f8c39
+- [x] 1.4 Production build succeeds: `npm run build` — c7f8c39
+- [x] 1.5 No `dark:` utility remains outside `src/components/ui/` — c7f8c39
 
 #### Manual
 
-- [x] 1.6 Every shadcn primitive renders light with no component edit
-- [x] 1.7 Bricolage Grotesque loads
-- [x] 1.8 Native scrollbars and autofill render light
-- [x] 1.9 Recorded contrast ratios meet AA for their intended use
+- [x] 1.6 Every shadcn primitive renders light with no component edit — c7f8c39
+- [x] 1.7 Bricolage Grotesque loads — c7f8c39
+- [x] 1.8 Native scrollbars and autofill render light — c7f8c39
+- [x] 1.9 Recorded contrast ratios meet AA for their intended use — c7f8c39
 
 ### Phase 2: Page shells and headings
 
 #### Automated
 
-- [ ] 2.1 Linting passes: `npm run lint`
-- [ ] 2.2 Type checking passes: `npm run typecheck`
-- [ ] 2.3 Production build succeeds: `npm run build`
-- [ ] 2.4 No `text-transparent` remains in `src/`
-- [ ] 2.5 No `bg-clip-text` remains in `src/`
+- [x] 2.1 Linting passes: `npm run lint`
+- [x] 2.2 Type checking passes: `npm run typecheck`
+- [x] 2.3 Production build succeeds: `npm run build`
+- [x] 2.4 No `text-transparent` remains in `src/`
+- [x] 2.5 No `bg-clip-text` remains in `src/`
 
 #### Manual
 
-- [ ] 2.6 Every page heading is visible and legible on all eight routes
-- [ ] 2.7 The three auth pages render identically after the `AuthCard` extraction
-- [ ] 2.8 Headings render in Bricolage Grotesque, not the fallback
+- [x] 2.6 Every page heading is visible and legible on all eight routes
+- [x] 2.7 The three auth pages render identically after the `AuthCard` extraction
+- [x] 2.8 Headings render in Bricolage Grotesque, not the fallback
 
 ### Phase 3: Surfaces
 
