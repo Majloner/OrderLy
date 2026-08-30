@@ -15,6 +15,11 @@ export default defineConfig({
     // Force a single React copy — avoids the dev-server "more than one copy of
     // React / invalid hook call" from duplicated optimized deps.
     resolve: { dedupe: ["react", "react-dom"] },
+    // `astro check` spins up its own Vite and re-optimizes the dep cache it
+    // shares with the dev server, leaving the server's SSR deps inconsistent
+    // (null-React useMemo crash inside islands). Run checks against a separate
+    // cache: the pre-commit gate invokes them with ASTRO_CHECK=1.
+    ...(process.env.ASTRO_CHECK ? { cacheDir: "node_modules/.vite-check" } : {}),
   },
   // No astro:assets usage in the app, so skip the Cloudflare Images binding the
   // adapter otherwise auto-enables (and tries to provision on deploy).
