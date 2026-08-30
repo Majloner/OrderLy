@@ -38,7 +38,7 @@ export default function StaffManager({ currentUserId }: StaffManagerProps) {
     if (loadError) {
       return <ErrorPanel message={loadError} onRetry={reload} />;
     }
-    return <p className="text-white/60">Ładowanie listy personelu…</p>;
+    return <p className="text-muted-foreground">Ładowanie listy personelu…</p>;
   }
 
   const openCreate = () => {

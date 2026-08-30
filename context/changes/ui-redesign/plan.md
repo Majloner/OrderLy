@@ -660,43 +660,43 @@ starting each phase.
 
 #### Automated
 
-- [x] 3.1 Linting passes: `npm run lint`
-- [x] 3.2 Type checking passes: `npm run typecheck`
-- [x] 3.3 Unit tests pass: `npm run test`
-- [x] 3.4 Integration tests pass: `npm run test:integration`
-- [x] 3.5 Production build succeeds: `npm run build`
-- [x] 3.6 No `backdrop-blur` remains in `src/`
-- [x] 3.7 No `bg-white/` or `border-white/` remains in `src/`
+- [x] 3.1 Linting passes: `npm run lint` — eeb3ab6
+- [x] 3.2 Type checking passes: `npm run typecheck` — eeb3ab6
+- [x] 3.3 Unit tests pass: `npm run test` — eeb3ab6
+- [x] 3.4 Integration tests pass: `npm run test:integration` — eeb3ab6
+- [x] 3.5 Production build succeeds: `npm run build` — eeb3ab6
+- [x] 3.6 No `backdrop-blur` remains in `src/` — eeb3ab6
+- [x] 3.7 No `bg-white/` or `border-white/` remains in `src/` — eeb3ab6
 
 #### Manual
 
-- [x] 3.8 Card boundaries visible on every list and panel
-- [x] 3.9 Dashed empty states, room canvas and orphan-tables panel are distinguishable
-- [x] 3.10 Inputs look and behave the same after the `<Input />` swap
-- [x] 3.11 Dialogs and selects render correctly over the new surfaces
+- [x] 3.8 Card boundaries visible on every list and panel — eeb3ab6
+- [x] 3.9 Dashed empty states, room canvas and orphan-tables panel are distinguishable — eeb3ab6
+- [x] 3.10 Inputs look and behave the same after the `<Input />` swap — eeb3ab6
+- [x] 3.11 Dialogs and selects render correctly over the new surfaces — eeb3ab6
 
 ### Phase 4: Text tiers and semantic maps
 
 #### Automated
 
-- [ ] 4.1 Linting passes: `npm run lint`
-- [ ] 4.2 Type checking passes: `npm run typecheck`
-- [ ] 4.3 Unit tests pass: `npm run test`
-- [ ] 4.4 Integration tests pass: `npm run test:integration`
-- [ ] 4.5 Production build succeeds: `npm run build`
-- [ ] 4.6 No `text-white` outside the two `ui/` destructive hits
-- [ ] 4.7 No `text-blue-100` remains in `src/`
+- [x] 4.1 Linting passes: `npm run lint`
+- [x] 4.2 Type checking passes: `npm run typecheck`
+- [x] 4.3 Unit tests pass: `npm run test`
+- [x] 4.4 Integration tests pass: `npm run test:integration`
+- [x] 4.5 Production build succeeds: `npm run build`
+- [x] 4.6 No `text-white` outside the two `ui/` destructive hits
+- [x] 4.7 No `text-blue-100` remains in `src/`
 
 #### Manual
 
-- [ ] 4.8 Every screen readable end to end; no white-on-cream
-- [ ] 4.9 Three availability states distinguishable on `/menu`
-- [ ] 4.10 Three role states plus inactive badge distinguishable on `/staff`
-- [ ] 4.11 Active and inactive tables distinguishable on `/room`, dashed border survives
-- [ ] 4.12 Links and destructive icons gain contrast on hover, never lose it
-- [ ] 4.13 Error and success banners legible
-- [ ] 4.14 Keyboard focus rings visible on every interactive element
-- [ ] 4.15 All `aria-label`s survived the edits
+- [x] 4.8 Every screen readable end to end; no white-on-cream
+- [x] 4.9 Three availability states distinguishable on `/menu`
+- [x] 4.10 Three role states plus inactive badge distinguishable on `/staff`
+- [x] 4.11 Active and inactive tables distinguishable on `/room`, dashed border survives
+- [x] 4.12 Links and destructive icons gain contrast on hover, never lose it
+- [x] 4.13 Error and success banners legible
+- [x] 4.14 Keyboard focus rings visible on every interactive element
+- [x] 4.15 All `aria-label`s survived the edits
 
 ### Phase 5: Landing page and the signature menu row
 

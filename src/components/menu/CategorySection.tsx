@@ -44,7 +44,7 @@ export function CategorySection({
         {category && (
           <button
             type="button"
-            className="cursor-grab touch-none text-white/40 hover:text-white/80"
+            className="text-muted-foreground hover:text-foreground cursor-grab touch-none"
             aria-label={`Przeciągnij kategorię ${category.name}`}
             {...attributes}
             {...listeners}
@@ -52,14 +52,14 @@ export function CategorySection({
             <GripVertical className="size-4" />
           </button>
         )}
-        <h2 className="min-w-0 flex-1 truncate text-lg font-semibold text-white">
+        <h2 className="text-foreground min-w-0 flex-1 truncate text-lg font-semibold">
           {category ? category.name : "Bez kategorii"}
         </h2>
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="text-white/70 hover:text-white"
+          className="text-muted-foreground hover:text-foreground"
           onClick={() => {
             onAddItem(category?.id ?? null);
           }}
@@ -72,7 +72,7 @@ export function CategorySection({
               type="button"
               variant="ghost"
               size="icon"
-              className="text-white/60 hover:text-white"
+              className="text-muted-foreground hover:text-foreground"
               aria-label={`Edytuj kategorię ${category.name}`}
               onClick={() => {
                 onEditCategory(category);
@@ -84,7 +84,7 @@ export function CategorySection({
               type="button"
               variant="ghost"
               size="icon"
-              className="text-white/60 hover:text-red-300"
+              className="text-muted-foreground hover:text-destructive"
               aria-label={`Usuń kategorię ${category.name}`}
               onClick={() => {
                 onDeleteCategory(category);
@@ -97,7 +97,7 @@ export function CategorySection({
       </header>
 
       {items.length === 0 ? (
-        <p className="text-sm text-white/40">Brak pozycji w tej kategorii.</p>
+        <p className="text-muted-foreground text-sm">Brak pozycji w tej kategorii.</p>
       ) : (
         <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
           <ul className="space-y-2">

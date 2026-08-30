@@ -22,6 +22,7 @@
 
   /* brand & accent */
   --color-bottle: #1e4a3c; /* brand — 9.03:1 on porcelain; white on bottle 10.00:1 (AAA) */
+  --color-bottle-deep: #14352a; /* link hover — darker than bottle, so always above its 9.03:1 */
   --color-amber: #e0a22b; /* accent — 2.02:1 on porcelain: DECORATIVE ONLY, never text; ink on amber 7.34:1 */
 
   /* surfaces */

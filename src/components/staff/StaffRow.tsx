@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { STAFF_ROLE_LABELS, type StaffMember } from "@/types";
 
+// Roles on the semantic triples: owner carries the brand, waiter the info
+// tone, kitchen the warm amber it had before — all AA-checked in global.css.
 const roleBadgeClass: Record<StaffMember["role"], string> = {
-  owner: "border-purple-400/40 bg-purple-500/15 text-purple-200",
-  waiter: "border-blue-400/40 bg-blue-500/15 text-blue-200",
-  kitchen: "border-amber-400/40 bg-amber-500/15 text-amber-200",
+  owner: "border-primary/40 bg-primary/10 text-primary",
+  waiter: "border-info-border bg-info-fill text-info-fg",
+  kitchen: "border-warning-border bg-warning-fill text-warning-fg",
 };
 
 interface StaffRowProps {
@@ -34,7 +36,7 @@ export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowPro
     <li className={cn("border-border bg-card flex items-start gap-3 rounded-lg border p-3", !isActive && "opacity-50")}>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-white">{displayName}</span>
+          <span className="text-foreground font-medium">{displayName}</span>
           <Badge variant="outline" className={roleBadgeClass[member.role]}>
             {STAFF_ROLE_LABELS[member.role]}
           </Badge>
@@ -43,9 +45,11 @@ export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowPro
               Nieaktywny
             </Badge>
           )}
-          {isSelf && <span className="text-xs text-white/40">(to Ty)</span>}
+          {isSelf && <span className="text-muted-foreground text-xs">(to Ty)</span>}
         </div>
-        {secondary && secondary !== displayName && <p className="mt-1 truncate text-sm text-white/50">{secondary}</p>}
+        {secondary && secondary !== displayName && (
+          <p className="text-muted-foreground mt-1 truncate text-sm">{secondary}</p>
+        )}
       </div>
 
       <div className="flex shrink-0 gap-1">
@@ -53,7 +57,7 @@ export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowPro
           type="button"
           variant="ghost"
           size="icon"
-          className="text-white/60 hover:text-white"
+          className="text-muted-foreground hover:text-foreground"
           aria-label={`Edytuj konto ${displayName}`}
           onClick={() => {
             onEdit(member);
@@ -65,7 +69,7 @@ export function StaffRow({ member, isSelf, onEdit, onToggleActive }: StaffRowPro
           type="button"
           variant="ghost"
           size="icon"
-          className={cn("text-white/60", isActive ? "hover:text-red-300" : "hover:text-green-300")}
+          className={cn("text-muted-foreground", isActive ? "hover:text-destructive" : "hover:text-success-fg")}
           aria-label={`${isActive ? "Dezaktywuj" : "Aktywuj"} konto ${displayName}`}
           disabled={isSelf}
           onClick={() => {

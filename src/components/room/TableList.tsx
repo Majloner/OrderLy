@@ -30,7 +30,7 @@ export function TableList({ tables, busyTableId, onEdit, onToggleActive }: Table
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm">{table.label ?? "—"}</span>
-            <span className="block text-xs text-white/50">{TABLE_SHAPE_LABELS[table.shape]}</span>
+            <span className="text-muted-foreground block text-xs">{TABLE_SHAPE_LABELS[table.shape]}</span>
           </span>
           <Badge variant={table.is_active ? "default" : "outline"}>{table.is_active ? "Aktywny" : "Wyłączony"}</Badge>
           <span className="flex gap-1">

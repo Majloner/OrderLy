@@ -77,7 +77,7 @@ export default function RoomLayoutManager() {
     if (loadError) {
       return <ErrorPanel message={loadError} onRetry={reload} />;
     }
-    return <p className="text-white/60">Ładowanie schematu sali…</p>;
+    return <p className="text-muted-foreground">Ładowanie schematu sali…</p>;
   }
 
   // Derived, not stored in an effect: a deleted or never-selected room falls
@@ -446,7 +446,7 @@ export default function RoomLayoutManager() {
               )}
               {objectsInRoom.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-white/70">Wyposażenie</h3>
+                  <h3 className="text-muted-foreground text-sm font-semibold">Wyposażenie</h3>
                   <RoomObjectList
                     objects={objectsInRoom}
                     busyObjectId={busyObjectId}
@@ -461,9 +461,9 @@ export default function RoomLayoutManager() {
       )}
 
       {orphanTables.length > 0 && (
-        <div className="space-y-2 rounded-2xl border border-amber-400/30 bg-amber-500/5 p-4">
+        <div className="border-warning-border bg-warning-fill space-y-2 rounded-2xl border p-4">
           <h2 className="text-lg font-semibold">Bez sali</h2>
-          <p className="text-sm text-white/60">
+          <p className="text-muted-foreground text-sm">
             Te stoliki wskazują salę, której już nie ma. Otwórz stolik i przypisz go do istniejącej sali.
           </p>
           <TableList

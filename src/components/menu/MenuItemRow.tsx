@@ -12,12 +12,12 @@ const priceFormatter = new Intl.NumberFormat("pl-PL", {
   currency: "PLN",
 });
 
+// Meaning-bearing map on the semantic triples from global.css — fifteen
+// contrast decisions made once, centrally (test-plan/plan.md phase 4).
 const availabilityBadgeClass: Record<MenuItem["availability"], string> = {
-  available: "border-green-400/40 bg-green-500/15 text-green-200",
-  // Neutral entry moved to the semantic tokens in phase 3 (the white-alpha
-  // sweep); the two coloured entries follow in phase 4 with the full map.
+  available: "border-success-border bg-success-fill text-success-fg",
   unavailable: "border-neutral-border bg-neutral-fill text-neutral-fg",
-  sold_out: "border-amber-400/40 bg-amber-500/15 text-amber-200",
+  sold_out: "border-warning-border bg-warning-fill text-warning-fg",
 };
 
 interface MenuItemRowProps {
@@ -49,7 +49,7 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
     >
       <button
         type="button"
-        className="mt-1 cursor-grab touch-none text-white/40 hover:text-white/80"
+        className="text-muted-foreground hover:text-foreground mt-1 cursor-grab touch-none"
         aria-label={`Przeciągnij pozycję ${item.name}`}
         {...attributes}
         {...listeners}
@@ -60,27 +60,27 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
       {thumbUrl ? (
         <img src={thumbUrl} alt="" loading="lazy" className="size-12 shrink-0 rounded-md object-cover" />
       ) : (
-        <div className="border-border bg-card flex size-12 shrink-0 items-center justify-center rounded-md border text-white/30">
+        <div className="border-border bg-card text-muted-foreground flex size-12 shrink-0 items-center justify-center rounded-md border">
           <ImageIcon className="size-5" />
         </div>
       )}
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-white">{item.name}</span>
-          <span className="text-sm text-blue-100/80">{priceFormatter.format(item.price)}</span>
+          <span className="text-foreground font-medium">{item.name}</span>
+          <span className="text-muted-foreground text-sm">{priceFormatter.format(item.price)}</span>
           <Badge variant="outline" className={availabilityBadgeClass[item.availability]}>
             {AVAILABILITY_LABELS[item.availability]}
           </Badge>
         </div>
-        {item.description && <p className="mt-1 truncate text-sm text-white/50">{item.description}</p>}
+        {item.description && <p className="text-muted-foreground mt-1 truncate text-sm">{item.description}</p>}
         {item.allergens.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {item.allergens.map((allergen) => (
               <Badge
                 key={allergen}
                 variant="outline"
-                className="border-neutral-border bg-neutral-fill text-xs text-white/60"
+                className="border-neutral-border bg-neutral-fill text-muted-foreground text-xs"
               >
                 {ALLERGEN_LABELS[allergen]}
               </Badge>
@@ -94,7 +94,7 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
           type="button"
           variant="ghost"
           size="icon"
-          className="text-white/60 hover:text-white"
+          className="text-muted-foreground hover:text-foreground"
           aria-label={`Edytuj pozycję ${item.name}`}
           onClick={() => {
             onEdit(item);
@@ -106,7 +106,7 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
           type="button"
           variant="ghost"
           size="icon"
-          className="text-white/60 hover:text-red-300"
+          className="text-muted-foreground hover:text-destructive"
           aria-label={`Zarchiwizuj pozycję ${item.name}`}
           onClick={() => {
             onArchive(item);

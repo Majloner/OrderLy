@@ -26,20 +26,26 @@ const success = Astro.url.searchParams.get("success");
 
 <Layout title="Ustawienia lokalu">
   <div class="bg-background flex min-h-screen items-center justify-center p-4">
-    <div class="border-border bg-card w-full max-w-md rounded-2xl border p-8 text-white shadow-sm">
+    <div class="border-border bg-card text-foreground w-full max-w-md rounded-2xl border p-8 shadow-sm">
       <h1 class="font-display text-primary mb-6 text-2xl font-bold">Ustawienia lokalu</h1>
 
       {
         isOwner ? (
           <div>
             {success && (
-              <p class="mb-4 rounded-lg bg-green-500/20 px-3 py-2 text-sm text-green-100">Zapisano zmiany.</p>
+              <p class="border-success-border bg-success-fill text-success-fg mb-4 rounded-lg border px-3 py-2 text-sm">
+                Zapisano zmiany.
+              </p>
             )}
-            {error && <p class="mb-4 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{error}</p>}
+            {error && (
+              <p class="border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-lg border px-3 py-2 text-sm">
+                {error}
+              </p>
+            )}
 
             <form method="POST" action="/api/company/profile" class="space-y-4">
               <div>
-                <label for="company-name" class="block text-sm text-blue-100/80">
+                <label for="company-name" class="text-muted-foreground block text-sm">
                   Nazwa lokalu
                 </label>
                 <Input
@@ -52,7 +58,7 @@ const success = Astro.url.searchParams.get("success");
                 />
               </div>
               <div>
-                <label for="company-address" class="block text-sm text-blue-100/80">
+                <label for="company-address" class="text-muted-foreground block text-sm">
                   Adres
                 </label>
                 <Input
@@ -64,7 +70,7 @@ const success = Astro.url.searchParams.get("success");
                 />
               </div>
               <div>
-                <label for="company-opening-hours" class="block text-sm text-blue-100/80">
+                <label for="company-opening-hours" class="text-muted-foreground block text-sm">
                   Godziny otwarcia
                 </label>
                 <Input
@@ -77,18 +83,20 @@ const success = Astro.url.searchParams.get("success");
               </div>
               <button
                 type="submit"
-                class="w-full rounded-lg bg-gradient-to-r from-blue-500/80 to-purple-500/80 px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+                class="hover:bg-bottle-deep bg-primary text-primary-foreground w-full rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
               >
                 Zapisz
               </button>
             </form>
           </div>
         ) : (
-          <p class="text-sm text-blue-100/70">Tylko właściciel lokalu może edytować te ustawienia.</p>
+          <p class="text-muted-foreground text-sm">Tylko właściciel lokalu może edytować te ustawienia.</p>
         )
       }
 
-      <a href="/dashboard" class="mt-4 inline-block text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
+      <a href="/dashboard" class="text-primary hover:text-bottle-deep mt-4 inline-block text-sm hover:underline"
+        >← Powrót do panelu</a
+      >
     </div>
   </div>
 </Layout>

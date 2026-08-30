@@ -31,7 +31,7 @@ export function RoomObjectList({ objects, busyObjectId, onEdit, onDelete }: Room
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm">{object.label ?? kindLabel}</span>
-              <span className="block text-xs text-white/50">
+              <span className="text-muted-foreground block text-xs">
                 {kindLabel} · {object.width}×{object.height}
                 {object.rotation === 0 ? "" : ` · ${String(object.rotation)}°`}
               </span>

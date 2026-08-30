@@ -19,21 +19,21 @@ if (supabase && company_id) {
 ---
 
 <Layout title="Pracownicy">
-  <div class="bg-background min-h-screen p-4 text-white sm:p-8">
+  <div class="bg-background text-foreground min-h-screen p-4 sm:p-8">
     <div class="mx-auto w-full max-w-3xl">
       <div class="mb-6 flex items-center justify-between">
         <h1 class="font-display text-primary text-3xl font-bold">Pracownicy</h1>
-        <a href="/dashboard" class="text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
+        <a href="/dashboard" class="text-primary hover:text-bottle-deep text-sm hover:underline">← Powrót do panelu</a>
       </div>
 
       {
         venueCode && (
           <div class="border-border bg-card mb-6 rounded-xl border px-4 py-3">
-            <p class="text-sm text-blue-100/70">
+            <p class="text-muted-foreground text-sm">
               Kod lokalu:
-              <span class="ml-2 font-mono text-lg font-semibold tracking-widest text-white">{venueCode}</span>
+              <span class="text-foreground ml-2 font-mono text-lg font-semibold tracking-widest">{venueCode}</span>
             </p>
-            <p class="mt-1 text-xs text-white/50">
+            <p class="text-muted-foreground mt-1 text-xs">
               Pracownik podaje ten kod razem ze swoim loginem przy logowaniu. Kod jest stały i nie zmienia się.
             </p>
           </div>

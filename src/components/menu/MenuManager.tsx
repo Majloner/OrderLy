@@ -50,7 +50,7 @@ export default function MenuManager({ supabaseUrl }: { supabaseUrl: string }) {
     if (loadError) {
       return <ErrorPanel message={loadError} onRetry={reload} />;
     }
-    return <p className="text-white/60">Ładowanie menu…</p>;
+    return <p className="text-muted-foreground">Ładowanie menu…</p>;
   }
 
   const categoryIds = new Set(menu.categories.map((category) => category.id));

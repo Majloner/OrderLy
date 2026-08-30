@@ -58,7 +58,7 @@ export default function SignInForm({ serverError }: Props) {
         placeholder="np. H42NAM"
         error={errors.venue_code}
         icon={<Store className="size-4" />}
-        hint={<p className="mt-1 text-xs text-blue-100/50">Zostaw puste, jeśli jesteś właścicielem lokalu.</p>}
+        hint={<p className="text-muted-foreground mt-1 text-xs">Zostaw puste, jeśli jesteś właścicielem lokalu.</p>}
       />
 
       {/* One field, two meanings — the venue code decides which. The `id` also

@@ -10,11 +10,11 @@ import { SUPABASE_URL } from "astro:env/server";
 ---
 
 <Layout title="Menu lokalu">
-  <div class="bg-background min-h-screen p-4 text-white sm:p-8">
+  <div class="bg-background text-foreground min-h-screen p-4 sm:p-8">
     <div class="mx-auto w-full max-w-3xl">
       <div class="mb-6 flex items-center justify-between">
         <h1 class="font-display text-primary text-3xl font-bold">Menu lokalu</h1>
-        <a href="/dashboard" class="text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
+        <a href="/dashboard" class="text-primary hover:text-bottle-deep text-sm hover:underline">← Powrót do panelu</a>
       </div>
       <MenuManager client:load supabaseUrl={SUPABASE_URL ?? ""} />
     </div>

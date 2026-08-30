@@ -10,7 +10,7 @@ interface EmptyStateProps {
 export function EmptyState({ message, children }: EmptyStateProps) {
   return (
     <div className="border-border bg-muted/40 rounded-2xl border border-dashed p-8 text-center">
-      <p className="text-white/70">{message}</p>
+      <p className="text-muted-foreground">{message}</p>
       {children}
     </div>
   );

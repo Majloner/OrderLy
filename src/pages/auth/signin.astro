@@ -9,8 +9,10 @@ const error = Astro.url.searchParams.get("error");
 <Layout title="Logowanie">
   <AuthCard title="Logowanie">
     <SignInForm serverError={error} client:load />
-    <p class="mt-4 text-center text-sm text-blue-100/60">
-      Nie masz konta? <a href="/auth/signup" class="text-purple-300 hover:underline">Zarejestruj się</a>
+    <p class="text-muted-foreground mt-4 text-center text-sm">
+      Nie masz konta? <a href="/auth/signup" class="text-primary hover:text-bottle-deep hover:underline"
+        >Zarejestruj się</a
+      >
     </p>
   </AuthCard>
 </Layout>
