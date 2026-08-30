@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "f=$(node -e \"const j=JSON.parse(require('fs').readFileSync(0,'utf8'));process.stdout.write((j.tool_input&&j.tool_input.file_path)||(j.tool_response&&j.tool_response.filePath)||'')\"); case \"$f\" in *.ts|*.tsx|*.astro|*.jsx|*.js) out=$(npx eslint --fix \"$f\" 2>&1) || { echo \"$out\" >&2; exit 2; } ;; esac",
+            "timeout": 60,
+            "statusMessage": "ESLint po edycji..."
+          },
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "f=$(node -e \"const j=JSON.parse(require('fs').readFileSync(0,'utf8'));process.stdout.write((j.tool_input&&j.tool_input.file_path)||(j.tool_response&&j.tool_response.filePath)||'')\"); case \"$f\" in *.ts|*.tsx|*.astro) out=$(npx astro check 2>&1) || { printf '%s\\n' \"$out\" | tail -60 >&2; exit 2; } ;; esac",
+            "timeout": 180,
+            "statusMessage": "Typecheck (astro check) po edycji..."
+          },
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "f=$(node -e \"const j=JSON.parse(require('fs').readFileSync(0,'utf8'));const p=(j.tool_input&&j.tool_input.file_path)||(j.tool_response&&j.tool_response.filePath)||'';process.stdout.write(p.split(String.fromCharCode(92)).join('/'))\"); case \"$f\" in */src/middleware.ts|*/src/lib/*|*/src/pages/api/*) out=$(AI_AGENT=1 npx vitest related \"$f\" --run 2>&1) || { echo \"$out\" | tail -40 >&2; exit 2; } ;; esac",
+            "timeout": 120,
+            "statusMessage": "Testy powiązane z edytowanym plikiem (vitest related)..."
+          }
+        ]
+      }
+    ]
+  }
+}
