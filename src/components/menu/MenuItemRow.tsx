@@ -66,9 +66,21 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
       )}
 
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-foreground font-medium">{item.name}</span>
-          <span className="text-muted-foreground text-sm">{priceFormatter.format(item.price)}</span>
+        {/* The signature printed-menu line: name, dotted leader, tabular price.
+            The leader is a flex-filling dotted border, so it shrinks to its
+            min-width when a long name wraps, and aria-hidden keeps screen
+            readers announcing "name, price" without the dots. */}
+        <div className="flex items-baseline gap-1">
+          <span className="text-foreground min-w-0 font-medium break-words">{item.name}</span>
+          <span
+            aria-hidden="true"
+            className="border-neutral-border mx-1 mb-1 min-w-6 flex-1 self-end border-b-2 border-dotted"
+          />
+          <span className="text-foreground shrink-0 text-sm font-medium tabular-nums">
+            {priceFormatter.format(item.price)}
+          </span>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
           <Badge variant="outline" className={availabilityBadgeClass[item.availability]}>
             {AVAILABILITY_LABELS[item.availability]}
           </Badge>

@@ -122,13 +122,6 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Kept under its historical name so the nine page-shell call sites can be
-   migrated mechanically in phase 2; now expands to the porcelain canvas
-   instead of the retired three-stop navy gradient. */
-@utility bg-cosmic {
-  background-color: var(--color-porcelain);
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;

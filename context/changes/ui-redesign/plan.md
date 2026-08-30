@@ -679,41 +679,41 @@ starting each phase.
 
 #### Automated
 
-- [x] 4.1 Linting passes: `npm run lint`
-- [x] 4.2 Type checking passes: `npm run typecheck`
-- [x] 4.3 Unit tests pass: `npm run test`
-- [x] 4.4 Integration tests pass: `npm run test:integration`
-- [x] 4.5 Production build succeeds: `npm run build`
-- [x] 4.6 No `text-white` outside the two `ui/` destructive hits
-- [x] 4.7 No `text-blue-100` remains in `src/`
+- [x] 4.1 Linting passes: `npm run lint` — 462eaca
+- [x] 4.2 Type checking passes: `npm run typecheck` — 462eaca
+- [x] 4.3 Unit tests pass: `npm run test` — 462eaca
+- [x] 4.4 Integration tests pass: `npm run test:integration` — 462eaca
+- [x] 4.5 Production build succeeds: `npm run build` — 462eaca
+- [x] 4.6 No `text-white` outside the two `ui/` destructive hits — 462eaca
+- [x] 4.7 No `text-blue-100` remains in `src/` — 462eaca
 
 #### Manual
 
-- [x] 4.8 Every screen readable end to end; no white-on-cream
-- [x] 4.9 Three availability states distinguishable on `/menu`
-- [x] 4.10 Three role states plus inactive badge distinguishable on `/staff`
-- [x] 4.11 Active and inactive tables distinguishable on `/room`, dashed border survives
-- [x] 4.12 Links and destructive icons gain contrast on hover, never lose it
-- [x] 4.13 Error and success banners legible
-- [x] 4.14 Keyboard focus rings visible on every interactive element
-- [x] 4.15 All `aria-label`s survived the edits
+- [x] 4.8 Every screen readable end to end; no white-on-cream — 462eaca
+- [x] 4.9 Three availability states distinguishable on `/menu` — 462eaca
+- [x] 4.10 Three role states plus inactive badge distinguishable on `/staff` — 462eaca
+- [x] 4.11 Active and inactive tables distinguishable on `/room`, dashed border survives — 462eaca
+- [x] 4.12 Links and destructive icons gain contrast on hover, never lose it — 462eaca
+- [x] 4.13 Error and success banners legible — 462eaca
+- [x] 4.14 Keyboard focus rings visible on every interactive element — 462eaca
+- [x] 4.15 All `aria-label`s survived the edits — 462eaca
 
 ### Phase 5: Landing page and the signature menu row
 
 #### Automated
 
-- [ ] 5.1 Linting passes: `npm run lint`
-- [ ] 5.2 Type checking passes: `npm run typecheck`
-- [ ] 5.3 Unit tests pass: `npm run test`
-- [ ] 5.4 Integration tests pass: `npm run test:integration`
-- [ ] 5.5 Production build succeeds: `npm run build`
-- [ ] 5.6 `bg-cosmic` call sites match the convention chosen in phase 2
+- [x] 5.1 Linting passes: `npm run lint`
+- [x] 5.2 Type checking passes: `npm run typecheck`
+- [x] 5.3 Unit tests pass: `npm run test`
+- [x] 5.4 Integration tests pass: `npm run test:integration`
+- [x] 5.5 Production build succeeds: `npm run build`
+- [x] 5.6 `bg-cosmic` call sites match the convention chosen in phase 2
 
 #### Manual
 
-- [ ] 5.7 The landing page describes OrderLY, not the starter template
-- [ ] 5.8 No blurred orbs remain; the page reads warm and light
-- [ ] 5.9 The menu row reads as a printed menu line with aligned prices
-- [ ] 5.10 The dotted leader behaves at narrow widths and with long names
-- [ ] 5.11 A screen reader announces name and price without the leader
-- [ ] 5.12 The whole app walked once more at mobile width
+- [x] 5.7 The landing page describes OrderLY, not the starter template
+- [x] 5.8 No blurred orbs remain; the page reads warm and light
+- [x] 5.9 The menu row reads as a printed menu line with aligned prices
+- [x] 5.10 The dotted leader behaves at narrow widths and with long names
+- [x] 5.11 A screen reader announces name and price without the leader
+- [x] 5.12 The whole app walked once more at mobile width
