@@ -702,18 +702,18 @@ starting each phase.
 
 #### Automated
 
-- [x] 5.1 Linting passes: `npm run lint`
-- [x] 5.2 Type checking passes: `npm run typecheck`
-- [x] 5.3 Unit tests pass: `npm run test`
-- [x] 5.4 Integration tests pass: `npm run test:integration`
-- [x] 5.5 Production build succeeds: `npm run build`
-- [x] 5.6 `bg-cosmic` call sites match the convention chosen in phase 2
+- [x] 5.1 Linting passes: `npm run lint` — ef1e48b
+- [x] 5.2 Type checking passes: `npm run typecheck` — ef1e48b
+- [x] 5.3 Unit tests pass: `npm run test` — ef1e48b
+- [x] 5.4 Integration tests pass: `npm run test:integration` — ef1e48b
+- [x] 5.5 Production build succeeds: `npm run build` — ef1e48b
+- [x] 5.6 `bg-cosmic` call sites match the convention chosen in phase 2 — ef1e48b
 
 #### Manual
 
-- [x] 5.7 The landing page describes OrderLY, not the starter template
-- [x] 5.8 No blurred orbs remain; the page reads warm and light
-- [x] 5.9 The menu row reads as a printed menu line with aligned prices
-- [x] 5.10 The dotted leader behaves at narrow widths and with long names
-- [x] 5.11 A screen reader announces name and price without the leader
-- [x] 5.12 The whole app walked once more at mobile width
+- [x] 5.7 The landing page describes OrderLY, not the starter template — ef1e48b
+- [x] 5.8 No blurred orbs remain; the page reads warm and light — ef1e48b
+- [x] 5.9 The menu row reads as a printed menu line with aligned prices — ef1e48b
+- [x] 5.10 The dotted leader behaves at narrow widths and with long names — ef1e48b
+- [x] 5.11 A screen reader announces name and price without the leader — ef1e48b
+- [x] 5.12 The whole app walked once more at mobile width — ef1e48b
