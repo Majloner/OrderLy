@@ -28,7 +28,12 @@ test("menu category created by the owner survives a page reload (test-plan risk 
   // Unique per run — parallel workers and repeated runs never collide on the name.
   const categoryName = `E2E Kategoria ${Date.now()}`;
 
+  // The menu manager is a React island that fetches /api/menu on mount —
+  // waiting for that response is the state-based signal that the island is
+  // hydrated and interactive (clicking earlier hits inert SSR markup).
+  const menuLoaded = page.waitForResponse((response) => response.url().includes("/api/menu") && response.ok());
   await page.goto("/menu");
+  await menuLoaded;
 
   // Create (role-based locators; the dialog is Radix, unmounted when closed).
   await page.getByRole("button", { name: "Dodaj kategorię" }).click();
