@@ -1,9 +1,10 @@
 ---
 change_id: ui-redesign
 title: UI redesign — "Karta / bistro"
-status: impl_reviewed
+status: archived
 created: 2026-07-28
-updated: 2026-08-28
+updated: 2026-08-31
+archived_at: 2026-08-31T08:05:18Z
 ---
 
 ## Notes
