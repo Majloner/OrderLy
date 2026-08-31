@@ -666,7 +666,7 @@ starting each phase.
 - [x] 3.4 Integration tests pass: `npm run test:integration` — eeb3ab6
 - [x] 3.5 Production build succeeds: `npm run build` — eeb3ab6
 - [x] 3.6 No `backdrop-blur` remains in `src/` — eeb3ab6
-- [x] 3.7 No `bg-white/` or `border-white/` remains in `src/` — eeb3ab6
+- [x] 3.7 No `bg-white/` or `border-white/` remains in `src/` — eeb3ab6 (korekta impl-review F1: grep filtrował .astro/.tsx i przepuścił room-object-visuals.ts — domknięte w commicie review-fixes, grep bez filtra czysty)
 
 #### Manual
 
@@ -684,7 +684,7 @@ starting each phase.
 - [x] 4.3 Unit tests pass: `npm run test` — 462eaca
 - [x] 4.4 Integration tests pass: `npm run test:integration` — 462eaca
 - [x] 4.5 Production build succeeds: `npm run build` — 462eaca
-- [x] 4.6 No `text-white` outside the two `ui/` destructive hits — 462eaca
+- [x] 4.6 No `text-white` outside the two `ui/` destructive hits — 462eaca (korekta impl-review F1: jw., room-object-visuals.ts domknięty w review-fixes)
 - [x] 4.7 No `text-blue-100` remains in `src/` — 462eaca
 
 #### Manual

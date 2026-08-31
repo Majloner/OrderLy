@@ -65,7 +65,9 @@
   --muted-foreground: var(--color-ink-muted);
   --accent: var(--color-parchment);
   --accent-foreground: var(--color-ink);
-  --destructive: #b3372b; /* white on it 6.00:1, itself on porcelain 5.42:1 (AA) */
+  --destructive: #b3372b; /* white on it 6.00:1, itself on porcelain 5.42:1 (AA);
+     on destructive/10 over porcelain 4.67:1 — the palette's floor pair:
+     don't lighten this colour or that tint without re-running the math */
   --border: var(--color-hairline);
   --input: var(--color-hairline);
   --ring: var(--color-bottle);
