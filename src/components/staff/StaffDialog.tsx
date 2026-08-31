@@ -124,7 +124,7 @@ function StaffForm({ member, isSelf, onCreate, onUpdate, onDone }: StaffFormProp
               autoComplete="off"
               autoFocus
             />
-            <p className="text-xs text-white/50">
+            <p className="text-muted-foreground text-xs">
               Tym loginem pracownik zaloguje się do systemu. Nie można go później zmienić.
             </p>
           </div>
@@ -198,7 +198,7 @@ function StaffForm({ member, isSelf, onCreate, onUpdate, onDone }: StaffFormProp
         </Select>
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>

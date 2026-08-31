@@ -237,7 +237,7 @@ export function DraggableRoomObject({
               tabIndex={-1}
               aria-label={`Zmień rozmiar: ${cornerLabel} narożnik`}
               className={cn(
-                "absolute size-3 touch-none rounded-sm border border-white/80 bg-white/90",
+                "border-primary bg-card absolute size-3 touch-none rounded-sm border",
                 // Centred on the corner rather than tucked inside it, so the whole
                 // hit area is usable even on a 20px-thin wall.
                 "translate-x-[-50%] translate-y-[-50%]",
@@ -256,7 +256,7 @@ export function DraggableRoomObject({
             type="button"
             tabIndex={-1}
             aria-label="Obróć element"
-            className="absolute top-0 left-1/2 size-3 translate-x-[-50%] translate-y-[-200%] touch-none rounded-full border border-white/80 bg-sky-300/90"
+            className="border-primary bg-info-fill absolute top-0 left-1/2 size-3 translate-x-[-50%] translate-y-[-200%] touch-none rounded-full border"
             onPointerDown={beginGesture}
             onPointerMove={handleRotateMove}
             onPointerUp={endGesture}

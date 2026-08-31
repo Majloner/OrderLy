@@ -8,13 +8,11 @@ import RoomLayoutManager from "@/components/room/RoomLayoutManager";
 ---
 
 <Layout title="Schemat sali">
-  <div class="bg-cosmic min-h-screen p-4 text-white sm:p-8">
+  <div class="bg-background text-foreground min-h-screen p-4 sm:p-8">
     <div class="mx-auto w-full max-w-5xl">
       <div class="mb-6 flex items-center justify-between">
-        <h1 class="bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent">
-          Schemat sali
-        </h1>
-        <a href="/dashboard" class="text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
+        <h1 class="font-display text-primary text-3xl font-bold">Schemat sali</h1>
+        <a href="/dashboard" class="text-primary hover:text-bottle-deep text-sm hover:underline">← Powrót do panelu</a>
       </div>
       <RoomLayoutManager client:load />
     </div>

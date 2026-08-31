@@ -1,0 +1,25 @@
+---
+// Shared shell + card for the three auth pages (signin, signup, confirm-email),
+// which repeated this wrapper verbatim. `centered` reproduces confirm-email's
+// text-center card; the "above" slot carries its emoji block.
+interface Props {
+  title: string;
+  centered?: boolean;
+}
+const { title, centered = false } = Astro.props;
+---
+
+<div class="bg-background flex min-h-screen items-center justify-center p-4">
+  <div
+    class:list={[
+      "border-border bg-card text-foreground w-full max-w-sm rounded-2xl border p-8 shadow-sm",
+      centered && "text-center",
+    ]}
+  >
+    <slot name="above" />
+    <h1 class="font-display text-primary mb-6 text-center text-2xl font-bold">
+      {title}
+    </h1>
+    <slot />
+  </div>
+</div>

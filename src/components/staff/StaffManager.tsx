@@ -11,6 +11,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorPanel } from "@/components/ui/ErrorPanel";
 import { callStaffApi, useStaff } from "@/components/hooks/useStaff";
 import { StaffDialog } from "@/components/staff/StaffDialog";
 import { StaffRow } from "@/components/staff/StaffRow";
@@ -34,16 +36,9 @@ export default function StaffManager({ currentUserId }: StaffManagerProps) {
   // rendered list stays on screen.
   if (!staff) {
     if (loadError) {
-      return (
-        <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-6 text-red-100">
-          <p>{loadError}</p>
-          <Button type="button" variant="outline" className="mt-4" onClick={reload}>
-            Spróbuj ponownie
-          </Button>
-        </div>
-      );
+      return <ErrorPanel message={loadError} onRetry={reload} />;
     }
-    return <p className="text-white/60">Ładowanie listy personelu…</p>;
+    return <p className="text-muted-foreground">Ładowanie listy personelu…</p>;
   }
 
   const openCreate = () => {
@@ -99,21 +94,16 @@ export default function StaffManager({ currentUserId }: StaffManagerProps) {
         </Button>
       </div>
 
-      {actionError && (
-        <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">
-          {actionError}
-        </p>
-      )}
+      {actionError && <ErrorPanel message={actionError} />}
 
       {/* The owner's own profile is always in the list, so "empty" means no
           staff have been added yet. */}
       {staff.length <= 1 && (
-        <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
-          <p className="text-white/70">Nie masz jeszcze kont personelu.</p>
+        <EmptyState message="Nie masz jeszcze kont personelu.">
           <Button type="button" className="mt-4" onClick={openCreate}>
             <Plus className="size-4" /> Dodaj pierwszego pracownika
           </Button>
-        </div>
+        </EmptyState>
       )}
 
       <ul className="space-y-2">

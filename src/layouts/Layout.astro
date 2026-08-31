@@ -1,4 +1,5 @@
 ---
+import "@fontsource-variable/bricolage-grotesque";
 import "../styles/global.css";
 import Banner from "@/components/Banner.astro";
 import { missingConfigs } from "@/lib/config-status";
@@ -11,11 +12,7 @@ const { title = "10x Astro Starter" } = Astro.props;
 ---
 
 <!doctype html>
-{
-  /* The whole app is dark (bg-cosmic); the .dark class keeps shadcn/Radix
-    portals (dialogs render into <body>) on the same theme. */
-}
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
@@ -44,6 +41,10 @@ const { title = "10x Astro Starter" } = Astro.props;
 </html>
 
 <style>
+  html {
+    /* Single light theme: keep native scrollbars, autofill and pickers light. */
+    color-scheme: light;
+  }
   html,
   body {
     margin: 0;

@@ -11,6 +11,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorPanel } from "@/components/ui/ErrorPanel";
 import { callRoomApi, useRoomLayout } from "@/components/hooks/useRoomLayout";
 import { MAX_TABLE_NUMBER, type RoomInput, type RoomObjectInput, type TableInput } from "@/lib/schemas/room";
 import { ROOM_OBJECT_KIND_LABELS, type Room, type RoomLayoutPayload, type RoomObject, type RoomTable } from "@/types";
@@ -73,16 +75,9 @@ export default function RoomLayoutManager() {
   // A failed refetch after a successful mutation surfaces as actionError below.
   if (!layout) {
     if (loadError) {
-      return (
-        <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-6 text-red-100">
-          <p>{loadError}</p>
-          <Button type="button" variant="outline" className="mt-4" onClick={reload}>
-            Spróbuj ponownie
-          </Button>
-        </div>
-      );
+      return <ErrorPanel message={loadError} onRetry={reload} />;
     }
-    return <p className="text-white/60">Ładowanie schematu sali…</p>;
+    return <p className="text-muted-foreground">Ładowanie schematu sali…</p>;
   }
 
   // Derived, not stored in an effect: a deleted or never-selected room falls
@@ -398,19 +393,14 @@ export default function RoomLayoutManager() {
         onDelete={setRoomToDelete}
       />
 
-      {actionError && (
-        <p className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-100">
-          {actionError}
-        </p>
-      )}
+      {actionError && <ErrorPanel message={actionError} />}
 
       {!activeRoom && (
-        <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
-          <p className="text-white/70">Nie masz jeszcze żadnej sali.</p>
+        <EmptyState message="Nie masz jeszcze żadnej sali.">
           <Button type="button" className="mt-4" onClick={openCreateRoom}>
             <Plus className="size-4" /> Dodaj pierwszą salę
           </Button>
-        </div>
+        </EmptyState>
       )}
 
       {activeRoom && (
@@ -428,12 +418,11 @@ export default function RoomLayoutManager() {
           </div>
 
           {tablesInRoom.length === 0 && objectsInRoom.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 p-8 text-center">
-              <p className="text-white/70">W tej sali nie ma jeszcze stolików ani wyposażenia.</p>
+            <EmptyState message="W tej sali nie ma jeszcze stolików ani wyposażenia.">
               <Button type="button" className="mt-4" onClick={openCreateTable}>
                 <Plus className="size-4" /> Dodaj pierwszy stolik
               </Button>
-            </div>
+            </EmptyState>
           ) : (
             <>
               <RoomCanvas
@@ -457,7 +446,7 @@ export default function RoomLayoutManager() {
               )}
               {objectsInRoom.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-white/70">Wyposażenie</h3>
+                  <h3 className="text-muted-foreground text-sm font-semibold">Wyposażenie</h3>
                   <RoomObjectList
                     objects={objectsInRoom}
                     busyObjectId={busyObjectId}
@@ -472,9 +461,9 @@ export default function RoomLayoutManager() {
       )}
 
       {orphanTables.length > 0 && (
-        <div className="space-y-2 rounded-2xl border border-amber-400/30 bg-amber-500/5 p-4">
+        <div className="border-warning-border bg-warning-fill space-y-2 rounded-2xl border p-4">
           <h2 className="text-lg font-semibold">Bez sali</h2>
-          <p className="text-sm text-white/60">
+          <p className="text-muted-foreground text-sm">
             Te stoliki wskazują salę, której już nie ma. Otwórz stolik i przypisz go do istniejącej sali.
           </p>
           <TableList

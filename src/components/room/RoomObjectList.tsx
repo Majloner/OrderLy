@@ -24,14 +24,14 @@ export function RoomObjectList({ objects, busyObjectId, onEdit, onDelete }: Room
         return (
           <li
             key={object.id}
-            className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2"
+            className="border-border bg-card flex flex-wrap items-center gap-3 rounded-xl border px-3 py-2"
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/10">
+            <span className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-lg">
               <Icon className="size-4" aria-hidden="true" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm">{object.label ?? kindLabel}</span>
-              <span className="block text-xs text-white/50">
+              <span className="text-muted-foreground block text-xs">
                 {kindLabel} · {object.width}×{object.height}
                 {object.rotation === 0 ? "" : ` · ${String(object.rotation)}°`}
               </span>

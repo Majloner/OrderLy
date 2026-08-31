@@ -1,1 +1,5 @@
 npx lint-staged
+# Typecheck moved here from the per-edit agent hook: it takes ~30 s (too slow per
+# edit) and its Vite re-optimization used to corrupt the running dev server's dep
+# cache — ASTRO_CHECK=1 points it at a separate cache dir (see astro.config.mjs).
+ASTRO_CHECK=1 npm run typecheck

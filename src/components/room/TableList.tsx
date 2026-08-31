@@ -21,16 +21,16 @@ export function TableList({ tables, busyTableId, onEdit, onToggleActive }: Table
         <li
           key={table.id}
           className={cn(
-            "flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2",
+            "border-border bg-card flex flex-wrap items-center gap-3 rounded-xl border px-3 py-2",
             !table.is_active && "opacity-60",
           )}
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-sm font-semibold">
+          <span className="bg-muted flex size-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold">
             {table.number}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm">{table.label ?? "—"}</span>
-            <span className="block text-xs text-white/50">{TABLE_SHAPE_LABELS[table.shape]}</span>
+            <span className="text-muted-foreground block text-xs">{TABLE_SHAPE_LABELS[table.shape]}</span>
           </span>
           <Badge variant={table.is_active ? "default" : "outline"}>{table.is_active ? "Aktywny" : "Wyłączony"}</Badge>
           <span className="flex gap-1">

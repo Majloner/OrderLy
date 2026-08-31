@@ -77,7 +77,7 @@ function RoomForm({ room, onSubmit, onDone }: RoomFormProps) {
           autoFocus
         />
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>
           Anuluj

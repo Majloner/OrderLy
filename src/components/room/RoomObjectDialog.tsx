@@ -221,7 +221,7 @@ function RoomObjectForm({
         </Select>
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
       <DialogFooter className="sm:justify-between">
         {object ? (
           <Button

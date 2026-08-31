@@ -627,93 +627,93 @@ starting each phase.
 
 #### Automated
 
-- [ ] 1.1 Linting passes: `npm run lint`
-- [ ] 1.2 Type checking passes: `npm run typecheck`
-- [ ] 1.3 Unit tests pass: `npm run test`
-- [ ] 1.4 Production build succeeds: `npm run build`
-- [ ] 1.5 No `dark:` utility remains outside `src/components/ui/`
+- [x] 1.1 Linting passes: `npm run lint` — c7f8c39
+- [x] 1.2 Type checking passes: `npm run typecheck` — c7f8c39
+- [x] 1.3 Unit tests pass: `npm run test` — c7f8c39
+- [x] 1.4 Production build succeeds: `npm run build` — c7f8c39
+- [x] 1.5 No `dark:` utility remains outside `src/components/ui/` — c7f8c39
 
 #### Manual
 
-- [ ] 1.6 Every shadcn primitive renders light with no component edit
-- [ ] 1.7 Bricolage Grotesque loads
-- [ ] 1.8 Native scrollbars and autofill render light
-- [ ] 1.9 Recorded contrast ratios meet AA for their intended use
+- [x] 1.6 Every shadcn primitive renders light with no component edit — c7f8c39
+- [x] 1.7 Bricolage Grotesque loads — c7f8c39
+- [x] 1.8 Native scrollbars and autofill render light — c7f8c39
+- [x] 1.9 Recorded contrast ratios meet AA for their intended use — c7f8c39
 
 ### Phase 2: Page shells and headings
 
 #### Automated
 
-- [ ] 2.1 Linting passes: `npm run lint`
-- [ ] 2.2 Type checking passes: `npm run typecheck`
-- [ ] 2.3 Production build succeeds: `npm run build`
-- [ ] 2.4 No `text-transparent` remains in `src/`
-- [ ] 2.5 No `bg-clip-text` remains in `src/`
+- [x] 2.1 Linting passes: `npm run lint`
+- [x] 2.2 Type checking passes: `npm run typecheck`
+- [x] 2.3 Production build succeeds: `npm run build`
+- [x] 2.4 No `text-transparent` remains in `src/`
+- [x] 2.5 No `bg-clip-text` remains in `src/`
 
 #### Manual
 
-- [ ] 2.6 Every page heading is visible and legible on all eight routes
-- [ ] 2.7 The three auth pages render identically after the `AuthCard` extraction
-- [ ] 2.8 Headings render in Bricolage Grotesque, not the fallback
+- [x] 2.6 Every page heading is visible and legible on all eight routes
+- [x] 2.7 The three auth pages render identically after the `AuthCard` extraction
+- [x] 2.8 Headings render in Bricolage Grotesque, not the fallback
 
 ### Phase 3: Surfaces
 
 #### Automated
 
-- [ ] 3.1 Linting passes: `npm run lint`
-- [ ] 3.2 Type checking passes: `npm run typecheck`
-- [ ] 3.3 Unit tests pass: `npm run test`
-- [ ] 3.4 Integration tests pass: `npm run test:integration`
-- [ ] 3.5 Production build succeeds: `npm run build`
-- [ ] 3.6 No `backdrop-blur` remains in `src/`
-- [ ] 3.7 No `bg-white/` or `border-white/` remains in `src/`
+- [x] 3.1 Linting passes: `npm run lint` — eeb3ab6
+- [x] 3.2 Type checking passes: `npm run typecheck` — eeb3ab6
+- [x] 3.3 Unit tests pass: `npm run test` — eeb3ab6
+- [x] 3.4 Integration tests pass: `npm run test:integration` — eeb3ab6
+- [x] 3.5 Production build succeeds: `npm run build` — eeb3ab6
+- [x] 3.6 No `backdrop-blur` remains in `src/` — eeb3ab6
+- [x] 3.7 No `bg-white/` or `border-white/` remains in `src/` — eeb3ab6 (korekta impl-review F1: grep filtrował .astro/.tsx i przepuścił room-object-visuals.ts — domknięte w commicie review-fixes, grep bez filtra czysty)
 
 #### Manual
 
-- [ ] 3.8 Card boundaries visible on every list and panel
-- [ ] 3.9 Dashed empty states, room canvas and orphan-tables panel are distinguishable
-- [ ] 3.10 Inputs look and behave the same after the `<Input />` swap
-- [ ] 3.11 Dialogs and selects render correctly over the new surfaces
+- [x] 3.8 Card boundaries visible on every list and panel — eeb3ab6
+- [x] 3.9 Dashed empty states, room canvas and orphan-tables panel are distinguishable — eeb3ab6
+- [x] 3.10 Inputs look and behave the same after the `<Input />` swap — eeb3ab6
+- [x] 3.11 Dialogs and selects render correctly over the new surfaces — eeb3ab6
 
 ### Phase 4: Text tiers and semantic maps
 
 #### Automated
 
-- [ ] 4.1 Linting passes: `npm run lint`
-- [ ] 4.2 Type checking passes: `npm run typecheck`
-- [ ] 4.3 Unit tests pass: `npm run test`
-- [ ] 4.4 Integration tests pass: `npm run test:integration`
-- [ ] 4.5 Production build succeeds: `npm run build`
-- [ ] 4.6 No `text-white` outside the two `ui/` destructive hits
-- [ ] 4.7 No `text-blue-100` remains in `src/`
+- [x] 4.1 Linting passes: `npm run lint` — 462eaca
+- [x] 4.2 Type checking passes: `npm run typecheck` — 462eaca
+- [x] 4.3 Unit tests pass: `npm run test` — 462eaca
+- [x] 4.4 Integration tests pass: `npm run test:integration` — 462eaca
+- [x] 4.5 Production build succeeds: `npm run build` — 462eaca
+- [x] 4.6 No `text-white` outside the two `ui/` destructive hits — 462eaca (korekta impl-review F1: jw., room-object-visuals.ts domknięty w review-fixes)
+- [x] 4.7 No `text-blue-100` remains in `src/` — 462eaca
 
 #### Manual
 
-- [ ] 4.8 Every screen readable end to end; no white-on-cream
-- [ ] 4.9 Three availability states distinguishable on `/menu`
-- [ ] 4.10 Three role states plus inactive badge distinguishable on `/staff`
-- [ ] 4.11 Active and inactive tables distinguishable on `/room`, dashed border survives
-- [ ] 4.12 Links and destructive icons gain contrast on hover, never lose it
-- [ ] 4.13 Error and success banners legible
-- [ ] 4.14 Keyboard focus rings visible on every interactive element
-- [ ] 4.15 All `aria-label`s survived the edits
+- [x] 4.8 Every screen readable end to end; no white-on-cream — 462eaca
+- [x] 4.9 Three availability states distinguishable on `/menu` — 462eaca
+- [x] 4.10 Three role states plus inactive badge distinguishable on `/staff` — 462eaca
+- [x] 4.11 Active and inactive tables distinguishable on `/room`, dashed border survives — 462eaca
+- [x] 4.12 Links and destructive icons gain contrast on hover, never lose it — 462eaca
+- [x] 4.13 Error and success banners legible — 462eaca
+- [x] 4.14 Keyboard focus rings visible on every interactive element — 462eaca
+- [x] 4.15 All `aria-label`s survived the edits — 462eaca
 
 ### Phase 5: Landing page and the signature menu row
 
 #### Automated
 
-- [ ] 5.1 Linting passes: `npm run lint`
-- [ ] 5.2 Type checking passes: `npm run typecheck`
-- [ ] 5.3 Unit tests pass: `npm run test`
-- [ ] 5.4 Integration tests pass: `npm run test:integration`
-- [ ] 5.5 Production build succeeds: `npm run build`
-- [ ] 5.6 `bg-cosmic` call sites match the convention chosen in phase 2
+- [x] 5.1 Linting passes: `npm run lint` — ef1e48b
+- [x] 5.2 Type checking passes: `npm run typecheck` — ef1e48b
+- [x] 5.3 Unit tests pass: `npm run test` — ef1e48b
+- [x] 5.4 Integration tests pass: `npm run test:integration` — ef1e48b
+- [x] 5.5 Production build succeeds: `npm run build` — ef1e48b
+- [x] 5.6 `bg-cosmic` call sites match the convention chosen in phase 2 — ef1e48b
 
 #### Manual
 
-- [ ] 5.7 The landing page describes OrderLY, not the starter template
-- [ ] 5.8 No blurred orbs remain; the page reads warm and light
-- [ ] 5.9 The menu row reads as a printed menu line with aligned prices
-- [ ] 5.10 The dotted leader behaves at narrow widths and with long names
-- [ ] 5.11 A screen reader announces name and price without the leader
-- [ ] 5.12 The whole app walked once more at mobile width
+- [x] 5.7 The landing page describes OrderLY, not the starter template — ef1e48b
+- [x] 5.8 No blurred orbs remain; the page reads warm and light — ef1e48b
+- [x] 5.9 The menu row reads as a printed menu line with aligned prices — ef1e48b
+- [x] 5.10 The dotted leader behaves at narrow widths and with long names — ef1e48b
+- [x] 5.11 A screen reader announces name and price without the leader — ef1e48b
+- [x] 5.12 The whole app walked once more at mobile width — ef1e48b

@@ -31,16 +31,18 @@ export const ROOM_OBJECT_ICONS: Record<RoomObjectKind, LucideIcon> = {
   till: Calculator,
 };
 
-// Muted next to the purple tables on purpose: furnishing is the backdrop a table
-// is read against, so it must not compete with it.
+// Muted next to the bottle-green tables on purpose: furnishing is the backdrop
+// a table is read against, so it must not compete with it. Drawn from the
+// semantic triples in global.css (every fg-on-fill pair there is recorded at
+// AA or better); identity comes from the icon, the tint only groups kinds.
 export const ROOM_OBJECT_STYLES: Record<RoomObjectKind, string> = {
-  wall: "border-white/25 bg-white/20 text-white/70",
-  chair: "border-sky-300/30 bg-sky-500/15 text-sky-100/70",
-  door: "border-amber-300/30 bg-amber-500/15 text-amber-100/70",
-  window: "border-cyan-300/30 bg-cyan-500/10 text-cyan-100/70",
-  bar: "border-orange-300/30 bg-orange-500/15 text-orange-100/70",
-  plant: "border-emerald-300/30 bg-emerald-500/15 text-emerald-100/70",
-  stairs: "border-slate-300/30 bg-slate-400/15 text-slate-100/70",
-  toilet: "border-indigo-300/30 bg-indigo-500/15 text-indigo-100/70",
-  till: "border-rose-300/30 bg-rose-500/15 text-rose-100/70",
+  wall: "border-neutral-border bg-neutral-fill text-neutral-fg",
+  chair: "border-info-border bg-info-fill text-info-fg",
+  door: "border-warning-border bg-warning-fill text-warning-fg",
+  window: "border-info-border bg-info-fill/60 text-info-fg",
+  bar: "border-warning-border bg-warning-fill/60 text-warning-fg",
+  plant: "border-success-border bg-success-fill text-success-fg",
+  stairs: "border-neutral-border bg-neutral-fill/60 text-neutral-fg",
+  toilet: "border-info-border bg-info-fill text-info-fg",
+  till: "border-success-border bg-success-fill/60 text-success-fg",
 };

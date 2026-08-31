@@ -36,12 +36,12 @@ export function RoomTabs({ rooms, tables, activeRoomId, onSelect, onCreate, onEd
             className={cn(
               "rounded-lg border px-3 py-1.5 text-sm transition-colors",
               room.id === activeRoomId
-                ? "border-purple-400/50 bg-purple-500/20 text-white"
-                : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10",
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:bg-muted",
             )}
           >
             {room.name}
-            <span className="ml-2 text-xs text-white/50">{countFor(room.id)}</span>
+            <span className="text-muted-foreground ml-2 text-xs">{countFor(room.id)}</span>
           </button>
         ))}
       </div>

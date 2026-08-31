@@ -35,8 +35,9 @@ export function DraggableTable({ table, scale, onActivate }: DraggableTableProps
         "absolute flex touch-none items-center justify-center border text-sm font-semibold transition-colors",
         table.shape === "circle" ? "rounded-full" : "rounded-lg",
         table.is_active
-          ? "border-purple-300/50 bg-purple-500/30 text-white"
-          : "border-dashed border-white/20 bg-white/5 text-white/40",
+          ? "border-primary/60 bg-primary/20 text-primary"
+          : // Dashed border carries the inactive meaning independently of colour.
+            "border-neutral-border bg-neutral-fill text-neutral-fg border-dashed",
         // Above the room objects (z-0/z-10) at all times: a table must stay
         // readable over the furnishing, even while a wall is being dragged.
         isDragging ? "z-30 cursor-grabbing opacity-80" : "z-20 cursor-grab",

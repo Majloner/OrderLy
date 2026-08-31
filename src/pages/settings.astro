@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase";
 
 // Authentication is enforced by middleware (PROTECTED_ROUTES includes /settings),
@@ -21,69 +22,81 @@ if (isOwner && supabase && company_id) {
 
 const error = Astro.url.searchParams.get("error");
 const success = Astro.url.searchParams.get("success");
-
-const inputClass =
-  "mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-white placeholder-white/30 focus:border-purple-300 focus:outline-none";
 ---
 
 <Layout title="Ustawienia lokalu">
-  <div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
-    <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-8 text-white backdrop-blur-xl">
-      <h1 class="mb-6 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-2xl font-bold text-transparent">
-        Ustawienia lokalu
-      </h1>
+  <div class="bg-background flex min-h-screen items-center justify-center p-4">
+    <div class="border-border bg-card text-foreground w-full max-w-md rounded-2xl border p-8 shadow-sm">
+      <h1 class="font-display text-primary mb-6 text-2xl font-bold">Ustawienia lokalu</h1>
 
       {
         isOwner ? (
           <div>
             {success && (
-              <p class="mb-4 rounded-lg bg-green-500/20 px-3 py-2 text-sm text-green-100">Zapisano zmiany.</p>
+              <p class="border-success-border bg-success-fill text-success-fg mb-4 rounded-lg border px-3 py-2 text-sm">
+                Zapisano zmiany.
+              </p>
             )}
-            {error && <p class="mb-4 rounded-lg bg-red-500/20 px-3 py-2 text-sm text-red-100">{error}</p>}
+            {error && (
+              <p class="border-destructive/30 bg-destructive/10 text-destructive mb-4 rounded-lg border px-3 py-2 text-sm">
+                {error}
+              </p>
+            )}
 
             <form method="POST" action="/api/company/profile" class="space-y-4">
-              <label class="block text-sm text-blue-100/80">
-                Nazwa lokalu
-                <input
-                  class:list={inputClass}
+              <div>
+                <label for="company-name" class="text-muted-foreground block text-sm">
+                  Nazwa lokalu
+                </label>
+                <Input
+                  id="company-name"
+                  className="mt-1"
                   name="name"
                   value={company?.name ?? ""}
                   placeholder="np. Bistro Roma"
                   required
                 />
-              </label>
-              <label class="block text-sm text-blue-100/80">
-                Adres
-                <input
-                  class:list={inputClass}
+              </div>
+              <div>
+                <label for="company-address" class="text-muted-foreground block text-sm">
+                  Adres
+                </label>
+                <Input
+                  id="company-address"
+                  className="mt-1"
                   name="address"
                   value={company?.address ?? ""}
                   placeholder="ul. Przykładowa 1"
                 />
-              </label>
-              <label class="block text-sm text-blue-100/80">
-                Godziny otwarcia
-                <input
-                  class:list={inputClass}
+              </div>
+              <div>
+                <label for="company-opening-hours" class="text-muted-foreground block text-sm">
+                  Godziny otwarcia
+                </label>
+                <Input
+                  id="company-opening-hours"
+                  className="mt-1"
                   name="opening_hours"
                   value={company?.opening_hours ?? ""}
                   placeholder="Pon–Nd 10:00–22:00"
                 />
-              </label>
+              </div>
               <button
                 type="submit"
-                class="w-full rounded-lg bg-gradient-to-r from-blue-500/80 to-purple-500/80 px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+                class="hover:bg-bottle-deep bg-primary text-primary-foreground w-full rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
               >
                 Zapisz
               </button>
             </form>
           </div>
         ) : (
-          <p class="text-sm text-blue-100/70">Tylko właściciel lokalu może edytować te ustawienia.</p>
+          <p class="text-muted-foreground text-sm">Tylko właściciel lokalu może edytować te ustawienia.</p>
         )
       }
 
-      <a href="/dashboard" class="mt-4 inline-block text-sm text-purple-300 hover:underline">← Powrót do panelu</a>
+      <a href="/dashboard" class="text-primary hover:text-bottle-deep mt-4 inline-block text-sm hover:underline"
+        >← Powrót do panelu</a
+      >
     </div>
   </div>
 </Layout>

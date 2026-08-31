@@ -196,7 +196,7 @@ function MenuItemForm({ item, categories, defaultCategoryId, supabaseUrl, onSubm
           {previewUrl ? (
             <img src={previewUrl} alt="" className="size-16 shrink-0 rounded-md object-cover" />
           ) : (
-            <div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/5 text-white/30">
+            <div className="border-border bg-card text-muted-foreground flex size-16 shrink-0 items-center justify-center rounded-md border">
               <ImageIcon className="size-6" />
             </div>
           )}
@@ -216,7 +216,7 @@ function MenuItemForm({ item, categories, defaultCategoryId, supabaseUrl, onSubm
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="w-fit text-white/60 hover:text-red-300"
+                className="text-muted-foreground hover:text-destructive w-fit"
                 onClick={() => {
                   setPhotoFile(null);
                   setPhotoRemoved(true);
@@ -300,7 +300,7 @@ function MenuItemForm({ item, categories, defaultCategoryId, supabaseUrl, onSubm
         <p className="text-muted-foreground text-xs">Pełna informacja o alergenach dostępna u obsługi lokalu.</p>
       </fieldset>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
 
       <DialogFooter>
         <Button
