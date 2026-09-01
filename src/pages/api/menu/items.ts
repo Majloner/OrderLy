@@ -26,8 +26,14 @@ export const POST: APIRoute = async (context) => {
   // A cross-tenant category_id would slip past RLS via FK validation, so verify
   // ownership before the insert. sort_order is assigned by a BEFORE INSERT
   // trigger (append at end of section) — no read-then-write race here.
-  if (body.input.category_id && !(await categoryExistsInCompany(guard.supabase, body.input.category_id))) {
-    return jsonError("Nie znaleziono wskazanej kategorii", 400);
+  if (body.input.category_id) {
+    const category = await categoryExistsInCompany(guard.supabase, body.input.category_id);
+    if ("error" in category) {
+      return category.error;
+    }
+    if (!category.owned) {
+      return jsonError("Nie znaleziono wskazanej kategorii", 400);
+    }
   }
 
   const { data, error } = await guard.supabase

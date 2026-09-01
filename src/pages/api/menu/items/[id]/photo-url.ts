@@ -29,7 +29,11 @@ export const POST: APIRoute = async (context) => {
     return body.error;
   }
 
-  if (!(await itemExistsInCompany(guard.supabase, id.data))) {
+  const item = await itemExistsInCompany(guard.supabase, id.data);
+  if ("error" in item) {
+    return item.error;
+  }
+  if (!item.owned) {
     return jsonError("Nie znaleziono pozycji", 404);
   }
 

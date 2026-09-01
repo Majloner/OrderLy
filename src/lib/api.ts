@@ -94,20 +94,42 @@ export function guardStaffRequest(
   return { supabase, companyId: company_id, userId: user.id };
 }
 
+// Ownership checks return the parseBody-style union: `{ error }` carries a
+// ready 500 when the lookup itself FAILED (transient DB error — not the same
+// thing as "row absent"), `{ owned }` answers the actual question. Collapsing
+// a failed lookup into `false` used to swallow the error and mislabel an infra
+// failure as a 4xx ownership refusal.
+
 // Confirm a category belongs to the caller's company before an item references
 // it. The SELECT is RLS-scoped to current_company_id(), so a category from
 // another tenant reads as absent — FK validation alone would bypass RLS and let
 // an owner point an item at another company's category.
-export async function categoryExistsInCompany(supabase: SupabaseServerClient, categoryId: string): Promise<boolean> {
-  const { data } = await supabase.from("menu_categories").select("id").eq("id", categoryId).maybeSingle();
-  return data !== null;
+export async function categoryExistsInCompany(
+  supabase: SupabaseServerClient,
+  categoryId: string,
+): Promise<{ error: Response } | { owned: boolean }> {
+  const { data, error } = await supabase.from("menu_categories").select("id").eq("id", categoryId).maybeSingle();
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[api] category ownership lookup failed:", error.message);
+    return { error: jsonError("Błąd serwera. Spróbuj ponownie.", 500) };
+  }
+  return { owned: data !== null };
 }
 
 // Confirm a menu item belongs to the caller's company (RLS-scoped SELECT) before
 // minting a photo upload URL — prevents orphan objects under the owner's prefix.
-export async function itemExistsInCompany(supabase: SupabaseServerClient, itemId: string): Promise<boolean> {
-  const { data } = await supabase.from("menu_items").select("id").eq("id", itemId).maybeSingle();
-  return data !== null;
+export async function itemExistsInCompany(
+  supabase: SupabaseServerClient,
+  itemId: string,
+): Promise<{ error: Response } | { owned: boolean }> {
+  const { data, error } = await supabase.from("menu_items").select("id").eq("id", itemId).maybeSingle();
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[api] item ownership lookup failed:", error.message);
+    return { error: jsonError("Błąd serwera. Spróbuj ponownie.", 500) };
+  }
+  return { owned: data !== null };
 }
 
 export async function parseBody<T>(

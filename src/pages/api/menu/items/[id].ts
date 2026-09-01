@@ -31,8 +31,14 @@ export const PUT: APIRoute = async (context) => {
   }
 
   // Reject a category_id that isn't in the caller's company (RLS-bypassing FK).
-  if (body.input.category_id && !(await categoryExistsInCompany(guard.supabase, body.input.category_id))) {
-    return jsonError("Nie znaleziono wskazanej kategorii", 400);
+  if (body.input.category_id) {
+    const category = await categoryExistsInCompany(guard.supabase, body.input.category_id);
+    if ("error" in category) {
+      return category.error;
+    }
+    if (!category.owned) {
+      return jsonError("Nie znaleziono wskazanej kategorii", 400);
+    }
   }
 
   const { data, error } = await guard.supabase
