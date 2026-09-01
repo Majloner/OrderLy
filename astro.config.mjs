@@ -6,11 +6,23 @@ import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import cloudflare from "@astrojs/cloudflare";
+import sentry from "@sentry/astro";
 
 // https://astro.build/config
 export default defineConfig({
   output: "server",
-  integrations: [react(), sitemap()],
+  integrations: [
+    react(),
+    sitemap(),
+    // Error monitoring (m3l5). Runtime config lives in sentry.client.config.js /
+    // sentry.server.config.js. authToken is only needed to upload source maps at
+    // build time — without it the integration just skips the upload.
+    sentry({
+      project: "orderly",
+      org: "majloner",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    }),
+  ],
   vite: {
     plugins: [tailwindcss()],
     // Force a single React copy — avoids the dev-server "more than one copy of
