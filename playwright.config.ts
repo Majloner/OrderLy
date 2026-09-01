@@ -30,6 +30,16 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], storageState: "playwright/.auth/owner.json" },
       dependencies: ["setup"],
     },
+    // Visual-review capture (test-plan §3 Phase 4). Needs only owner A, so it
+    // depends on a grep-narrowed setup — owner B may not exist in the target
+    // stack and the visual pipeline must not require it.
+    { name: "visual-setup", testMatch: /auth\.setup\.ts/, grep: /owner A/ },
+    {
+      name: "visual",
+      testMatch: /\.visual\.ts$/,
+      use: { ...devices["Desktop Chrome"], storageState: "playwright/.auth/owner.json" },
+      dependencies: ["visual-setup"],
+    },
   ],
   webServer: {
     command: "npm run dev",

@@ -512,3 +512,6 @@ reports/
 playwright/.auth/
 playwright-report/
 .playwright-cli/
+
+# AI-native visual review output (screenshots + review, regenerated per run)
+visual-review/
