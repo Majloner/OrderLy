@@ -42,11 +42,24 @@ export const onRequest = defineMiddleware(async (context, next) => {
       // inside the method chain the directive attaches to the wrong AST node.
       // Stryker disable next-line StringLiteral: select("") behaves like select("*"), an equivalent mutant no behavioral test can distinguish
       const profileColumns = "company_id, role, full_name, login";
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select(profileColumns)
         .eq("user_id", user.id)
         .maybeSingle<{ company_id: string; role: StaffRole; full_name: string | null; login: string | null }>();
+      // A FAILED lookup is not "no profile". Swallowing this error let a
+      // transient DB/PostgREST failure fall through to the deactivation branch
+      // below, which signs the user out of EVERY session (GoTrue global revoke)
+      // behind a misleading "account inactive" message. Infrastructure failure
+      // must surface as a 5xx and leave the session alone.
+      if (profileError) {
+        // eslint-disable-next-line no-console
+        console.error("[middleware] profiles lookup failed:", profileError.message);
+        if (context.url.pathname.startsWith("/api/")) {
+          return jsonError("Błąd serwera. Spróbuj ponownie.", 500);
+        }
+        return new Response("Błąd serwera. Spróbuj ponownie.", { status: 500 });
+      }
       if (profile) {
         context.locals.company_id = profile.company_id;
         context.locals.role = profile.role;
