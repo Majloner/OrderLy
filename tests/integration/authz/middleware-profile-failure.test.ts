@@ -14,6 +14,7 @@ import { runMiddleware, sessionCookieFromClient } from "../helpers/middleware";
 // registry only, so the main middleware matrix keeps the real client.
 
 let failProfiles = false;
+let failGetUser = false;
 
 vi.mock("@/lib/supabase", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/supabase")>();
@@ -22,6 +23,21 @@ vi.mock("@/lib/supabase", async (importOriginal) => {
     if (!client) {
       return client;
     }
+    const realGetUser = client.auth.getUser.bind(client.auth);
+    client.auth.getUser = async (jwt?: string) => {
+      if (failGetUser) {
+        // Transport-level failure: no HTTP response at all (status 0), the shape
+        // auth-js produces when fetch itself rejects (AuthRetryableFetchError).
+        return {
+          data: { user: null },
+          error: Object.assign(new Error("transient GoTrue outage (test)"), {
+            name: "AuthRetryableFetchError",
+            status: 0,
+          }),
+        } as unknown as Awaited<ReturnType<typeof realGetUser>>;
+      }
+      return realGetUser(jwt);
+    };
     const realFrom = client.from.bind(client);
     client.from = ((table: string) => {
       if (failProfiles && table === "profiles") {
@@ -98,5 +114,40 @@ describe("profiles lookup failure is an infra error, not a deactivated account",
     const { nextCalled, locals } = await runMiddleware("/dashboard", { cookie });
     expect(nextCalled).toBe(true);
     expect(locals.role).toBe("owner");
+  });
+});
+
+// The other half of the same swallowed-error class: auth.getUser() also errors
+// for plain anonymous or expired sessions (4xx) — that is the NORMAL anon path,
+// pinned by the real-client matrix in middleware.test.ts. Only a transport-level
+// failure (status 0 — fetch got no response) or a GoTrue 5xx means the session
+// state is UNKNOWN; treating it as "anonymous" bounced signed-in users to the
+// signin page and gave API clients a misleading 401.
+describe("auth.getUser transport failure is an infra error, not an anonymous visitor", () => {
+  it("answers a page request with 500 instead of the signin redirect", async () => {
+    const cookie = await freshOwnerCookie();
+    failGetUser = true;
+    try {
+      const { response, cookies, nextCalled } = await runMiddleware("/dashboard", { cookie });
+      expect(response.status).toBe(500);
+      expect(response.headers.get("Location")).toBeNull();
+      expect(nextCalled).toBe(false);
+      expect(Array.from(cookies.headers())).toHaveLength(0);
+    } finally {
+      failGetUser = false;
+    }
+  });
+
+  it("answers an API request with JSON 500", async () => {
+    const cookie = await freshOwnerCookie();
+    failGetUser = true;
+    try {
+      const { response } = await runMiddleware("/api/menu", { cookie });
+      expect(response.status).toBe(500);
+      const body: unknown = await response.json();
+      expect(body).toHaveProperty("error");
+    } finally {
+      failGetUser = false;
+    }
   });
 });

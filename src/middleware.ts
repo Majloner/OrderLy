@@ -31,7 +31,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (supabase) {
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser();
+    // getUser also "errors" for a plain anonymous or expired session (4xx) —
+    // that is the normal anon path. Only a transport-level failure (status 0 or
+    // missing: fetch got no response) or a GoTrue 5xx means the session state is
+    // UNKNOWN; treating it as "anonymous" would bounce signed-in users to the
+    // signin page and hand API clients a misleading 401/200.
+    if (userError && (!userError.status || userError.status >= 500)) {
+      // eslint-disable-next-line no-console
+      console.error("[middleware] auth.getUser failed:", userError.message);
+      if (context.url.pathname.startsWith("/api/")) {
+        return jsonError("Błąd serwera. Spróbuj ponownie.", 500);
+      }
+      return new Response("Błąd serwera. Spróbuj ponownie.", { status: 500 });
+    }
     context.locals.user = user ?? null;
 
     // Resolve tenant context for authenticated users only (anon skips the query).
