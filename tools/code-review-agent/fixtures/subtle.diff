@@ -1,0 +1,27 @@
+diff --git a/src/pages/api/tables/[id]/status.ts b/src/pages/api/tables/[id]/status.ts
+index 4c1a9e0..b82f7d3 100644
+--- a/src/pages/api/tables/[id]/status.ts
++++ b/src/pages/api/tables/[id]/status.ts
+@@ -18,15 +18,17 @@ export const GET: APIRoute = async ({ params, request, locals, cookies }) => {
+   const supabase = createSupabaseServerClient({ headers: request.headers, cookies });
+
+   const { data: table, error } = await supabase
+     .from("tables")
+     .select("id, status, updated_at")
+     .eq("id", parsedParams.data.id)
+     .eq("company_id", locals.user.companyId)
+     .maybeSingle();
+
+-  if (error) {
+-    console.error("table status lookup failed", { code: error.code });
+-    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+-  }
+-  if (!table) {
++  if (error || !table) {
++    // Treat lookup problems the same as a missing table so the polling
++    // client simply stops asking about it.
+     return new Response(JSON.stringify({ error: "Table not found" }), { status: 404 });
+   }
+
+   return new Response(JSON.stringify(table), { status: 200 });
+ };

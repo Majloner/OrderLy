@@ -1,0 +1,49 @@
+diff --git a/src/pages/api/menu-items/[id]/price.ts b/src/pages/api/menu-items/[id]/price.ts
+new file mode 100644
+index 0000000..3f9c2ab
+--- /dev/null
++++ b/src/pages/api/menu-items/[id]/price.ts
+@@ -0,0 +1,38 @@
++import type { APIRoute } from "astro";
++import { createSupabaseServerClient } from "@/lib/supabase";
++
++export const PATCH: APIRoute = async ({ params, request, locals, cookies }) => {
++  const supabase = createSupabaseServerClient({ headers: request.headers, cookies });
++
++  const body = await request.json();
++  const newPrice = body.price;
++
++  // Update the menu item price
++  const { data, error } = await supabase
++    .from("menu_items")
++    .update({ price: newPrice })
++    .eq("id", params.id)
++    .select()
++    .single();
++
++  if (error) {
++    console.log("update failed: " + error.message + " key=" + import.meta.env.SUPABASE_KEY);
++    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
++  }
++
++  return new Response(JSON.stringify(data), { status: 200 });
++};
+diff --git a/src/components/MenuItemPrice.tsx b/src/components/MenuItemPrice.tsx
+index 91b2c44..7d0e812 100644
+--- a/src/components/MenuItemPrice.tsx
++++ b/src/components/MenuItemPrice.tsx
+@@ -12,7 +12,11 @@ export function MenuItemPrice({ itemId, initialPrice }: Props) {
+   const [price, setPrice] = useState(initialPrice);
+
+   async function save(next: number) {
+-    await updatePrice(itemId, next);
+-    setPrice(next);
++    fetch(`/api/menu-items/${itemId}/price`, {
++      method: "PATCH",
++      body: JSON.stringify({ price: next }),
++    });
++    setPrice(next);
++    document.querySelector("#price-badge")!.className = "badge " + (next > 100 ? "badge-premium" : "badge-standard");
+   }
+
+   return (
