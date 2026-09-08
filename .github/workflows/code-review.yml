@@ -34,7 +34,10 @@ jobs:
 
       - name: Install review agent
         working-directory: tools/code-review-agent
-        run: npm ci --omit=dev
+        # npm install zamiast npm ci: lock zawiera devowe promptfoo, którego opcjonalne
+        # peer-zależności npm na runnerze rozwiązuje inaczej niż lokalnie (EUSAGE).
+        # CI potrzebuje tylko zależności produkcyjnych (agent SDK + zod).
+        run: npm install --omit=dev --no-audit --no-fund
 
       - name: Build PR diff
         working-directory: tools/code-review-agent
