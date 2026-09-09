@@ -303,4 +303,4 @@ bump `version` w PR (rejestr odrzuca duplikaty), merge do main publikuje.
 
 #### Manual
 
-- [ ] 3.3 Po merge do main: `publish` zielony, paczka widoczna w Packages
+- [x] 3.3 Po merge do main: `publish` zielony, paczka widoczna w Packages — bc828f1
