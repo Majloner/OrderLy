@@ -1,10 +1,10 @@
 ---
 change_id: ai-toolkit-package
 title: Minimalna zespołowa paczka npm z artefaktami AI (GitHub Packages)
-status: implemented
+status: archived
 created: 2026-09-09
-updated: 2026-09-09
-archived_at: null
+updated: 2026-09-10
+archived_at: 2026-09-09T22:13:34Z
 ---
 
 ## Notes
