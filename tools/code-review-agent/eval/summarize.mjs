@@ -30,7 +30,7 @@ console.log("| Model | Wynik | Koszt (3 diffy) | Łączny czas |");
 console.log("|---|---|---|---|");
 for (const [model, e] of byModel) {
   console.log(
-    `| ${model} | ${e.passed}/${e.tests.length} | $${e.cost.toFixed(4)} | ${(e.timeMs / 1000).toFixed(1)}s |`
+    `| ${model} | ${e.passed}/${e.tests.length} | $${e.cost.toFixed(4)} | ${(e.timeMs / 1000).toFixed(1)}s |`,
   );
 }
 console.log("");

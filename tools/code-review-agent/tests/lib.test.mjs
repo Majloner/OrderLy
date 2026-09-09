@@ -87,7 +87,7 @@ describe("parseReviewResponse", () => {
   it("throws the JSON error (with raw attached) on garbled output", () => {
     assert.throws(
       () => parseReviewResponse("Sure! Here is my review: it looks fine."),
-      (err) => err.message.includes("not with valid JSON") && err.raw.includes("Sure!")
+      (err) => err.message.includes("not with valid JSON") && err.raw.includes("Sure!"),
     );
   });
 
@@ -96,7 +96,7 @@ describe("parseReviewResponse", () => {
     review.criteria = review.criteria.slice(1);
     assert.throws(
       () => parseReviewResponse(JSON.stringify(review)),
-      (err) => err.message.includes("violates the review contract")
+      (err) => err.message.includes("violates the review contract"),
     );
   });
 });

@@ -79,6 +79,43 @@ const scriptsConfig = tseslint.config({
   },
 });
 
+// Standalone tool packages under tools/ (code-review agent, ai-toolkit) run on
+// Node, live outside the app tsconfig, and ship CLI scripts — same rationale as
+// scriptsConfig: drop the type-aware layer and no-console, provide Node globals.
+// The CommonJS block additionally allows require() and CJS module globals.
+const toolsConfig = tseslint.config(
+  {
+    files: ["tools/**/*.{js,cjs,mjs}"],
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+        URL: "readonly",
+      },
+    },
+    rules: {
+      "no-console": "off",
+    },
+  },
+  {
+    files: ["tools/**/*.{js,cjs}"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        require: "readonly",
+        module: "writable",
+        exports: "writable",
+        __dirname: "readonly",
+        __filename: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+);
+
 const astroConfig = tseslint.config({
   files: ["**/*.astro"],
   rules: {
@@ -96,5 +133,6 @@ export default tseslint.config(
   ...eslintPluginAstro.configs["flat/jsx-a11y-recommended"],
   astroConfig,
   scriptsConfig,
+  toolsConfig,
   eslintPluginPrettier,
 );

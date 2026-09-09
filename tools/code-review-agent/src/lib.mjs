@@ -85,7 +85,7 @@ export function parseReviewResponse(reviewText) {
   const parsed = ReviewSchema.safeParse(parsedJson);
   if (!parsed.success) {
     const err = new Error(
-      `response violates the review contract: ${parsed.error.issues.map((i) => i.message).join("; ")}`
+      `response violates the review contract: ${parsed.error.issues.map((i) => i.message).join("; ")}`,
     );
     err.raw = reviewText;
     throw err;
@@ -125,8 +125,7 @@ export async function runReview(diff, opts = {}) {
     throw new Error(`Unknown tools mode; use one of: ${Object.keys(TOOL_MODES).join(", ")}`);
   }
 
-  const systemPrompt =
-    readFileSync(join(packageRoot, "prompts", "review-system.md"), "utf8") + mode.extraPrompt;
+  const systemPrompt = readFileSync(join(packageRoot, "prompts", "review-system.md"), "utf8") + mode.extraPrompt;
 
   const prompt = [
     "Review the following unified diff and respond in the JSON format defined in your instructions.",

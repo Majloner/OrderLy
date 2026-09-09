@@ -60,13 +60,15 @@ for (const c of review.criteria) {
 }
 
 if (!meta.verdict_consistent) {
-  console.log(`\n⚠️ Model verdict '${review.verdict}' is inconsistent with criteria — the gate uses the derived verdict.`);
+  console.log(
+    `\n⚠️ Model verdict '${review.verdict}' is inconsistent with criteria — the gate uses the derived verdict.`,
+  );
 }
 console.log(`\nVerdict:  ${meta.verdict_derived.toUpperCase()}`);
 console.log(`Report:   ${reportPath}`);
 console.log(
   `Usage:    in=${meta.input_tokens} out=${meta.output_tokens} ` +
-    `cost=$${meta.cost_usd?.toFixed(4) ?? "n/a"} duration=${meta.duration_ms}ms`
+    `cost=$${meta.cost_usd?.toFixed(4) ?? "n/a"} duration=${meta.duration_ms}ms`,
 );
 
 process.exit(meta.verdict_derived === "request_changes" ? 3 : 0);
