@@ -275,30 +275,30 @@ bump `version` w PR (rejestr odrzuca duplikaty), merge do main publikuje.
 
 #### Automated
 
-- [x] 1.1 `npm pack --dry-run` wypisuje dokładnie kontraktowy zestaw plików
-- [x] 1.2 Frontmatter SKILL.md parsuje się i `name` == `code-review`
+- [x] 1.1 `npm pack --dry-run` wypisuje dokładnie kontraktowy zestaw plików — fd8a0c7
+- [x] 1.2 Frontmatter SKILL.md parsuje się i `name` == `code-review` — fd8a0c7
 
 #### Manual
 
-- [x] 1.3 Treść SKILL.md odzwierciedla pięć kryteriów z M5L2/3
+- [x] 1.3 Treść SKILL.md odzwierciedla pięć kryteriów z M5L2/3 — fd8a0c7
 
 ### Phase 2: Instalator i deinstalator z testami
 
 #### Automated
 
-- [x] 2.1 `npm test` zielone
-- [x] 2.2 Idempotencja podwójnej instalacji (asercja)
-- [x] 2.3 Czysty uninstall (asercja)
+- [x] 2.1 `npm test` zielone — e149ab4
+- [x] 2.2 Idempotencja podwójnej instalacji (asercja) — e149ab4
+- [x] 2.3 Czysty uninstall (asercja) — e149ab4
 
 #### Manual
 
-- [x] 2.4 Ręczne oględziny instalacji do katalogu tymczasowego
+- [x] 2.4 Ręczne oględziny instalacji do katalogu tymczasowego — e149ab4
 
 ### Phase 3: Pipeline publikacji
 
 #### Automated
 
-- [ ] 3.1 YAML workflow poprawny składniowo
+- [x] 3.1 YAML workflow poprawny składniowo
 - [ ] 3.2 Job `validate` zielony na PR
 
 #### Manual
