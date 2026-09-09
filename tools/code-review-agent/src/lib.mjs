@@ -62,6 +62,38 @@ export function deriveVerdict(review) {
   return review.criteria.some((c) => c.status === "fail") ? "request_changes" : "approve";
 }
 
+/**
+ * Parse a raw model response into a contract-valid review object.
+ * Tolerates an accidental markdown fence; throws (with `raw` attached) on
+ * malformed JSON or a contract violation.
+ */
+export function parseReviewResponse(reviewText) {
+  const jsonText = reviewText
+    .replace(/^```(?:json)?\s*/, "")
+    .replace(/\s*```$/, "")
+    .trim();
+
+  let parsedJson;
+  try {
+    parsedJson = JSON.parse(jsonText);
+  } catch {
+    const err = new Error("model responded, but not with valid JSON");
+    err.raw = reviewText;
+    throw err;
+  }
+
+  const parsed = ReviewSchema.safeParse(parsedJson);
+  if (!parsed.success) {
+    const err = new Error(
+      `response violates the review contract: ${parsed.error.issues.map((i) => i.message).join("; ")}`
+    );
+    err.raw = reviewText;
+    throw err;
+  }
+
+  return parsed.data;
+}
+
 const TOOL_MODES = {
   none: {
     allowedTools: [],
@@ -135,31 +167,10 @@ export async function runReview(diff, opts = {}) {
     throw new Error(`model call failed: ${JSON.stringify(resultMessage)}`);
   }
 
-  const jsonText = reviewText
-    .replace(/^```(?:json)?\s*/, "")
-    .replace(/\s*```$/, "")
-    .trim();
-
-  let parsedJson;
-  try {
-    parsedJson = JSON.parse(jsonText);
-  } catch {
-    const err = new Error("model responded, but not with valid JSON");
-    err.raw = reviewText;
-    throw err;
-  }
-
-  const parsed = ReviewSchema.safeParse(parsedJson);
-  if (!parsed.success) {
-    const err = new Error(
-      `response violates the review contract: ${parsed.error.issues.map((i) => i.message).join("; ")}`
-    );
-    err.raw = reviewText;
-    throw err;
-  }
+  const review = parseReviewResponse(reviewText);
 
   return {
-    review: parsed.data,
+    review,
     meta: {
       model,
       tools: opts.tools ?? process.env.REVIEW_TOOLS ?? "none",
@@ -167,8 +178,8 @@ export async function runReview(diff, opts = {}) {
       input_tokens: resultMessage.usage?.input_tokens ?? null,
       output_tokens: resultMessage.usage?.output_tokens ?? null,
       duration_ms: Date.now() - started,
-      verdict_derived: deriveVerdict(parsed.data),
-      verdict_consistent: deriveVerdict(parsed.data) === parsed.data.verdict,
+      verdict_derived: deriveVerdict(review),
+      verdict_consistent: deriveVerdict(review) === review.verdict,
     },
   };
 }

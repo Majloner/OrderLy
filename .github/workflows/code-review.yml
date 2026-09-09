@@ -39,6 +39,10 @@ jobs:
         # CI potrzebuje tylko zależności produkcyjnych (agent SDK + zod).
         run: npm install --omit=dev --no-audit --no-fund
 
+      - name: Unit-test review agent
+        working-directory: tools/code-review-agent
+        run: npm test
+
       - name: Build PR diff
         working-directory: tools/code-review-agent
         run: git diff origin/${{ github.base_ref }}...HEAD -- ':(exclude)package-lock.json' > pr.diff
