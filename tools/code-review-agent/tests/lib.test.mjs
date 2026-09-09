@@ -41,6 +41,14 @@ describe("ReviewSchema invariants", () => {
     assert.equal(ReviewSchema.safeParse(makeReview()).success, true);
   });
 
+  it("accepts a pass criterion with the findings key omitted (defaults to [])", () => {
+    const review = makeReview();
+    delete review.criteria[0].findings;
+    const result = ReviewSchema.safeParse(review);
+    assert.equal(result.success, true);
+    assert.deepEqual(result.data.criteria[0].findings, []);
+  });
+
   it("rejects a missing criterion", () => {
     const review = makeReview();
     review.criteria = review.criteria.slice(1);

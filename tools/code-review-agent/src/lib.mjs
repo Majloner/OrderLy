@@ -31,7 +31,10 @@ const Criterion = z.object({
   id: z.enum(CRITERIA_IDS),
   status: z.enum(["pass", "warn", "fail"]),
   notes: z.string().min(1),
-  findings: z.array(Finding),
+  // Models routinely omit the key on a clean criterion (seen on docs-only
+  // diffs); an absent list means "no findings", which the superRefine below
+  // still rejects for warn/fail.
+  findings: z.array(Finding).default([]),
 });
 
 export const ReviewSchema = z
