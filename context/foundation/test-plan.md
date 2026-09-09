@@ -84,14 +84,15 @@ orkiestrator aktualizuje Status w miarę pojawiania się artefaktów na dysku.
 | 3 | Quality gates wiring | Zabetonować podłogę: lint + typecheck + unit+integration w CI; lokalny post-edit hook | cross-cutting | gates, hook | complete | context/changes/quality-gates-ci/ |
 | 4 | AI-native selective visual | Multimodalny przegląd wizualny 1–3 krytycznych ekranów właściciela po redesignie „Karta/bistro" | cross-cutting | multimodal visual review | not started | — |
 
-**Faza 4 jest zablokowana — nie zaczynaj jej „bo została".** Dwa niezależne powody,
-oba sprawdzalne: (1) jej cel to przegląd ekranów **po** redesignie „Karta/bistro", a
-ta zmiana ma status `planned` i 0/55 pozycji Progress (`context/changes/ui-redesign/`)
-— nie ma czego przeglądać, co potwierdza też §4 („When NOT to use: ekrany bez zmiany
-wizualnej"); (2) `CLAUDE.md` przypisuje multimodal scenario code do Lekcji 4, poza
-zakresem bieżącej. Status zostaje `not started`, bo słownik poniżej nie ma wartości
-„blocked", a wpisanie `complete` fazie, która się nie odbyła, byłoby nieprawdą w
-artefakcie. Odblokowanie: dowieźć redesign, potem `/10x-test-plan`.
+**Faza 4 skreślona decyzją właściciela 2026-09-06 — nie wznawiać automatycznie.**
+Właściciel uznał, że recenzja screenshotów przez VLM nie jest warta utrzymywania
+(koszt klucza API + brak zaufania do wartości sygnału). Wykonana praca została
+wycofana w całości: commit harnessu `aacc534` zrevertowany (seed, projekt visual
+w Playwright, capture spec), a niezacommitowana Faza 2 (rubryki + skrypt recenzji)
+usunięta z dysku. Status `not started` jest literalnie prawdziwy (folder change'a
+nie istnieje), ale orkiestrator NIE powinien otwierać tej fazy ponownie bez nowej,
+jawnej decyzji właściciela. Historia: git blame tego akapitu; wcześniejsza blokada
+i odblokowanie 2026-08-31 — w historii gita.
 
 **Status vocabulary** (fixed — parser literals):
 

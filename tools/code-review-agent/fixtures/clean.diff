@@ -1,0 +1,105 @@
+diff --git a/src/pages/api/menu-items/[id]/price.ts b/src/pages/api/menu-items/[id]/price.ts
+new file mode 100644
+index 0000000..8e41b02
+--- /dev/null
++++ b/src/pages/api/menu-items/[id]/price.ts
+@@ -0,0 +1,52 @@
++import type { APIRoute } from "astro";
++import { z } from "zod";
++import { createSupabaseServerClient } from "@/lib/supabase";
++
++export const prerender = false;
++
++const paramsSchema = z.object({ id: z.string().uuid() });
++const bodySchema = z.object({ price: z.number().positive().max(10_000) });
++
++export const PATCH: APIRoute = async ({ params, request, locals, cookies }) => {
++  const user = locals.user;
++  if (!user) {
++    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
++  }
++
++  const parsedParams = paramsSchema.safeParse(params);
++  if (!parsedParams.success) {
++    return new Response(JSON.stringify({ error: "Invalid menu item id" }), { status: 400 });
++  }
++
++  let parsedBody;
++  try {
++    parsedBody = bodySchema.safeParse(await request.json());
++  } catch {
++    return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400 });
++  }
++  if (!parsedBody.success) {
++    return new Response(JSON.stringify({ error: "Invalid price" }), { status: 400 });
++  }
++
++  const supabase = createSupabaseServerClient({ headers: request.headers, cookies });
++  const { data, error } = await supabase
++    .from("menu_items")
++    .update({ price: parsedBody.data.price })
++    .eq("id", parsedParams.data.id)
++    .eq("company_id", user.companyId)
++    .select()
++    .maybeSingle();
++
++  if (error) {
++    console.error("menu item price update failed", { code: error.code });
++    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
++  }
++  if (!data) {
++    return new Response(JSON.stringify({ error: "Menu item not found" }), { status: 404 });
++  }
++
++  return new Response(JSON.stringify(data), { status: 200 });
++};
+diff --git a/tests/integration/menu-item-price.test.ts b/tests/integration/menu-item-price.test.ts
+new file mode 100644
+index 0000000..5b7d911
+--- /dev/null
++++ b/tests/integration/menu-item-price.test.ts
+@@ -0,0 +1,41 @@
++import { describe, expect, it } from "vitest";
++import { authedFetch, seedMenuItem, cleanupMenuItem } from "./helpers";
++
++describe("PATCH /api/menu-items/:id/price", () => {
++  it("rejects anonymous callers with 401", async () => {
++    const res = await fetch(`/api/menu-items/00000000-0000-0000-0000-000000000000/price`, {
++      method: "PATCH",
++      headers: { "Content-Type": "application/json" },
++      body: JSON.stringify({ price: 12 }),
++    });
++    expect(res.status).toBe(401);
++  });
++
++  it("rejects an invalid price with 400", async () => {
++    const item = await seedMenuItem({ suffix: Date.now() });
++    try {
++      const res = await authedFetch(`/api/menu-items/${item.id}/price`, { price: -5 });
++      expect(res.status).toBe(400);
++    } finally {
++      await cleanupMenuItem(item.id);
++    }
++  });
++
++  it("returns 404 for another tenant's item", async () => {
++    const foreign = await seedMenuItem({ suffix: Date.now(), company: "other" });
++    try {
++      const res = await authedFetch(`/api/menu-items/${foreign.id}/price`, { price: 12 });
++      expect(res.status).toBe(404);
++    } finally {
++      await cleanupMenuItem(foreign.id);
++    }
++  });
++
++  it("updates the price for the owning tenant", async () => {
++    const item = await seedMenuItem({ suffix: Date.now() });
++    try {
++      const res = await authedFetch(`/api/menu-items/${item.id}/price`, { price: 19.5 });
++      expect(res.status).toBe(200);
++      expect((await res.json()).price).toBe(19.5);
++    } finally {
++      await cleanupMenuItem(item.id);
++    }
++  });
++});

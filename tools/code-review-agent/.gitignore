@@ -1,0 +1,5 @@
+reports/
+eval/results.json
+pr.diff
+review.md
+errors.log

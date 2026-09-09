@@ -1,0 +1,76 @@
+# Model-comparison eval for the OrderLY code-review agent (10xDevs M5L3, task 3).
+# Providers run the same agent script via the Claude Code subscription (no API key),
+# so the matrix compares models on identical prompts, criteria, and output contract.
+#
+# Run from this directory:
+#   npx promptfoo eval -c promptfooconfig.yaml --no-cache -o results.json
+#   npx promptfoo view   # optional web UI
+
+description: "OrderLY code review — model comparison on the review contract"
+
+prompts:
+  - "{{diff}}"
+
+providers:
+  - id: "exec: node run-review.mjs"
+    label: "claude-opus-5"
+    config:
+      model: "claude-opus-5"
+  - id: "exec: node run-review.mjs"
+    label: "claude-sonnet-5"
+    config:
+      model: "claude-sonnet-5"
+  - id: "exec: node run-review.mjs"
+    label: "claude-haiku-4-5"
+    config:
+      model: "claude-haiku-4-5"
+
+defaultTest:
+  assert:
+    - type: is-json
+    # Contract sanity: five criteria, model verdict consistent with statuses.
+    - type: javascript
+      value: |
+        const r = JSON.parse(output);
+        const ids = ["tenant-isolation","auth-and-secrets","input-validation","framework-conventions","test-coverage"];
+        const ok = Array.isArray(r.criteria)
+          && r.criteria.length === 5
+          && ids.every(id => r.criteria.some(c => c.id === id))
+          && (r.criteria.some(c => c.status === "fail") ? r.verdict === "request_changes" : r.verdict === "approve");
+        return ok || "contract violated: " + JSON.stringify({verdict: r.verdict, statuses: (r.criteria||[]).map(c => c.id + "=" + c.status)});
+
+tests:
+  - description: "sample.diff — blatant violations must be rejected"
+    vars:
+      diff: file://../fixtures/sample.diff
+    assert:
+      - type: javascript
+        value: |
+          const r = JSON.parse(output);
+          const st = Object.fromEntries(r.criteria.map(c => [c.id, c.status]));
+          const ok = r.verdict === "request_changes"
+            && st["tenant-isolation"] === "fail"
+            && st["auth-and-secrets"] === "fail"
+            && st["input-validation"] === "fail";
+          return ok || "expected request_changes with tenant/auth/validation fails, got " + JSON.stringify(st);
+
+  - description: "clean.diff — compliant change must be approved"
+    vars:
+      diff: file://../fixtures/clean.diff
+    assert:
+      - type: javascript
+        value: |
+          const r = JSON.parse(output);
+          return r.verdict === "approve"
+            || "false positive: " + JSON.stringify(r.criteria.filter(c => c.status === "fail").map(c => c.id));
+
+  - description: "subtle.diff — masked 500→404 error semantics must be caught"
+    vars:
+      diff: file://../fixtures/subtle.diff
+    assert:
+      - type: javascript
+        value: |
+          const r = JSON.parse(output);
+          const iv = r.criteria.find(c => c.id === "input-validation");
+          const ok = r.verdict === "request_changes" && iv && iv.status !== "pass";
+          return ok || "missed the error-semantics regression: verdict=" + r.verdict + ", input-validation=" + (iv && iv.status);

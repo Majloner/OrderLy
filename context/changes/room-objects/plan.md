@@ -921,15 +921,16 @@ istniejącej tabeli nie została zmieniona.
 #### Manual
 
 - [x] 4.5 Dodanie ściany daje długi cienki prostokąt, dodanie krzesła mały kwadrat
-- [ ] 4.6 Przeciągnięcie myszą zapisuje pozycję i utrzymuje się po odświeżeniu
+- [x] 4.6 Przeciągnięcie myszą zapisuje pozycję i utrzymuje się po odświeżeniu
 - [ ] 4.7 Przeciąganie palcem działa i strona się nie przewija
+  - *2026-09-07: częściowo — `touch-action: none` potwierdzone (computed style) na powierzchni dragu przy aktywnej emulacji mobile; realnego gestu dotykowego nie dało się wykonać (translacja mysz→dotyk w panelu przeglądarki wisi). Do domknięcia na fizycznym urządzeniu: `npm run dev -- --host` + telefon w tej samej sieci.*
 - [x] 4.8 Obiekty rysują się pod stolikami, także w trakcie przeciągania
 - [x] 4.9 Obrót o 90° utrzymuje się po odświeżeniu; przy 45° narożnik nie wyjeżdża za kanwas
-- [ ] 4.10 Przeciąganie obróconego obiektu idzie prosto pod kursorem, nie po łuku
-- [ ] 4.11 Zwężenie okna skaluje obiekty razem ze stolikami i drag nadal trafia pod kursor
+- [x] 4.10 Przeciąganie obróconego obiektu idzie prosto pod kursorem, nie po łuku
+- [x] 4.11 Zwężenie okna skaluje obiekty razem ze stolikami i drag nadal trafia pod kursor
 - [x] 4.12 Usunięcie wymaga potwierdzenia, po nim obiekt nie wraca po odświeżeniu
 - [x] 4.13 Cała ścieżka dodaj/edytuj/usuń jest wykonalna z klawiatury przez listę
-- [ ] 4.14 Błąd sieci przy upuszczeniu cofa tylko ten obiekt; pozostałe pozycje nietknięte
+- [x] 4.14 Błąd sieci przy upuszczeniu cofa tylko ten obiekt; pozostałe pozycje nietknięte
 
 ### Phase 5: Uchwyty zmiany rozmiaru i obrotu (opcjonalna)
 
@@ -944,6 +945,8 @@ istniejącej tabeli nie została zmieniona.
 
 - [x] 5.5 Kliknięcie zaznacza obiekt i pokazuje uchwyty; kliknięcie w tło odznacza
 - [x] 5.6 Uchwyt narożny zmienia rozmiar, a nie przesuwa obiektu
-- [ ] 5.7 Uchwyt obrotu obraca wokół środka; `Shift` snapuje do 15°
+- [x] 5.7 Uchwyt obrotu obraca wokół środka; `Shift` snapuje do 15°
+  - *2026-09-07: obrót wokół środka potwierdzony realnym dragiem (2 obiekty, pozycja stała); snap 52°→45 potwierdzony gestem syntetycznym z `shiftKey` — panel przeglądarki nie umie trzymać Shift w trakcie dragu; matematyka snapu pokryta testami jednostkowymi (5.1).*
 - [ ] 5.8 Uchwyty działają palcem i nie przewijają strony
-- [ ] 5.9 Ścieżka klawiaturowa z fazy 4 nadal działa i daje ten sam wynik
+  - *2026-09-07: częściowo — `touch-action: none` potwierdzone (computed style) na wszystkich 5 uchwytach przy aktywnej emulacji mobile; realny gest dotykowy niewykonalny w panelu (jak 4.7). Do domknięcia na fizycznym urządzeniu.*
+- [x] 5.9 Ścieżka klawiaturowa z fazy 4 nadal działa i daje ten sam wynik
