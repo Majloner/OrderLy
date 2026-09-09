@@ -298,8 +298,8 @@ bump `version` w PR (rejestr odrzuca duplikaty), merge do main publikuje.
 
 #### Automated
 
-- [x] 3.1 YAML workflow poprawny składniowo
-- [ ] 3.2 Job `validate` zielony na PR
+- [x] 3.1 YAML workflow poprawny składniowo — ad44f00
+- [x] 3.2 Job `validate` zielony na PR — 8c73a0e
 
 #### Manual
 
