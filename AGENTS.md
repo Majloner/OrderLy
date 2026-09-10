@@ -63,4 +63,3 @@ Standalone packages under `tools/` — repo tooling, not app code; their depende
 - Secrets `SUPABASE_URL`/`SUPABASE_KEY`: `.env` (Node) or `.dev.vars` (Cloudflare local, both gitignored). Never commit them.
 - The `@przeprogramowani/10x-cli` block in `@CLAUDE.md` is generated — do not hand-edit it. `context/` is that toolkit's working area.
 - `.mcp.json` registers a local `claude-manager-kanban` server (tooling, not app code).
-- Migration cleanup still pending: review the `CLAUDE.md.scaffold` sibling left by the scaffold (the `.github.scaffold` sibling is already gone).
