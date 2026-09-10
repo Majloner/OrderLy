@@ -2,7 +2,9 @@
 -- Seeds two companies with owners, a waiter, a deactivated staff member, rooms,
 -- tables, menu categories and menu items, then asserts, per simulated JWT
 -- context, that staff see only their own company, that menu writes are
--- owner-only (waiter denied), that anonymous callers read only visible rows
+-- owner-only with one S-05 exception — the waiter may UPDATE menu_items but
+-- a trigger holds the change to the availability column alone, while the
+-- kitchen role still has no write path at all — that anonymous callers read only visible rows
 -- (available/sold_out, non-archived) and cannot write, that an orphan
 -- (profile-less) authenticated user sees nothing, that menu-photos Storage
 -- writes are owner-only and scoped to the caller's company prefix, that
@@ -42,7 +44,10 @@ values
   ('f3333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'annaA@test.local', now(), now()),
   ('f4444444-4444-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'annaB@test.local', now(), now()),
   ('f5555555-5555-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dup@test.local', now(), now()),
-  ('f6666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'noemail@test.local', now(), now());
+  ('f6666666-6666-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'noemail@test.local', now(), now()),
+  -- S-05: an ACTIVE kitchen member of company A (the fixture kitchen user above
+  -- is deactivated on purpose for assertion 17, so it cannot prove role denial).
+  ('f7777777-7777-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'kitchenA@test.local', now(), now());
 
 -- companies.code is NOT NULL with no default and a unique index
 -- (companies_code_idx), added by 20260728150833_venue_code_and_staff_login.sql.
@@ -63,7 +68,8 @@ values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1111111-1111-1111-1111-111111111111', 'owner', 'Owner A', 'ownerA@test.local', null, null),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'b2222222-2222-2222-2222-222222222222', 'owner', 'Owner B', 'ownerB@test.local', null, null),
   ('dddddddd-dddd-dddd-dddd-dddddddddddd', 'a1111111-1111-1111-1111-111111111111', 'waiter', 'Waiter A', 'waiterA@test.local', 'waiter-a', null),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'a1111111-1111-1111-1111-111111111111', 'kitchen', 'Gone A', 'goneA@test.local', 'gone-a', now());
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'a1111111-1111-1111-1111-111111111111', 'kitchen', 'Gone A', 'goneA@test.local', 'gone-a', now()),
+  ('f7777777-7777-7777-7777-777777777777', 'a1111111-1111-1111-1111-111111111111', 'kitchen', 'Kitchen A', 'kitchenA@test.local', 'kitchen-a', null);
 
 -- S-06: tables.room_id is NOT NULL, so rooms must be seeded first.
 insert into public.rooms (id, company_id, name, sort_order)
@@ -115,7 +121,7 @@ begin
   -- Deactivated staff stay visible to their own company: profiles_select_same_company
   -- filters on the CALLER's company, not the row's state, which is what makes
   -- the reactivate flow possible without a second policy.
-  if pr <> 3 then raise exception 'FAIL A.profiles: saw %, expected 3 (owner+waiter+deactivated)', pr; end if;
+  if pr <> 4 then raise exception 'FAIL A.profiles: saw %, expected 4 (owner+waiter+kitchen+deactivated)', pr; end if;
   if tb <> 2 then raise exception 'FAIL A.tables: saw %, expected 2 (own active+inactive)', tb; end if;
   if rm <> 1 then raise exception 'FAIL A.rooms: saw %, expected 1 (own)', rm; end if;
   if mi <> 4 then raise exception 'FAIL A.menu_items: saw %, expected 4 (own, incl. archived)', mi; end if;
@@ -161,10 +167,14 @@ end $$;
 reset role;
 
 -- --- Assertion 4: waiter A can read but NOT write menu ----------------------
+-- Re-baselined by S-05 (20260910080000): the waiter now MATCHES an UPDATE
+-- policy, so a non-availability UPDATE is no longer silently filtered (0 rows)
+-- — it reaches the menu_items_guard_staff_columns trigger and raises P0001.
+-- The waiter's ALLOWED write (availability only) is assertion 27.
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"dddddddd-dddd-dddd-dddd-dddddddddddd","role":"authenticated"}';
 do $$
-declare mi int; n int; leaked boolean := false;
+declare mi int; n int; state text; leaked boolean := false;
 begin
   select count(*) into mi from public.menu_items;
   if mi <> 4 then raise exception 'FAIL waiter read: saw % items, expected 4', mi; end if;
@@ -177,9 +187,14 @@ begin
   end;
   if leaked then raise exception 'FAIL waiter write: menu_items INSERT succeeded (should be denied)'; end if;
 
-  update public.menu_items set description = 'edited by waiter' where name = 'A-Pizza';
-  get diagnostics n = row_count;
-  if n <> 0 then raise exception 'FAIL waiter write: UPDATE affected % rows, expected 0', n; end if;
+  begin
+    update public.menu_items set description = 'edited by waiter' where name = 'A-Pizza';
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> 'P0001' then
+    raise exception 'FAIL waiter write: description UPDATE gave sqlstate %, expected P0001 (column-guard trigger)', state;
+  end if;
 
   delete from public.menu_items where name = 'A-Pizza';
   get diagnostics n = row_count;
@@ -1000,6 +1015,63 @@ begin
     raise exception 'FAIL room cascade: % objects survived their room, expected 0', left_over;
   end if;
   raise notice 'OK objects are tenant-isolated, cannot cross-reference a room, and cascade with theirs';
+end $$;
+reset role;
+
+-- --- Assertion 27 (S-05): waiter toggles availability and NOTHING else --------
+-- The one write a waiter has (PRD Access Control: "przełącza dostępność …
+-- Nie zmienia … menu"). Four properties: the flip itself lands; a column smuggled
+-- alongside it is rejected whole (P0001); the flip cannot reach another tenant's
+-- rows (0 rows, RLS); the kitchen role has no write path at all (0 rows — no
+-- UPDATE policy matches, so the trigger never even runs).
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"dddddddd-dddd-dddd-dddd-dddddddddddd","role":"authenticated"}';
+do $$
+declare n int; state text; av public.menu_item_availability;
+begin
+  update public.menu_items set availability = 'sold_out' where name = 'A-Pizza';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL waiter availability: UPDATE affected % rows, expected 1', n; end if;
+  select availability into av from public.menu_items where name = 'A-Pizza';
+  if av <> 'sold_out' then raise exception 'FAIL waiter availability: value is %, expected sold_out', av; end if;
+
+  -- availability + price in one statement must be rejected whole, not partially applied
+  begin
+    update public.menu_items set availability = 'available', price = 0.01 where name = 'A-Pizza';
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> 'P0001' then
+    raise exception 'FAIL waiter smuggled column: sqlstate %, expected P0001 (column-guard trigger)', state;
+  end if;
+  select availability into av from public.menu_items where name = 'A-Pizza';
+  if av <> 'sold_out' then raise exception 'FAIL waiter smuggled column: availability changed to % despite rejection', av; end if;
+
+  -- cross-tenant: company B's item is invisible to the waiter's policies (0 rows)
+  update public.menu_items set availability = 'unavailable' where name = 'B-Pasta';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL waiter cross-tenant availability: UPDATE affected % rows, expected 0', n; end if;
+  raise notice 'OK waiter A toggles availability only, within own company only';
+end $$;
+reset role;
+
+-- --- Assertion 28 (S-05): kitchen A cannot touch availability -----------------
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"f7777777-7777-7777-7777-777777777777","role":"authenticated"}';
+do $$
+declare mi int; n int;
+begin
+  -- kitchen still READS the menu of its company (menu_items_select_staff).
+  -- Keyed on fixture names, not an absolute count: assertion 5b leaves two
+  -- GAP-probe items behind in company A (same brittleness-avoidance as 10/25).
+  select count(*) into mi from public.menu_items
+    where name in ('A-Pizza', 'A-SoldOut', 'A-Hidden', 'A-Archived');
+  if mi <> 4 then raise exception 'FAIL kitchen read: saw % fixture items, expected 4', mi; end if;
+
+  update public.menu_items set availability = 'available' where name = 'A-Pizza';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL kitchen availability: UPDATE affected % rows, expected 0 (no policy)', n; end if;
+  raise notice 'OK kitchen A reads the menu but cannot toggle availability';
 end $$;
 reset role;
 
