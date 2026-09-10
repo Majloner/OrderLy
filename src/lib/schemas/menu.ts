@@ -70,5 +70,11 @@ export const photoUploadRequestSchema = z.object({
     .max(MAX_THUMB_PHOTO_BYTES, "Miniatura jest zbyt duża"),
 });
 
+// S-05: the waiter's single permitted write is this one field. Built with
+// .pick() so the enum and its message cannot drift from the full item schema
+// (same reasoning as roomObjectTransformSchema in schemas/room.ts).
+export const menuItemAvailabilitySchema = menuItemInputSchema.pick({ availability: true });
+
 export type MenuCategoryInput = z.output<typeof menuCategoryInputSchema>;
 export type MenuItemInput = z.output<typeof menuItemInputSchema>;
+export type MenuItemAvailabilityInput = z.output<typeof menuItemAvailabilitySchema>;

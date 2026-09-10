@@ -34,10 +34,20 @@ describe("Risk #3 — write-route authorization matrix", () => {
         expect(res.status).toBe(401);
       });
 
-      it("rejects a waiter with 403", async () => {
-        const res = await call(seed.companyA.waiter);
-        expect(res.status).toBe(403);
-      });
+      if (route.waiterAllowed) {
+        // S-05: the availability PATCH admits the waiter. Same shape as the
+        // owner assertion — the guard lets them through; what the waiter may
+        // actually CHANGE is pinned by the RLS suite's column-guard assertions.
+        it("admits the waiter past the guard (not 401/403)", async () => {
+          const res = await call(seed.companyA.waiter);
+          expect([401, 403]).not.toContain(res.status);
+        });
+      } else {
+        it("rejects a waiter with 403", async () => {
+          const res = await call(seed.companyA.waiter);
+          expect(res.status).toBe(403);
+        });
+      }
 
       it("rejects the kitchen with 403", async () => {
         const res = await call(seed.companyA.kitchen);

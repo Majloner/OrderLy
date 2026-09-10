@@ -25,17 +25,23 @@ interface MenuRequestContext {
 
 // Route-level guard for /api/menu/*. RLS is the real enforcement; this gives
 // the UI fast, friendly JSON errors. Reads are for the whole staff (S-05
-// polling will reuse GET /api/menu), writes are owner-only.
+// polling reuses GET /api/menu); writes are owner-only, with one S-05
+// exception: `write: "availability"` also admits the waiter (the availability
+// PATCH — the DB holds the change to that column via the
+// menu_items_guard_staff_columns trigger). Kitchen has no menu write at all.
 export function guardMenuRequest(
   context: APIContext,
-  options: { write: boolean },
+  options: { write: boolean | "availability" },
 ): { error: Response } | MenuRequestContext {
   const { user, company_id, role } = context.locals;
 
   if (!user) {
     return { error: jsonError("Wymagane zalogowanie", 401) };
   }
-  if (options.write && role !== "owner") {
+  if (options.write === "availability" && role !== "owner" && role !== "waiter") {
+    return { error: jsonError("Tylko właściciel i kelner mogą zmieniać dostępność pozycji", 403) };
+  }
+  if (options.write === true && role !== "owner") {
     return { error: jsonError("Tylko właściciel może modyfikować menu", 403) };
   }
   if (!company_id) {

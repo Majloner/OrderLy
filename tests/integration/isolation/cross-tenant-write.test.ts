@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PUT as menuCategoryPut } from "@/pages/api/menu/categories/[id]";
 import { PUT as menuItemPut } from "@/pages/api/menu/items/[id]";
+import { PATCH as menuItemAvailabilityPatch } from "@/pages/api/menu/items/[id]/availability";
 import { PUT as roomPut } from "@/pages/api/room/rooms/[id]";
 import { PATCH as tableActivationPatch } from "@/pages/api/room/tables/[id]/activation";
 import { PUT as staffPut } from "@/pages/api/staff/[id]";
@@ -73,6 +74,30 @@ describe("Risk #1 — cross-tenant writes are denied and leave company B unchang
       .eq("id", seed.companyB.resources.itemId)
       .single<{ name: string }>();
     expect(data?.name).toBe("Seed Item");
+  });
+
+  it("waiter A cannot toggle availability on company B's menu item (S-05)", async () => {
+    // Driven as the WAITER, not the owner: this is the one route whose guard
+    // admits the waiter, so the denial being proven here is the new
+    // menu_items_update_availability_waiter policy's company_id predicate.
+    const res = await Promise.resolve(
+      menuItemAvailabilityPatch(
+        buildContext(seed.companyA.waiter, {
+          method: "PATCH",
+          params: { id: seed.companyB.resources.itemId },
+          body: { availability: "sold_out" },
+        }),
+      ),
+    );
+    expect([401, 403]).not.toContain(res.status);
+    expect(res.status).toBe(404);
+
+    const { data } = await service
+      .from("menu_items")
+      .select("availability")
+      .eq("id", seed.companyB.resources.itemId)
+      .single<{ availability: string }>();
+    expect(data?.availability).toBe("available");
   });
 
   it("owner A cannot rename company B's room", async () => {

@@ -5,6 +5,7 @@ import { PUT as menuCategoryPut } from "@/pages/api/menu/categories/[id]";
 import { PUT as menuCategoriesReorderPut } from "@/pages/api/menu/categories/reorder";
 import { POST as menuItemsPost } from "@/pages/api/menu/items";
 import { PUT as menuItemPut } from "@/pages/api/menu/items/[id]";
+import { PATCH as menuItemAvailabilityPatch } from "@/pages/api/menu/items/[id]/availability";
 import { PUT as menuItemsReorderPut } from "@/pages/api/menu/items/reorder";
 import { POST as photoUrlPost } from "@/pages/api/menu/items/[id]/photo-url";
 import { POST as roomsPost } from "@/pages/api/room/rooms";
@@ -120,6 +121,14 @@ const CASES: ParityCase[] = [
     method: "PUT",
     violates: "menuItemInputSchema.availability enum",
     badBody: () => ({ ...validItem, availability: "hidden" }),
+    params: ownedItem,
+  },
+  {
+    label: "PATCH /api/menu/items/[id]/availability — unknown availability",
+    handler: menuItemAvailabilityPatch,
+    method: "PATCH",
+    violates: "menuItemAvailabilitySchema.availability enum",
+    badBody: () => ({ availability: "hidden" }),
     params: ownedItem,
   },
   {

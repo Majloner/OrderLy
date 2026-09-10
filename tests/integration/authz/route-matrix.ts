@@ -4,6 +4,7 @@ import { PUT as menuCategoryPut, DELETE as menuCategoryDelete } from "@/pages/ap
 import { PUT as menuCategoriesReorderPut } from "@/pages/api/menu/categories/reorder";
 import { POST as menuItemsPost } from "@/pages/api/menu/items";
 import { PUT as menuItemPut, DELETE as menuItemDelete } from "@/pages/api/menu/items/[id]";
+import { PATCH as menuItemAvailabilityPatch } from "@/pages/api/menu/items/[id]/availability";
 import { PUT as menuItemsReorderPut } from "@/pages/api/menu/items/reorder";
 import { POST as roomsPost } from "@/pages/api/room/rooms";
 import { PUT as roomPut, DELETE as roomDelete } from "@/pages/api/room/rooms/[id]";
@@ -33,6 +34,10 @@ export interface WriteRouteCase {
   method: "POST" | "PUT" | "PATCH" | "DELETE";
   handler: APIRoute;
   params?: Record<string, string>;
+  // S-05: the availability PATCH is the first (and so far only) write a waiter
+  // may perform. Omitted (default false) = the classic owner-only contract, so
+  // pre-S-05 rows stay untouched. The kitchen expectation never varies: 403.
+  waiterAllowed?: boolean;
 }
 
 const withId = { id: DUMMY_UUID };
@@ -75,6 +80,14 @@ export const WRITE_ROUTES: WriteRouteCase[] = [
     method: "DELETE",
     handler: menuItemDelete,
     params: withId,
+  },
+  {
+    label: "PATCH /api/menu/items/[id]/availability",
+    path: "/api/menu/items/[id]/availability",
+    method: "PATCH",
+    handler: menuItemAvailabilityPatch,
+    params: withId,
+    waiterAllowed: true,
   },
   {
     label: "PUT /api/menu/items/reorder",

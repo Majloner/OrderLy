@@ -365,22 +365,22 @@ Rollback = drop polityki i triggera.
 
 #### Automated
 
-- [x] 1.1 Migracja aplikuje się czysto (`npm run db:push`)
-- [x] 1.2 Suita RLS przechodzi z nowymi asercjami (`npm run test:rls:local`)
-- [x] 1.3 Istniejące asercje menu_items bez regresji
+- [x] 1.1 Migracja aplikuje się czysto (`npm run db:push`) — 7e7c797
+- [x] 1.2 Suita RLS przechodzi z nowymi asercjami (`npm run test:rls:local`) — 7e7c797
+- [x] 1.3 Istniejące asercje menu_items bez regresji — 7e7c797
 
 ### Phase 2: API — PATCH availability
 
 #### Automated
 
-- [ ] 2.1 Lint + typecheck przechodzą
-- [ ] 2.2 Testy jednostkowe schematu przechodzą (`npm run test`)
-- [ ] 2.3 Testy integracyjne przechodzą: macierz (waiter allowed), parity, cross-tenant (`npm run test:integration`)
-- [ ] 2.4 Rejestr completeness zielony (wpis trasy)
+- [x] 2.1 Lint + typecheck przechodzą
+- [x] 2.2 Testy jednostkowe schematu przechodzą (`npm run test`)
+- [x] 2.3 Testy integracyjne przechodzą: macierz (waiter allowed), parity, cross-tenant (`npm run test:integration`)
+- [x] 2.4 Rejestr completeness zielony (wpis trasy)
 
 #### Manual
 
-- [ ] 2.5 Spot-check: kelner PATCH availability → 200; inne mutacje kelnera odrzucane
+- [x] 2.5 Spot-check: kelner PATCH availability → 200; inne mutacje kelnera odrzucane
 
 ### Phase 3: UI — role-aware /menu, kafle, redirect
 

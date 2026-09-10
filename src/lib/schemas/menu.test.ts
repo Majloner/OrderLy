@@ -3,6 +3,7 @@ import {
   MAX_FULL_PHOTO_BYTES,
   MAX_THUMB_PHOTO_BYTES,
   menuCategoryInputSchema,
+  menuItemAvailabilitySchema,
   menuItemInputSchema,
   photoUploadRequestSchema,
   reorderSchema,
@@ -87,6 +88,25 @@ describe("menuItemInputSchema", () => {
 
   it("rejects an unknown availability value", () => {
     const result = menuItemInputSchema.safeParse({ ...validItem, availability: "hidden" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("menuItemAvailabilitySchema", () => {
+  it("accepts each of the three states", () => {
+    for (const availability of ["available", "unavailable", "sold_out"]) {
+      const result = menuItemAvailabilitySchema.safeParse({ availability });
+      expect(result.success).toBe(true);
+    }
+  });
+
+  it("rejects an unknown availability value", () => {
+    const result = menuItemAvailabilitySchema.safeParse({ availability: "hidden" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a missing availability field", () => {
+    const result = menuItemAvailabilitySchema.safeParse({});
     expect(result.success).toBe(false);
   });
 });
