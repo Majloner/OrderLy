@@ -3,7 +3,7 @@ project: OrderLY
 version: 1
 status: draft
 created: 2026-07-01
-updated: 2026-07-17
+updated: 2026-09-11
 prd_version: 1
 main_goal: speed
 top_blocker: time
@@ -43,7 +43,7 @@ więc sekwencjonowana tak wcześnie, jak pozwolą zależności (menu + stoliki +
 | S-02  | staff-accounts-roles       | właściciel tworzy konta personelu i nadaje role (kelner/kuchnia)       | S-01             | FR-003                       | proposed |
 | S-03  | menu-items-management      | właściciel buduje menu — pozycje, kategorie, tagi alergenów            | S-01             | US-02, FR-004, FR-006        | done     |
 | S-04  | menu-item-photos           | właściciel dodaje zdjęcia pozycji z generowaniem miniatur              | S-03             | US-02, FR-005                | proposed |
-| S-05  | menu-availability-toggle   | kelner przełącza dostępność pozycji (dostępna/niedostępna/wyprzedana)  | S-03, S-02       | FR-007                       | proposed |
+| S-05  | menu-availability-toggle   | kelner przełącza dostępność pozycji (dostępna/niedostępna/wyprzedana)  | S-03, S-02       | FR-007                       | done |
 | S-06  | room-layout-tables         | właściciel projektuje schemat sali i zarządza stolikami                | S-01             | FR-008, FR-009, FR-010       | proposed |
 | S-07  | table-qr-codes             | właściciel generuje stały kod QR przypisany na trwałe do stolika       | S-06             | FR-011                       | proposed |
 | S-08  | client-qr-ordering         | klient skanuje QR, przegląda menu i składa/dokłada zamówienie ze stolika | S-03, S-07     | US-01, FR-012, FR-015        | proposed |
@@ -152,7 +152,7 @@ Fundamenty poniżej zakładają obecność tych warstw i ich NIE odbudowują.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** „Czas rzeczywisty" jest świadomie zdegradowany do pollingu (per tech-stack.md); jeśli odświeżanie jest zbyt rzadkie, klient zamówi pozycję właśnie oznaczoną jako wyprzedana.
-- **Status:** proposed
+- **Status:** done
 
 ### S-06: Schemat sali i stoliki
 
@@ -276,3 +276,4 @@ Fundamenty poniżej zakładają obecność tych warstw i ich NIE odbudowują.
 - **F-01: (fundament) każda tabela domenowa nosi `company_id`, polityki RLS wymuszają izolację per firma, a role personelu (właściciel/kelner/kuchnia) są reprezentowane na bazie istniejącego Supabase Auth.** — Archived 2026-07-06 → `context/archive/2026-07-04-multitenant-rls-foundation/`. Lesson: —.
 - **S-01: właściciel rejestruje konto firmy, loguje się i edytuje profil lokalu (nazwa, adres, godziny otwarcia).** — Archived 2026-07-07 → `context/archive/2026-07-04-owner-company-registration/`. Lesson: —.
 - **S-03: właściciel tworzy i edytuje pozycje aktywnego menu — nazwa, opis, cena, kategoria — oraz oznacza tagi alergenów.** — Archived 2026-07-17 → `context/archive/2026-07-08-menu-items-management/`. Lesson: Anon RLS reads must be scoped by company_id (context/foundation/lessons.md).
+- **S-05: kelner przełącza dostępność pozycji menu (dostępna / niedostępna / wyprzedana); zmiana jest widoczna dla przeglądającego menu klienta (model pollingu, nie trwałe połączenie).** — Archived 2026-09-11 → `context/archive/2026-09-07-menu-availability-toggle/`. Lesson: Zmiana middleware/guardów zawsze z test:integration w kryteriach fazy (context/foundation/lessons.md). Uwaga o zakresie: S-05 dowiózł polling STAFF-owy (wspólny /menu, toggle kelnera, kuchnia read-only); polling anonimowego klienta domyka S-08 na SECURITY DEFINER RPC — nie istnieje żadna anonimowa powierzchnia odczytu (celowo, patrz anon-read-scoping).

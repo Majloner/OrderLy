@@ -1,10 +1,10 @@
 ---
 change_id: menu-availability-toggle
 title: Kelner przełącza dostępność pozycji menu (S-05)
-status: impl_reviewed
+status: archived
 created: 2026-09-07
 updated: 2026-09-11
-archived_at: null
+archived_at: 2026-09-11T21:35:00Z
 ---
 
 ## Notes
