@@ -400,11 +400,11 @@ Rollback = drop polityki i triggera.
 
 #### Automated
 
-- [x] 4.1 Lint + typecheck przechodzą
+- [x] 4.1 Lint + typecheck przechodzą — 2a1ea8c
 
 #### Manual
 
-- [x] 4.2 Dwie sesje: zmiana kelnera widoczna u ownera ≤5 s bez odświeżania
-- [x] 4.3 Otwarty dialog nie jest resetowany przez tick
-- [x] 4.4 Ukryta karta nie polluje; powrót wznawia
-- [x] 4.5 Cichy błąd ticku nie miga błędem w UI
+- [x] 4.2 Dwie sesje: zmiana kelnera widoczna u ownera ≤5 s bez odświeżania — 2a1ea8c
+- [x] 4.3 Otwarty dialog nie jest resetowany przez tick — 2a1ea8c
+- [x] 4.4 Ukryta karta nie polluje; powrót wznawia — 2a1ea8c
+- [x] 4.5 Cichy błąd ticku nie miga błędem w UI — 2a1ea8c
