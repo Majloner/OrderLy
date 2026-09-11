@@ -51,3 +51,15 @@
 - **Applies to**: każda serwerowa operacja Supabase Storage w tym projekcie
   (bucket `menu-photos` i przyszłe) — `src/lib/storage.ts`. Powiązane:
   [[anon-rls-reads-must-be-scoped-by-company-id]].
+
+## Zmiana middleware/guardów zawsze z test:integration w kryteriach fazy
+
+- **Context**: Każda faza dotykająca src/middleware.ts, guardów w src/lib/*api.ts
+  lub route-gatingu (PROTECTED_ROUTES/OWNER_ROUTES).
+- **Problem**: S-05 (impl-review F2): e534101 wyjął /menu z OWNER_ROUTES, a kontrakt
+  testu macierzy middleware pękł po cichu — kryteria fazy 3 gnały tylko
+  lint/typecheck/build/e2e, a zbiorczy re-run maskował exit code pipe'em do tail.
+- **Rule**: Faza dotykająca middleware/guardów/route-gatingu musi mieć
+  `npm run test:integration` w kryteriach automatycznych; wynik testów czytaj
+  z exit code, nigdy przez pipe do tail/grep.
+- **Applies to**: plan, implement, impl-review
