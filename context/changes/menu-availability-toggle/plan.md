@@ -386,25 +386,25 @@ Rollback = drop polityki i triggera.
 
 #### Automated
 
-- [x] 3.1 Lint + typecheck + build SSR przechodzą
-- [x] 3.2 Testy e2e przechodzą (w tym zaktualizowany route-protection)
+- [x] 3.1 Lint + typecheck + build SSR przechodzą — e534101
+- [x] 3.2 Testy e2e przechodzą (w tym zaktualizowany route-protection) — e534101
 
 #### Manual
 
-- [x] 3.3 Kelner: login → /dashboard → /menu → toggle działa; zero owner-akcji w UI
-- [x] 3.4 Kuchnia: /menu read-only; PATCH jako kuchnia → 403
-- [x] 3.5 Owner: pełny CRUD bez regresji + select-toggle działa
-- [x] 3.6 Kafel ustawień niewidoczny dla staff; kafel Menu widoczny dla wszystkich
+- [x] 3.3 Kelner: login → /dashboard → /menu → toggle działa; zero owner-akcji w UI — e534101
+- [x] 3.4 Kuchnia: /menu read-only; PATCH jako kuchnia → 403 — e534101
+- [x] 3.5 Owner: pełny CRUD bez regresji + select-toggle działa — e534101
+- [x] 3.6 Kafel ustawień niewidoczny dla staff; kafel Menu widoczny dla wszystkich — e534101
 
 ### Phase 4: Polling
 
 #### Automated
 
-- [ ] 4.1 Lint + typecheck przechodzą
+- [x] 4.1 Lint + typecheck przechodzą
 
 #### Manual
 
-- [ ] 4.2 Dwie sesje: zmiana kelnera widoczna u ownera ≤5 s bez odświeżania
-- [ ] 4.3 Otwarty dialog nie jest resetowany przez tick
-- [ ] 4.4 Ukryta karta nie polluje; powrót wznawia
-- [ ] 4.5 Cichy błąd ticku nie miga błędem w UI
+- [x] 4.2 Dwie sesje: zmiana kelnera widoczna u ownera ≤5 s bez odświeżania
+- [x] 4.3 Otwarty dialog nie jest resetowany przez tick
+- [x] 4.4 Ukryta karta nie polluje; powrót wznawia
+- [x] 4.5 Cichy błąd ticku nie miga błędem w UI

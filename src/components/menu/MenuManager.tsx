@@ -31,7 +31,6 @@ interface SignedUploadResponse {
 }
 
 export default function MenuManager({ supabaseUrl, role }: { supabaseUrl: string; role: StaffRole }) {
-  const { menu, setMenu, loadError, refetch, reload } = useMenu();
   const [actionError, setActionError] = useState<string | null>(null);
 
   // Display-gating only — guardMenuRequest and RLS are the enforcement (S-05).
@@ -46,6 +45,16 @@ export default function MenuManager({ supabaseUrl, role }: { supabaseUrl: string
   const [editedItem, setEditedItem] = useState<MenuItem | null>(null);
   const [itemDefaultCategoryId, setItemDefaultCategoryId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
+
+  // Reorder/archive mutations outside a dialog also pause the poll — a tick
+  // landing mid-optimistic-reorder would repaint the pre-reorder order.
+  const [busyMutations, setBusyMutations] = useState(0);
+
+  // S-05 polling (FR-007 degraded to 4 s): paused while any dialog is open or
+  // any mutation is in flight, so a background refetch never fights the UI.
+  const pollPaused =
+    categoryDialogOpen || itemDialogOpen || confirm !== null || availabilityBusyId !== null || busyMutations > 0;
+  const { menu, setMenu, loadError, refetch, reload } = useMenu({ pollMs: 4000, pollPaused });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -171,8 +180,11 @@ export default function MenuManager({ supabaseUrl, role }: { supabaseUrl: string
   };
 
   // Optimistic reorder with rollback — the only optimistic mutation (plan).
+  // Wrapped in the busy counter so a poll tick cannot repaint the pre-reorder
+  // order between setMenu(optimistic) and the server's ack.
   const persistReorder = async (url: string, ids: string[], optimistic: MenuPayload) => {
     const previous = menu;
+    setBusyMutations((count) => count + 1);
     setMenu(optimistic);
     setActionError(null);
     try {
@@ -180,6 +192,8 @@ export default function MenuManager({ supabaseUrl, role }: { supabaseUrl: string
     } catch (error) {
       setMenu(previous);
       setActionError(error instanceof Error ? error.message : "Nie udało się zapisać kolejności");
+    } finally {
+      setBusyMutations((count) => count - 1);
     }
   };
 
