@@ -331,13 +331,13 @@ N/d. Rollback = `git checkout -- context/foundation/test-plan.md`.
 
 #### Automated
 
-- [x] 2.1 Grep: zero „none yet — see §3 Phase"
-- [x] 2.2 Grep: zero „2026-08-04" poza nietykanym §3
-- [x] 2.3 `npx prettier --check context/foundation/test-plan.md`
-- [x] 2.4 `git diff --stat` — nadal tylko test-plan.md + folder change'a
+- [x] 2.1 Grep: zero „none yet — see §3 Phase" — a2b3812
+- [x] 2.2 Grep: zero „2026-08-04" poza nietykanym §3 — a2b3812
+- [x] 2.3 `npx prettier --check context/foundation/test-plan.md` — a2b3812
+- [x] 2.4 `git diff --stat` — nadal tylko test-plan.md + folder change'a — a2b3812
 
 #### Manual
 
-- [x] 2.5 Diff §1–§3 pusty (nagłówek pliku dozwolony)
-- [x] 2.6 Tabele §4/§5 renderują się poprawnie
-- [x] 2.7 Read-through całości: brak odesłań do Fazy 4 jako żywej
+- [x] 2.5 Diff §1–§3 pusty (nagłówek pliku dozwolony) — a2b3812
+- [x] 2.6 Tabele §4/§5 renderują się poprawnie — a2b3812
+- [x] 2.7 Read-through całości: brak odesłań do Fazy 4 jako żywej — a2b3812
