@@ -173,6 +173,8 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 ### 6.4 Adding a test for a new API endpoint
 
 - **Autoryzacja (Ryzyko #3)**: dodaj wiersz do `WRITE_ROUTES` (lub `READ_ROUTES`) w `tests/integration/authz/route-matrix.ts`. Parametryczna macierz automatycznie sprawdza anon→401, kelner/kuchnia→403, owner dopuszczony. `registry-completeness.test.ts` wymusza obecność wiersza (nowa trasa bez wpisu = czerwone).
+- **Staff-write (wzorzec S-05)**: trasa write dopuszczająca rolę staff dostaje flagę `waiterAllowed: true` na wierszu macierzy (`route-matrix.ts:40`; brak flagi = klasyczny kontrakt owner-only, oczekiwanie kuchni **nigdy** się nie waha: 403). Gałąź testu (`write-routes.test.ts:37-50`) asertuje „wpuszczony za guard (nie 401/403)" — *co* roli wolno zmienić, dowodzi SQL (§6.5). Dopisz trasę też do rejestrów parity i cross-tenant, a przypadek cross-tenant jedź **jako dopuszczona rola staff**, żeby ćwiczyć predykat `company_id` nowej polityki (`isolation/cross-tenant-write.test.ts:79-101`). Happy-path (200 + payload + re-read `service-role`) pinuj na warstwie route (`tests/integration/menu/availability-toggle.test.ts`) — macierz dowodzi tylko wpuszczenia, SQL tylko DB; ręczny spot-check środka promuj do trwałego testu (lekcja S-05 F5).
+- **Wąski PATCH (szablon `activation`/`availability`)**: endpoint jednopolowy = guard → `z.uuid()` na `[id]` → `parseBody` ze schematem `.pick()` z bazowego inputu (enum i komunikat nie mogą dryfować, `src/lib/schemas/menu.ts:76`) → update jednej kolumny rekonstruowany z parsowanego inputu → 404 na pusty wynik (tak ujawnia się cross-tenant i archived). Referencja: `src/pages/api/menu/items/[id]/availability.ts`.
 - **Izolacja (Ryzyko #1)**: jeśli endpoint dotyka nowej encji, dodaj test w `tests/integration/isolation/` — odczyt: zbiór odpowiedzi nie zawiera id firmy B; zapis: firma A celuje w zasób B → 404 **plus weryfikacja w DB** klientem `service-role`, że wiersz B się nie zmienił.
 - **Własność / IDOR (Ryzyko #4)**: jeśli endpoint przyjmuje id zasobu od klienta (wskaźnik `category_id`/`room_id`, `[id]` zdjęcia), dodaj przypadek „firma A celuje w zasób firmy B" → oczekiwane 400 (wskaźnik) lub 404 (własny `[id]` innego tenanta), plus dowód braku efektu w DB. Referencje: `isolation/cross-entity-pointer.test.ts`, `isolation/photo-idor.test.ts`. Ścieżkę do Storage **buduje serwer** z `company_id` — asertuj argument mocka, nie sam status.
 - **Walidacja (Ryzyko #5)**: dodaj wiersz do rejestru w `tests/integration/validation/input-parity.test.ts` — jeden reprezentatywny zły input → 400. Pola per-constraint pokrywają unity schem (`src/lib/schemas/*.test.ts`), więc ich nie powielaj. `badBody` jest funkcją seeda, bo `parseBody` zwraca **tylko pierwszy** błąd zod — pozostałe pola muszą być poprawne, inaczej 400 przyjdzie z innego constraintu. W `params` używaj **realnych, posiadanych id**, bo zły uuid daje 400 ze sprawdzenia ścieżki i test przechodzi z niewłaściwego powodu.
@@ -186,6 +188,10 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 - **Run**: `npm run test:rls:local` (lokalne Supabase) lub `npm run test:rls` (hostowane `--linked`).
 - **Ryzyko #2 — ZAMKNIĘTE** (2026-08-13, migracja `20260813010000_drop_unscoped_anon_read_policies.sql`): blok `KNOWN GAP (Risk #2)` jest teraz Asercją 5c. Uwaga na **interlock**, który przy tym wyszedł: Asercja 5 asertowała wcześniej, że anon *widzi* 2/2/3/2 wiersze — czyli sam przeciek jako oczekiwanie. Flip bloku bez jednoczesnego przebazowania tamtych liczb czyni suite wewnętrznie sprzecznym. **Domykając lukę, szukaj asercji, które utrwaliły stan sprzed naprawy, i edytuj je jako jedną całość.**
 - **Wzorzec zamknięcia luki (Ryzyko #4)**: `menu_items.category_id` był drugim takim `notice` — luka została domknięta migracją `20260812220000_menu_item_category_composite_fk.sql`, a blok zamieniony w twardą asercję („Assertion 5b"). Domykając kolejną lukę: dodaj składowy FK, przełącz `notice`→`exception` i **udowodnij, że asercja nie jest tautologiczna** (usuń ograniczenie → suite ma sczerwienieć). Asertuj też to, co łatwo zepsuć przy okazji: przy nullowalnym wskaźniku zostaw legalny `NULL` i zachowaj `on delete set null` (forma z listą kolumn, gdy druga kolumna jest `NOT NULL`).
+- **Niezmiennik kolumnowy → trigger, nie RLS (wzorzec S-05)**: RLS nadaje UPDATE na *wierszu* i nie umie ograniczyć zapisu do kolumny — „rola staff zmienia wyłącznie kolumnę X" musi żyć w triggerze BEFORE UPDATE (`to_jsonb(old) - 'X' is distinct from to_jsonb(new) - 'X'` → `raise exception`, czyli P0001; wzorzec `guard_menu_item_staff_columns`, migracja `20260910080000_menu_availability_waiter_write.sql:36-53`). Forma „`to_jsonb` minus dozwolony klucz" jest odporna na przyszłe kolumny, a NULL-owa rola (`service_role`, migracje) przechodzi nietknięta. Asertuj cztery własności w jednym bloku, jak Asercja 27 (`rls_isolation.sql:1021-1062`): dozwolona zmiana ląduje (1 wiersz); przemyt drugiej kolumny w tym samym UPDATE odrzucony **w całości** (P0001 **i** wartość dozwolonej kolumny bez zmian); cross-tenant → 0 wierszy; archived → 0 wierszy.
+- **Semantyka odmowy jest częścią kontraktu**: „brak polityki" = 0 wierszy (Asercja 28 — kuchnia czyta menu, ale UPDATE nie rusza nic i trigger nawet nie biegnie), trigger = P0001 (Asercja 27), guard trasy = 403, schemat = 400. Nie asertuj ogólnego „odmowa". **Nowa polityka dopasowująca rolę wymusza przebazowanie starych oczekiwań 0-wierszy**: S-05 przepisał Asercję 4 (`rls_isolation.sql:169-212`) — UPDATE `description` kelnera oczekuje dziś P0001, nie 0 wierszy. To ten sam interlock, co przy domykaniu Ryzyka #2 powyżej.
+- **Pinuj ścieżki pośrednie, nie tylko trasę**: RPC piszący zablokowaną kolumnę, wywołany jako rola staff, musi abortować — Asercja 29 (`rls_isolation.sql:1064-1090`) pinuje `reorder_menu_items` (SECURITY INVOKER, EXECUTE dla PUBLIC) jako kelner → P0001. Przed S-05 kelner nie dopasowywał żadnej polityki UPDATE, więc wiersze były cicho filtrowane; po S-05 dopasowuje, więc `set sort_order` RPC-a **dociera** do triggera. Pułapka fixture: zamieniaj wiersze, które na pewno się zmienią — no-op nigdy nie dociera do triggera.
+- **Filtr wierszy w trasie ≠ polityka (lekcja S-05 F3)**: każdy warunek wierszowy wyrażający politykę (np. `.is("archived_at", null)`) musi mieć lustro w USING/WITH CHECK polityki RLS **i** asercję w SQL — inaczej rola staff z własnym JWT omija trasę, idąc prosto do PostgREST. Referencja: migracja `20260911090000_menu_availability_waiter_policy_archived.sql:9-15` + blok archived w Asercji 27.
 
 ### 6.6 Per-rollout-phase notes
 
@@ -219,6 +225,14 @@ za zablokowane). Wzorzec testowania: §6.7. Pułapka: globalny `signOut()` middl
 w GoTrue **wszystkie** sesje usera — testy używają świeżego `signInWithPassword` per test, nigdy
 recyklingu sesji z seeda.
 
+**S-05 (2026-09-07, `menu-availability-toggle`) — pierwszy staff-write.** Trzy warstwy
+egzekwowania (middleware `OWNER_ROUTES` → guard rodziny w `src/lib/api.ts` → RLS + trigger)
+poruszają się razem i **każda ma swój poziom testu**: macierz middleware (§6.7), macierz tras
+(§6.4), suite SQL (§6.5). Guard zyskał trzeci tryb `write: "availability"`
+(`src/lib/api.ts:32-58`) — owner + kelner przechodzą, kuchnia 403. Suite integration ma od tej
+fazy dwa nowe katalogi: `contract/` (pin `prerender=false` na każdej trasie API) i `menu/`
+(happy-path staff-write). Polling, który ta faza wprowadziła: §6.8.
+
 ### 6.7 Adding a middleware page-gating test
 
 - **Gdzie**: `tests/integration/authz/middleware.test.ts`; helper `tests/integration/helpers/middleware.ts`
@@ -234,8 +248,35 @@ recyklingu sesji z seeda.
   asertuj obecność parametru `error` w `Location`; (3) `Response` z bezpośredniego `onRequest` nie
   niesie `Set-Cookie` — czyszczenie sesji asertuj przez `ctx.cookies` (pole `cookies` w wyniku
   `runMiddleware`); (4) wariant `supabase === null` wymaga `vi.resetModules()` + `vi.stubEnv` +
-  dynamicznego importu, bo stub `astro:env/server` czyta `process.env` w momencie importu modułu.
+  dynamicznego importu, bo stub `astro:env/server` czyta `process.env` w momencie importu modułu;
+  (5) **faza dotykająca middleware/guardów/route-gatingu MUSI mieć `npm run test:integration`
+  w kryteriach automatycznych**, a wynik czytaj z exit code, nigdy przez pipe do `tail`/`grep`
+  (S-05 F2: `e534101` wyjął `/menu` z `OWNER_ROUTES`, e2e zaktualizowane w tym samym commicie
+  zostało zielone, a kontrakt macierzy middleware pękł po cichu; fix `5be3d00`, reguła
+  w `context/foundation/lessons.md`).
 - **Run**: `npm run test:integration` (wymaga `npx supabase start` + `.env.test`).
+
+### 6.8 Verifying a polling surface
+
+- **Kształt hooka**: `src/components/hooks/useMenu.ts:38-46,101-128` — opcje `pollMs`
+  (`0`/undefined wyłącza pętlę) i `pollPaused`; tick pomijany, gdy
+  `inFlight || pollPaused || document.hidden`. `document.hidden` sprawdzany **per tick**, bez
+  listenera `visibilitychange` — powrót do karty wznawia na najbliższym ticku. Porażka ticka
+  jest **cicha** (`loadError` ustawia tylko initial load), żeby blip sieci nie migał bannerem
+  co kilka sekund.
+- **Konsument spina pauzę**: `src/components/menu/MenuManager.tsx:55-56` — `pollPaused` =
+  otwarte dialogi/confirm **lub** `busyMutations > 0`. Mutacja pauzuje polling przez **licznik**,
+  nigdy przez pojedyncze `id`: dwie równoległe mutacje z jednym slotem odpauzowują się wzajemnie
+  w `finally` (lekcja S-05 F1, `MenuManager.tsx:169-183`), a per-wierszowe `id` zostaje wyłącznie
+  do `disabled`.
+- **Co weryfikować ręcznie** (procedura z S-05, archiwum `plan.md:314-319`): dwie sesje w dwóch
+  rolach — zmiana u jednej widoczna u drugiej ≤ 5 s przy `pollMs: 4000`, bez odświeżania;
+  otwarty dialog nie resetuje się na ticku; ukryta karta = **zero** żądań w network tab;
+  wymuszony błąd ticka nie pokazuje bannera.
+- **Czego tu nie ma**: testów hooka ani automatycznej weryfikacji międzysesyjnej — to świadome
+  wykluczenie, patrz §7. Zaakceptowane ryzyko: otwarty `Select` vs zdalna zmiana w oknie ticka
+  (S-05 impl-review F6,
+  `context/archive/2026-09-07-menu-availability-toggle/reviews/impl-review.md`).
 
 ## 7. What We Deliberately Don't Test
 
@@ -244,7 +285,8 @@ kontrybutorzy respektują je, dopóki założenie się nie zmieni.
 
 - **Edytor sali per-piksel** — logika geometrii pokryta unit (`src/lib/room-geometry.test.ts`); pozycjonowanie/render to ręczny rzut oka. Re-evaluate, jeśli edytor zacznie wyliczać kolizje lub snapping serwerowo. (Source: Phase 2 interview Q5.)
 - **Snapshoty pikselowe UI i wygenerowane typy / trywialne mapowania** — pękają bez sensu albo generator jest testem. Re-evaluate, jeśli mapowanie zacznie nieść logikę. (Source: Phase 2 interview Q5.)
-- **Pętla zamówienia, brama dostępności i trwałość QR** — kod nie istnieje (S-05/S-07/S-08). Dopisać przez `--refresh`, gdy te slice’y wylądują. (Source: Challenger pass — odrzucone jako spekulatywne.)
+- **Pętla zamówienia i trwałość QR** — kod nie istnieje (S-07/S-08). Dopisać przez `--refresh`, gdy te slice’y wylądują. (Source: Challenger pass — odrzucone jako spekulatywne. Brama dostępności wyszła z tej trójki wraz z S-05 — jest pokryta, wzorce w §6.4, §6.5 i §6.8.)
+- **Propagacja międzysesyjna pollingu dostępności** — weryfikowana ręcznie (procedura w §6.8); automatycznego testu dwusesyjnego celowo brak. Cross-session propagation kosztuje e2e z dwoma kontekstami i zegarem, a dziś jedynym konsumentem jest panel personelu, gdzie nieświeży kafelek nie kosztuje zamówienia. Re-evaluate, gdy wyląduje pętla zamówienia (S-07) i nieświeży stan zacznie kosztować pieniądze. (Source: kryteria Fazy 4 S-05 — weryfikacja ręczna odhaczona w archiwum; impl-review F6 zaakceptowane.)
 
 ## 8. Freshness Ledger
 
