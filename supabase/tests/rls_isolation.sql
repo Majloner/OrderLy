@@ -1051,7 +1051,41 @@ begin
   update public.menu_items set availability = 'unavailable' where name = 'B-Pasta';
   get diagnostics n = row_count;
   if n <> 0 then raise exception 'FAIL waiter cross-tenant availability: UPDATE affected % rows, expected 0', n; end if;
-  raise notice 'OK waiter A toggles availability only, within own company only';
+
+  -- archived rows are outside the waiter policy (impl-review F3): the route
+  -- filters archived_at, and since 20260911090000 the DB does too.
+  update public.menu_items set availability = 'unavailable' where name = 'A-Archived';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL waiter archived availability: UPDATE affected % rows, expected 0', n; end if;
+  raise notice 'OK waiter A toggles availability only, within own company only, never on archived rows';
+end $$;
+reset role;
+
+-- --- Assertion 29 (S-05, impl-review F4): reorder RPC as waiter is trigger-blocked --
+-- Before S-05 a waiter calling reorder_menu_items (SECURITY INVOKER, EXECUTE
+-- for PUBLIC) matched no UPDATE policy — rows silently filtered. Since the
+-- waiter now MATCHES menu_items_update_availability_waiter, the RPC's
+-- `set sort_order` reaches menu_items_guard_staff_columns and must abort with
+-- P0001. This pins the exact path the column-guard trigger exists for.
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"dddddddd-dddd-dddd-dddd-dddddddddddd","role":"authenticated"}';
+do $$
+declare i1 uuid; i2 uuid; state text;
+begin
+  -- Two non-archived, category-less items: set_menu_item_sort_order gave them
+  -- sort_order 1 and 2 within their section, so the swapped array guarantees
+  -- at least one row actually changes (a no-op would never reach the trigger).
+  select id into i1 from public.menu_items where name = 'A-SoldOut';
+  select id into i2 from public.menu_items where name = 'A-Hidden';
+  begin
+    perform public.reorder_menu_items(array[i2, i1]);
+    state := 'none';
+  exception when others then state := sqlstate;
+  end;
+  if state <> 'P0001' then
+    raise exception 'FAIL waiter reorder RPC: sqlstate %, expected P0001 (column-guard trigger)', state;
+  end if;
+  raise notice 'OK the reorder RPC as waiter aborts on the column-guard trigger';
 end $$;
 reset role;
 

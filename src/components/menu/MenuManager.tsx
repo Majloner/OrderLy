@@ -52,8 +52,7 @@ export default function MenuManager({ supabaseUrl, role }: { supabaseUrl: string
 
   // S-05 polling (FR-007 degraded to 4 s): paused while any dialog is open or
   // any mutation is in flight, so a background refetch never fights the UI.
-  const pollPaused =
-    categoryDialogOpen || itemDialogOpen || confirm !== null || availabilityBusyId !== null || busyMutations > 0;
+  const pollPaused = categoryDialogOpen || itemDialogOpen || confirm !== null || busyMutations > 0;
   const { menu, setMenu, loadError, refetch, reload } = useMenu({ pollMs: 4000, pollPaused });
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -167,7 +166,11 @@ export default function MenuManager({ supabaseUrl, role }: { supabaseUrl: string
     if (availability === item.availability) {
       return;
     }
+    // busyMutations drives the poll pause (a COUNTER, so concurrent toggles
+    // cannot un-pause each other — impl-review F1); availabilityBusyId only
+    // disables the one row's Select.
     setAvailabilityBusyId(item.id);
+    setBusyMutations((count) => count + 1);
     setActionError(null);
     try {
       await callMenuApi("PATCH", `/api/menu/items/${item.id}/availability`, { availability });
@@ -176,6 +179,7 @@ export default function MenuManager({ supabaseUrl, role }: { supabaseUrl: string
       setActionError(error instanceof Error ? error.message : "Nie udało się zmienić dostępności");
     } finally {
       setAvailabilityBusyId(null);
+      setBusyMutations((count) => count - 1);
     }
   };
 
