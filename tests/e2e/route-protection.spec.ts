@@ -10,10 +10,12 @@ import { test, expect } from "@playwright/test";
 // browser context starts with no session cookies at all.
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test("anonymous visitor is redirected to sign-in from the owner-only menu page (test-plan risk #3: protected page routes)", async ({
+test("anonymous visitor is redirected to sign-in from the protected menu page (test-plan risk #3: protected page routes)", async ({
   page,
 }) => {
-  // Attempt to open an owner-only, protected route without any session.
+  // Attempt to open a protected route without any session. Since S-05 /menu is
+  // open to the whole STAFF (no longer owner-only), but stays in
+  // PROTECTED_ROUTES — anonymous visitors are still bounced to sign-in.
   await page.goto("/menu");
 
   // State-based signal, no waitForTimeout: the middleware must answer with a

@@ -373,28 +373,28 @@ Rollback = drop polityki i triggera.
 
 #### Automated
 
-- [x] 2.1 Lint + typecheck przechodzą
-- [x] 2.2 Testy jednostkowe schematu przechodzą (`npm run test`)
-- [x] 2.3 Testy integracyjne przechodzą: macierz (waiter allowed), parity, cross-tenant (`npm run test:integration`)
-- [x] 2.4 Rejestr completeness zielony (wpis trasy)
+- [x] 2.1 Lint + typecheck przechodzą — 69242a7
+- [x] 2.2 Testy jednostkowe schematu przechodzą (`npm run test`) — 69242a7
+- [x] 2.3 Testy integracyjne przechodzą: macierz (waiter allowed), parity, cross-tenant (`npm run test:integration`) — 69242a7
+- [x] 2.4 Rejestr completeness zielony (wpis trasy) — 69242a7
 
 #### Manual
 
-- [x] 2.5 Spot-check: kelner PATCH availability → 200; inne mutacje kelnera odrzucane
+- [x] 2.5 Spot-check: kelner PATCH availability → 200; inne mutacje kelnera odrzucane — 69242a7
 
 ### Phase 3: UI — role-aware /menu, kafle, redirect
 
 #### Automated
 
-- [ ] 3.1 Lint + typecheck + build SSR przechodzą
-- [ ] 3.2 Testy e2e przechodzą (w tym zaktualizowany route-protection)
+- [x] 3.1 Lint + typecheck + build SSR przechodzą
+- [x] 3.2 Testy e2e przechodzą (w tym zaktualizowany route-protection)
 
 #### Manual
 
-- [ ] 3.3 Kelner: login → /dashboard → /menu → toggle działa; zero owner-akcji w UI
-- [ ] 3.4 Kuchnia: /menu read-only; PATCH jako kuchnia → 403
-- [ ] 3.5 Owner: pełny CRUD bez regresji + select-toggle działa
-- [ ] 3.6 Kafel ustawień niewidoczny dla staff; kafel Menu widoczny dla wszystkich
+- [x] 3.3 Kelner: login → /dashboard → /menu → toggle działa; zero owner-akcji w UI
+- [x] 3.4 Kuchnia: /menu read-only; PATCH jako kuchnia → 403
+- [x] 3.5 Owner: pełny CRUD bez regresji + select-toggle działa
+- [x] 3.6 Kafel ustawień niewidoczny dla staff; kafel Menu widoczny dla wszystkich
 
 ### Phase 4: Polling
 

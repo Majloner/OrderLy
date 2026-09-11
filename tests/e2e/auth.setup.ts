@@ -81,9 +81,10 @@ async function signInAndSave(page: Page, owner: OwnerAccount): Promise<void> {
   await page.getByRole("button", { name: "Zaloguj się" }).click();
 
   // State-based signal that the session landed: the signin endpoint redirects
-  // to "/" and the topbar renders "Sign out" only for an authenticated user.
-  // Asserting the signed-in STATE (not a URL) survives redirect-target changes.
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  // to /dashboard (S-05), which renders its "Wyloguj" button only for an
+  // authenticated user. Asserting a signed-in STATE (not a URL) survives most
+  // redirect-target changes — as long as the target renders a sign-out control.
+  await expect(page.getByRole("button", { name: "Wyloguj" })).toBeVisible();
   await page.context().storageState({ path: owner.authFile });
 }
 

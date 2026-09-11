@@ -5,12 +5,14 @@ import { createClient } from "@/lib/supabase";
 import type { StaffRole } from "@/types";
 
 const PROTECTED_ROUTES = ["/dashboard", "/settings", "/menu", "/staff", "/room"];
-// Menu management, staff provisioning, the room layout and the company profile
-// are owner-only (PRD Access Control, FR-002); waiter/kitchen land back on the
-// dashboard. RLS enforces this on the data layer regardless. Keep every owner
-// route in PROTECTED_ROUTES too — one listed only here would bounce anonymous
-// visitors to /dashboard instead of signin.
-const OWNER_ROUTES = ["/menu", "/staff", "/room", "/settings"];
+// Staff provisioning, the room layout and the company profile are owner-only
+// (PRD Access Control, FR-002); waiter/kitchen land back on the dashboard. RLS
+// enforces this on the data layer regardless. /menu left this list in S-05:
+// the whole staff may open it — the page differentiates actions by role
+// (owner: full CRUD; waiter: availability toggle; kitchen: read-only). Keep
+// every owner route in PROTECTED_ROUTES too — one listed only here would
+// bounce anonymous visitors to /dashboard instead of signin.
+const OWNER_ROUTES = ["/staff", "/room", "/settings"];
 
 // Match a route exactly or as a path prefix (`/menu` matches `/menu` and
 // `/menu/x`, but not `/menus` — that would silently gate a future public

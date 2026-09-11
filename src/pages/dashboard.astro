@@ -16,15 +16,15 @@ const isOwner = role === "owner";
       <p class="text-muted-foreground mt-2 text-sm">Ta strona jest tylko dla zalogowanych.</p>
       <div class="mt-6 flex justify-center gap-3">
         {
-          isOwner && (
-            <a
-              href="/menu"
-              class="border-border bg-card hover:bg-muted inline-block rounded-lg border px-4 py-2 text-sm transition-colors"
-            >
-              Menu
-            </a>
-          )
+          /* Menu is for the whole staff since S-05: the page itself differentiates
+            actions by role (owner: CRUD, waiter: availability, kitchen: read). */
         }
+        <a
+          href="/menu"
+          class="border-border bg-card hover:bg-muted inline-block rounded-lg border px-4 py-2 text-sm transition-colors"
+        >
+          Menu
+        </a>
         {
           isOwner && (
             <a
@@ -45,12 +45,18 @@ const isOwner = role === "owner";
             </a>
           )
         }
-        <a
-          href="/settings"
-          class="border-border bg-card hover:bg-muted inline-block rounded-lg border px-4 py-2 text-sm transition-colors"
-        >
-          Ustawienia lokalu
-        </a>
+        {
+          /* Owner-gated like the route itself — an ungated tile just bounced
+             staff back here with no explanation. */
+          isOwner && (
+            <a
+              href="/settings"
+              class="border-border bg-card hover:bg-muted inline-block rounded-lg border px-4 py-2 text-sm transition-colors"
+            >
+              Ustawienia lokalu
+            </a>
+          )
+        }
       </div>
       <form method="POST" action="/api/auth/signout" class="mt-4">
         <button

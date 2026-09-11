@@ -3,10 +3,13 @@ import Layout from "@/layouts/Layout.astro";
 import MenuManager from "@/components/menu/MenuManager";
 import { SUPABASE_URL } from "astro:env/server";
 
-// Auth + owner role are enforced by middleware (PROTECTED_ROUTES/OWNER_ROUTES),
-// so this page only renders the island; it fetches GET /api/menu on mount.
+// Auth is enforced by middleware (PROTECTED_ROUTES); since S-05 the page is
+// open to the WHOLE staff and the island differentiates actions by role
+// (owner: full CRUD; waiter: availability toggle only; kitchen: read-only).
+// The role prop is display-gating only — the API guard and RLS enforce it.
 // SUPABASE_URL (the public project URL, not a secret) is passed so the island
 // can build public photo CDN URLs; photo uploads go through the API.
+const { role } = Astro.locals;
 ---
 
 <Layout title="Menu lokalu">
@@ -16,7 +19,7 @@ import { SUPABASE_URL } from "astro:env/server";
         <h1 class="font-display text-primary text-3xl font-bold">Menu lokalu</h1>
         <a href="/dashboard" class="text-primary hover:text-bottle-deep text-sm hover:underline">← Powrót do panelu</a>
       </div>
-      <MenuManager client:load supabaseUrl={SUPABASE_URL ?? ""} />
+      <MenuManager client:load supabaseUrl={SUPABASE_URL ?? ""} role={role ?? "kitchen"} />
     </div>
   </div>
 </Layout>

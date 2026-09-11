@@ -36,5 +36,8 @@ export const POST: APIRoute = async (context) => {
     return context.redirect(`/auth/signin?error=${encodeURIComponent(message)}`);
   }
 
-  return context.redirect("/");
+  // /dashboard, not "/": the marketing page has nothing for a signed-in user,
+  // and staff especially used to land there with no visible way onward (S-05).
+  // The dashboard's tiles are role-aware, so one target serves every role.
+  return context.redirect("/dashboard");
 };

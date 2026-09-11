@@ -3,13 +3,19 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { MenuCategory, MenuItem } from "@/types";
+import type { MenuCategory, MenuItem, MenuItemAvailability } from "@/types";
 import { MenuItemRow } from "./MenuItemRow";
 
 interface CategorySectionProps {
   category: MenuCategory | null; // null renders the trailing "Bez kategorii" section
   items: MenuItem[];
   supabaseUrl: string;
+  // S-05 display gating (enforcement lives in the guard + RLS): menu CRUD is
+  // the owner's; the availability toggle is the owner's and the waiter's.
+  canEditMenu: boolean;
+  canToggleAvailability: boolean;
+  availabilityBusyId: string | null;
+  onChangeAvailability: (item: MenuItem, availability: MenuItemAvailability) => Promise<void>;
   onEditCategory: (category: MenuCategory) => void;
   onDeleteCategory: (category: MenuCategory) => void;
   onAddItem: (categoryId: string | null) => void;
@@ -21,6 +27,10 @@ export function CategorySection({
   category,
   items,
   supabaseUrl,
+  canEditMenu,
+  canToggleAvailability,
+  availabilityBusyId,
+  onChangeAvailability,
   onEditCategory,
   onDeleteCategory,
   onAddItem,
@@ -31,7 +41,7 @@ export function CategorySection({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: category?.id ?? "__uncategorized__",
     data: { type: "category" },
-    disabled: !category,
+    disabled: !category || !canEditMenu,
   });
 
   return (
@@ -41,7 +51,7 @@ export function CategorySection({
       className={cn("border-border bg-card rounded-2xl border p-4 shadow-sm", isDragging && "z-10 opacity-70")}
     >
       <header className="mb-3 flex items-center gap-2">
-        {category && (
+        {category && canEditMenu && (
           <button
             type="button"
             className="text-muted-foreground hover:text-foreground cursor-grab touch-none"
@@ -55,18 +65,20 @@ export function CategorySection({
         <h2 className="text-foreground min-w-0 flex-1 truncate text-lg font-semibold">
           {category ? category.name : "Bez kategorii"}
         </h2>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-foreground"
-          onClick={() => {
-            onAddItem(category?.id ?? null);
-          }}
-        >
-          <Plus className="size-4" /> Dodaj pozycję
-        </Button>
-        {category && (
+        {canEditMenu && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              onAddItem(category?.id ?? null);
+            }}
+          >
+            <Plus className="size-4" /> Dodaj pozycję
+          </Button>
+        )}
+        {category && canEditMenu && (
           <>
             <Button
               type="button"
@@ -107,6 +119,10 @@ export function CategorySection({
                 item={item}
                 sectionId={sectionId}
                 supabaseUrl={supabaseUrl}
+                canEditMenu={canEditMenu}
+                canToggleAvailability={canToggleAvailability}
+                availabilityBusy={availabilityBusyId === item.id}
+                onChangeAvailability={onChangeAvailability}
                 onEdit={onEditItem}
                 onArchive={onArchiveItem}
               />

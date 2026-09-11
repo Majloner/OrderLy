@@ -18,7 +18,7 @@ import { ErrorPanel } from "@/components/ui/ErrorPanel";
 import { callMenuApi, useMenu } from "@/components/hooks/useMenu";
 import { putSignedBlob } from "@/lib/images";
 import type { MenuCategoryInput, MenuItemInput } from "@/lib/schemas/menu";
-import type { MenuCategory, MenuItem, MenuPayload } from "@/types";
+import type { MenuCategory, MenuItem, MenuItemAvailability, MenuPayload, StaffRole } from "@/types";
 import { CategoryDialog } from "./CategoryDialog";
 import { CategorySection } from "./CategorySection";
 import { MenuItemDialog, type PhotoIntent } from "./MenuItemDialog";
@@ -30,9 +30,15 @@ interface SignedUploadResponse {
   thumb: { signedUrl: string };
 }
 
-export default function MenuManager({ supabaseUrl }: { supabaseUrl: string }) {
+export default function MenuManager({ supabaseUrl, role }: { supabaseUrl: string; role: StaffRole }) {
   const { menu, setMenu, loadError, refetch, reload } = useMenu();
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Display-gating only — guardMenuRequest and RLS are the enforcement (S-05).
+  // Owner: full CRUD + toggle; waiter: toggle only; kitchen: read-only.
+  const canEditMenu = role === "owner";
+  const canToggleAvailability = role === "owner" || role === "waiter";
+  const [availabilityBusyId, setAvailabilityBusyId] = useState<string | null>(null);
 
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [editedCategory, setEditedCategory] = useState<MenuCategory | null>(null);
@@ -145,6 +151,25 @@ export default function MenuManager({ supabaseUrl }: { supabaseUrl: string }) {
     }
   };
 
+  // The S-05 quick toggle: single-field PATCH + refetch, with a per-item busy
+  // flag (pattern: RoomLayoutManager.toggleActive / TableList). Errors land in
+  // the shared actionError panel — the row itself stays as the server left it.
+  const changeAvailability = async (item: MenuItem, availability: MenuItemAvailability) => {
+    if (availability === item.availability) {
+      return;
+    }
+    setAvailabilityBusyId(item.id);
+    setActionError(null);
+    try {
+      await callMenuApi("PATCH", `/api/menu/items/${item.id}/availability`, { availability });
+      await refetch();
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "Nie udało się zmienić dostępności");
+    } finally {
+      setAvailabilityBusyId(null);
+    }
+  };
+
   // Optimistic reorder with rollback — the only optimistic mutation (plan).
   const persistReorder = async (url: string, ids: string[], optimistic: MenuPayload) => {
     const previous = menu;
@@ -207,35 +232,40 @@ export default function MenuManager({ supabaseUrl }: { supabaseUrl: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button type="button" variant="outline" onClick={openCreateCategory}>
-          <Plus className="size-4" /> Dodaj kategorię
-        </Button>
-        <Button
-          type="button"
-          onClick={() => {
-            openCreateItem(null);
-          }}
-        >
-          <Plus className="size-4" /> Dodaj pozycję
-        </Button>
-      </div>
-
-      {actionError && <ErrorPanel message={actionError} />}
-
-      {menu.items.length === 0 && (
-        <EmptyState message="Twoje menu jest jeszcze puste.">
+      {canEditMenu && (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button type="button" variant="outline" onClick={openCreateCategory}>
+            <Plus className="size-4" /> Dodaj kategorię
+          </Button>
           <Button
             type="button"
-            className="mt-4"
             onClick={() => {
               openCreateItem(null);
             }}
           >
-            <Plus className="size-4" /> Dodaj pierwszą pozycję
+            <Plus className="size-4" /> Dodaj pozycję
           </Button>
-        </EmptyState>
+        </div>
       )}
+
+      {actionError && <ErrorPanel message={actionError} />}
+
+      {menu.items.length === 0 &&
+        (canEditMenu ? (
+          <EmptyState message="Twoje menu jest jeszcze puste.">
+            <Button
+              type="button"
+              className="mt-4"
+              onClick={() => {
+                openCreateItem(null);
+              }}
+            >
+              <Plus className="size-4" /> Dodaj pierwszą pozycję
+            </Button>
+          </EmptyState>
+        ) : (
+          <EmptyState message="Menu jest jeszcze puste." />
+        ))}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div className="space-y-4">
@@ -246,6 +276,10 @@ export default function MenuManager({ supabaseUrl }: { supabaseUrl: string }) {
                 category={category}
                 items={itemsFor(category.id)}
                 supabaseUrl={supabaseUrl}
+                canEditMenu={canEditMenu}
+                canToggleAvailability={canToggleAvailability}
+                availabilityBusyId={availabilityBusyId}
+                onChangeAvailability={changeAvailability}
                 onEditCategory={openEditCategory}
                 onDeleteCategory={(target) => {
                   setConfirm({ type: "delete-category", category: target });
@@ -263,6 +297,10 @@ export default function MenuManager({ supabaseUrl }: { supabaseUrl: string }) {
               category={null}
               items={uncategorized}
               supabaseUrl={supabaseUrl}
+              canEditMenu={canEditMenu}
+              canToggleAvailability={canToggleAvailability}
+              availabilityBusyId={availabilityBusyId}
+              onChangeAvailability={changeAvailability}
               onEditCategory={() => undefined}
               onDeleteCategory={() => undefined}
               onAddItem={openCreateItem}

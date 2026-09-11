@@ -3,9 +3,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { publicPhotoUrl } from "@/lib/images";
 import { cn } from "@/lib/utils";
-import { ALLERGEN_LABELS, AVAILABILITY_LABELS, type MenuItem } from "@/types";
+import { ALLERGEN_LABELS, AVAILABILITY, AVAILABILITY_LABELS, type MenuItem, type MenuItemAvailability } from "@/types";
 
 const priceFormatter = new Intl.NumberFormat("pl-PL", {
   style: "currency",
@@ -24,14 +25,31 @@ interface MenuItemRowProps {
   item: MenuItem;
   sectionId: string;
   supabaseUrl: string;
+  // S-05 display gating (guard + RLS enforce): CRUD is the owner's, the
+  // availability toggle is the owner's and the waiter's; kitchen sees a badge.
+  canEditMenu: boolean;
+  canToggleAvailability: boolean;
+  availabilityBusy: boolean;
+  onChangeAvailability: (item: MenuItem, availability: MenuItemAvailability) => Promise<void>;
   onEdit: (item: MenuItem) => void;
   onArchive: (item: MenuItem) => void;
 }
 
-export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }: MenuItemRowProps) {
+export function MenuItemRow({
+  item,
+  sectionId,
+  supabaseUrl,
+  canEditMenu,
+  canToggleAvailability,
+  availabilityBusy,
+  onChangeAvailability,
+  onEdit,
+  onArchive,
+}: MenuItemRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
     data: { type: "item", sectionId },
+    disabled: !canEditMenu,
   });
 
   const thumbUrl = item.photo_path
@@ -47,15 +65,17 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
         isDragging && "z-10 opacity-70",
       )}
     >
-      <button
-        type="button"
-        className="text-muted-foreground hover:text-foreground mt-1 cursor-grab touch-none"
-        aria-label={`Przeciągnij pozycję ${item.name}`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="size-4" />
-      </button>
+      {canEditMenu && (
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground mt-1 cursor-grab touch-none"
+          aria-label={`Przeciągnij pozycję ${item.name}`}
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-4" />
+        </button>
+      )}
 
       {thumbUrl ? (
         <img src={thumbUrl} alt="" loading="lazy" className="size-12 shrink-0 rounded-md object-cover" />
@@ -81,9 +101,37 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
           </span>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          <Badge variant="outline" className={availabilityBadgeClass[item.availability]}>
-            {AVAILABILITY_LABELS[item.availability]}
-          </Badge>
+          {canToggleAvailability ? (
+            // S-05 quick toggle: three states, so a Select rather than a binary
+            // switch. Styled with the same semantic triple as the badge, so the
+            // state stays readable at a glance while it becomes actionable.
+            <Select
+              value={item.availability}
+              disabled={availabilityBusy}
+              onValueChange={(value) => {
+                void onChangeAvailability(item, value as MenuItemAvailability);
+              }}
+            >
+              <SelectTrigger
+                size="sm"
+                aria-label={`Zmień dostępność pozycji ${item.name}`}
+                className={cn("h-7 gap-1 px-2 text-xs font-medium", availabilityBadgeClass[item.availability])}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AVAILABILITY.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {AVAILABILITY_LABELS[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Badge variant="outline" className={availabilityBadgeClass[item.availability]}>
+              {AVAILABILITY_LABELS[item.availability]}
+            </Badge>
+          )}
         </div>
         {item.description && <p className="text-muted-foreground mt-1 truncate text-sm">{item.description}</p>}
         {item.allergens.length > 0 && (
@@ -101,32 +149,34 @@ export function MenuItemRow({ item, sectionId, supabaseUrl, onEdit, onArchive }:
         )}
       </div>
 
-      <div className="flex shrink-0 gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-foreground"
-          aria-label={`Edytuj pozycję ${item.name}`}
-          onClick={() => {
-            onEdit(item);
-          }}
-        >
-          <Pencil className="size-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-destructive"
-          aria-label={`Zarchiwizuj pozycję ${item.name}`}
-          onClick={() => {
-            onArchive(item);
-          }}
-        >
-          <Trash2 className="size-4" />
-        </Button>
-      </div>
+      {canEditMenu && (
+        <div className="flex shrink-0 gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground"
+            aria-label={`Edytuj pozycję ${item.name}`}
+            onClick={() => {
+              onEdit(item);
+            }}
+          >
+            <Pencil className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive"
+            aria-label={`Zarchiwizuj pozycję ${item.name}`}
+            onClick={() => {
+              onArchive(item);
+            }}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      )}
     </li>
   );
 }
