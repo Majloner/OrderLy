@@ -317,27 +317,27 @@ N/d. Rollback = `git checkout -- context/foundation/test-plan.md`.
 
 #### Automated
 
-- [x] 1.1 Grep: „brama dostępności" nieobecna w §7 (lub tylko jako „pokryta")
-- [x] 1.2 Grep: sekcja 6.8 istnieje
-- [x] 1.3 Wszystkie nowe referencje plikowe istnieją w repo (ls wg listy z fazy)
-- [x] 1.4 `git diff` dotyka tylko test-plan.md + folder change'a
+- [x] 1.1 Grep: „brama dostępności" nieobecna w §7 (lub tylko jako „pokryta") — 1079852
+- [x] 1.2 Grep: sekcja 6.8 istnieje — 1079852
+- [x] 1.3 Wszystkie nowe referencje plikowe istnieją w repo (ls wg listy z fazy) — 1079852
+- [x] 1.4 `git diff` dotyka tylko test-plan.md + folder change'a — 1079852
 
 #### Manual
 
-- [x] 1.5 Read-through §6–§7: ton i długość spójne z sąsiadami
-- [x] 1.6 §1–§3 wizualnie nietknięte w diffie
+- [x] 1.5 Read-through §6–§7: ton i długość spójne z sąsiadami — 1079852
+- [x] 1.6 §1–§3 wizualnie nietknięte w diffie — 1079852
 
 ### Phase 2: §4 stack, §5 gates, §6.3 e2e, §8 ledger (księgowość)
 
 #### Automated
 
-- [ ] 2.1 Grep: zero „none yet — see §3 Phase"
-- [ ] 2.2 Grep: zero „2026-08-04" poza nietykanym §3
-- [ ] 2.3 `npx prettier --check context/foundation/test-plan.md`
-- [ ] 2.4 `git diff --stat` — nadal tylko test-plan.md + folder change'a
+- [x] 2.1 Grep: zero „none yet — see §3 Phase"
+- [x] 2.2 Grep: zero „2026-08-04" poza nietykanym §3
+- [x] 2.3 `npx prettier --check context/foundation/test-plan.md`
+- [x] 2.4 `git diff --stat` — nadal tylko test-plan.md + folder change'a
 
 #### Manual
 
-- [ ] 2.5 Diff §1–§3 pusty (nagłówek pliku dozwolony)
-- [ ] 2.6 Tabele §4/§5 renderują się poprawnie
-- [ ] 2.7 Read-through całości: brak odesłań do Fazy 4 jako żywej
+- [x] 2.5 Diff §1–§3 pusty (nagłówek pliku dozwolony)
+- [x] 2.6 Tabele §4/§5 renderują się poprawnie
+- [x] 2.7 Read-through całości: brak odesłań do Fazy 4 jako żywej

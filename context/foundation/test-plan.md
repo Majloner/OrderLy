@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-08-04
+> Last updated: 2026-09-12
 
 ## 1. Strategy
 
@@ -113,22 +113,22 @@ weryfikacji.
 
 | Layer | Tool | Version | Notes |
 |-------|------|---------|-------|
-| unit + integration | Vitest | ^4.1.10 | skonfigurowany; dziś 6 plików unit (`src/lib/schemas/*`, `room-geometry`, `staff-identity`) |
-| integration DB | Supabase CLI (local Postgres/Auth) | ^2.23.4 | `npx supabase start` (wymaga Dockera) — realny RLS dla łańcucha żądań; brak jeszcze harnessu route’ów |
-| API/route harness | none yet — see §3 Phase 1 | — | integration route’ów API pod SSR (Astro) do postawienia w Fazie 1 |
-| API mocking | none yet — see §3 Phase 1 | — | mock tylko na krawędzi sieci (Storage/service-role); nigdy modułów wewnętrznych |
-| e2e | none yet — see §3 Phase 4 (opcjonalnie) | — | promować tylko dla ścieżek, których nie łapie integration |
+| unit + integration | Vitest | ^4.1.10 | skonfigurowany; dziś 6 plików unit (~180 przypadków: `src/lib/schemas/*`, `room-geometry`, `staff-identity`) + 20 plików integration w `tests/integration/**` |
+| integration DB | Supabase CLI (local Postgres/Auth) | ^2.23.4 | `npx supabase start` (wymaga Dockera) — realny RLS dla łańcucha żądań. Deklaracja `^2.23.4`, resolved **2.98.2** przez `package-lock`; CI celowo odpala pin z lockfile (`npx supabase`), nie `setup-cli@latest` |
+| API/route harness | syntetyczny `APIContext` (`buildContext`) — dowieziony w Fazie 1 | n/a | `tests/integration/helpers/context.ts` — ćwiczy prawdziwy guard + RLS bez serwera HTTP (middleware omijany celowo, patrz §6.4); stub `astro:env/server` i alias `astro:middleware` w `vitest.integration.config.ts` |
+| API mocking | `vi.mock` na krawędzi — dowieziony w Fazie 2 | n/a | wyłącznie krawędź zewnętrzna (`@/lib/storage`, service-role); nigdy guardów ani modułów wewnętrznych — wzorzec w §6.2 |
+| e2e | Playwright (`@playwright/test`) — checked: 2026-09-12 | ^1.62.1 | istnieje: `tests/e2e/` (setup dwóch ownerów + 3 specy), `npm run test:e2e`, webServer `npm run dev`. **Lokalne-only — brak jobu w CI** (gałęzie `process.env.CI` w configu są dziś martwe). Promować tylko ścieżki, których nie łapie integration; przepis w §6.3 |
 | accessibility | none yet | — | poza zakresem MVP (patrz §7) |
 | mutation (selective gate) | Stryker (`@stryker-mutator/core` + `vitest-runner`) — checked: 2026-08-26 | ^10.0.0 | **bramka ad hoc po fazie ryzyka, NIE per-commit w CI** — `npx stryker run` z `mutate` zawężonym w `stryker.config.json` (obecnie `src/middleware.ts`, suite zawężony przez `vitest.stryker.config.ts`, `inPlace` bo `.env.test` nie kopiuje się do sandboxa). Przeżywające mutanty oceniaj pytaniem „czy to skrzywdzi użytkownika/biznes?"; nie goń 100% (ekwiwalentne + gałęzie defensywne ignoruj świadomie) |
-| (optional) AI-native | multimodal visual review — checked: 2026-08-04 | n/a | **When NOT to use:** każdy ekran, ekrany bez zmiany wizualnej, cokolwiek co łapie deterministyczny diff lub test integration |
+| (optional) AI-native | multimodal visual review — **WYCOFANE** — checked: 2026-09-12 | n/a | Faza 4 skreślona 2026-09-06 (uzasadnienie w §3), harness zrevertowany (`aacc534`). Wiersz zostaje dla historii — nie wznawiać bez nowej decyzji właściciela. Gdyby wrócił, **When NOT to use:** każdy ekran, ekrany bez zmiany wizualnej, cokolwiek co łapie deterministyczny diff lub test integration |
 
-Jeśli wiersz brzmi „none yet — see §3 Phase N", tę lukę domyka wskazana faza.
+Jedyne pozostałe „none yet" to accessibility — świadomie poza zakresem MVP (§7), nie czeka na żadną fazę.
 
 **Stack grounding tools (current session):**
-- Docs: Context7 ✓ — dostępny do bieżących API test-setupu (Astro SSR, Supabase, Vitest 4); checked: 2026-08-04
-- Search: Exa.ai ✓ — dostępny do sprawdzania aktualnego statusu narzędzi (np. wsparcie Astro w test-runnerach); checked: 2026-08-04
-- Runtime/browser: Claude Browser (preview) ✓ — możliwe źródło warstwy weryfikacji wizualnej (Faza 4); nie użyty jako główna warstwa; checked: 2026-08-04
-- Provider/platform: Cloudflare / Linear — **wymagają autoryzacji, niedostępne w tej sesji**; Supabase bez MCP (lokalne CLI); GitHub przez `gh` CLI; checked: 2026-08-04
+- Docs: Context7 ✓ — dostępny do bieżących API test-setupu (Astro SSR, Supabase, Vitest 4); checked: 2026-09-12
+- Search: Exa.ai ✓ — dostępny do sprawdzania aktualnego statusu narzędzi (np. wsparcie Astro w test-runnerach); checked: 2026-09-12
+- Runtime/browser: Claude Browser (preview) ✓ — rolę warstwy przeglądarkowej pełni dziś Playwright (§4); wizualna Faza 4 skreślona; checked: 2026-09-12
+- Provider/platform: Cloudflare / Linear — **wymagają autoryzacji, niedostępne w tej sesji**; Supabase bez MCP (lokalne CLI); GitHub przez `gh` CLI; checked: 2026-09-12
 
 ## 5. Quality Gates
 
@@ -142,7 +142,8 @@ tej fazy; wcześniej jest `planned`.
 | unit + integration | local + CI | required — wired (ci.yml: `fast` unit + `db` integration, Phase 3) | regresje logiki i łańcucha żądań |
 | RLS isolation (SQL) | CI | required — wired (ci.yml job `db`, Phase 3) | rozjazd polityk RLS / wyciek między najemcami |
 | post-edit hook | local (agent loop) | recommended after §3 Phase 3 | regresje w momencie edycji |
-| multimodal visual review | CI on PR | optional after §3 Phase 4 | problemy wizualne, których nie łapie diff — 1–3 ekrany |
+| e2e (Playwright) | local | optional — istnieje (`npm run test:e2e`), **bez jobu w CI**; wpięcie do CI = osobna zmiana | regresje przepływów przeglądarkowych: logowanie, redirecty middleware, izolacja między kontekstami |
+| multimodal visual review | — | **wycofane** (Faza 4 skreślona 2026-09-06, patrz §3) | — |
 | pre-prod smoke | między merge a prod | optional | błędy specyficzne dla środowiska (Cloudflare Workers) |
 
 ## 6. Cookbook Patterns
@@ -168,7 +169,15 @@ wyląduje odpowiednia faza rolloutu; wcześniej brzmi „TBD — see §3 Phase N
 
 ### 6.3 Adding an e2e test
 
-- TBD — see §3 Phase 4 (promować tylko gdy integration nie wystarcza).
+- **Proces**: skill `/10x-e2e` (ryzyko → seed → generacja → review → weryfikacja) jest źródłem prawdy dla *przebiegu*; ten wpis opisuje wyłącznie harness.
+- **Location**: `tests/e2e/*.spec.ts` (`testDir` w `playwright.config.ts:15`; projekt `setup` to `auth.setup.ts`, `chromium` od niego zależy).
+- **Naming**: `<obszar>.spec.ts` — konwencja obecna: `seed.spec.ts`, `route-protection.spec.ts`, `tenant-isolation.spec.ts`.
+- **Reference test**: `tests/e2e/seed.spec.ts` (owner tworzy kategorię przez UI → przeżywa `page.reload()` → sprząta po sobie).
+- **Fixtures**: `auth.setup.ts` loguje **przez realne UI** i zapisuje stan do `playwright/.auth/owner.json` **oraz** `owner-b.json` — dwóch ownerów, żeby dało się asertować izolację w drugim kontekście (`browser.newContext({ storageState: … })`, wzorzec `tenant-isolation.spec.ts:27`). Ścieżkę anonimową zeruj przez `test.use({ storageState: { cookies: [], origins: [] } })` (`route-protection.spec.ts:11`).
+- **Env**: `.env.e2e` wg `.env.e2e.example` (plik i katalog `playwright/.auth/` są w `.gitignore`): `E2E_OWNER_EMAIL`/`E2E_OWNER_PASSWORD` obowiązkowe, a `E2E_PROVISION=1` + klucz service-role idempotentnie zasieje konta i firmy.
+- **Run locally**: `npm run test:e2e` — webServer (`npm run dev`) wstaje sam, `reuseExistingServer` poza CI. **W CI nie biegnie** (patrz §5).
+- **Pułapki**: (1) czekaj na hydratację wysp (`astro-island:not([ssr])`), nigdy `waitForTimeout`; (2) nie asertuj URL tam, gdzie wystarczy stan UI — setup celowo sprawdza obecność „Sign out", dzięki czemu przeżył zmianę redirectów w S-05; (3) id unikalne per test (sufiks czasowy), bo specy biegną równolegle i bywają re-runowane.
+- **Kiedy promować do e2e**: tylko ścieżki niełapalne niżej — realne cookie i redirect middleware w przeglądarce, wielokontekstowość, hydratacja wysp. Reszta zostaje w integration (§6.2). Lokatory (`getByRole`/`getByLabel`) i zakaz `waitForTimeout` — hard rules w `CLAUDE.md`.
 
 ### 6.4 Adding a test for a new API endpoint
 
@@ -290,9 +299,9 @@ kontrybutorzy respektują je, dopóki założenie się nie zmieni.
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-08-04
-- Stack versions last verified: 2026-08-04
-- AI-native tool references last verified: 2026-08-04
+- Strategy (§1–§5) last reviewed: 2026-09-12 — **przegląd mechaniczny, zakres §4–§8** (refresh po S-05, change `test-plan-refresh-2026-09-11`). **§1–§2 NIE były przeglądane**: wywiad pominięty decyzją właściciela, więc Risk Map wciąż stoi na 2026-08-04; świeże hot-spoty czekają w `context/changes/test-plan-refresh-2026-09-11/research.md`.
+- Stack versions last verified: 2026-09-12
+- AI-native tool references last verified: 2026-09-12 (multimodal visual review — wycofane wraz z Fazą 4)
 
 Refresh (`/10x-test-plan --refresh`) when:
 
