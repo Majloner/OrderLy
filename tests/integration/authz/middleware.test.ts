@@ -45,7 +45,8 @@ function freshWaiterCookie(): Promise<string> {
 // future public client-menu page.
 const PROTECTED_PAGES = ["/dashboard", "/settings", "/menu", "/staff", "/room"];
 const PROTECTED_SUBPATHS = ["/menu/anything", "/room/editor/nested"];
-const OWNER_PAGES = ["/menu", "/staff", "/room", "/settings"];
+// /menu left this list in S-05 — the whole staff may open it (role-gated UI).
+const OWNER_PAGES = ["/staff", "/room", "/settings"];
 const PUBLIC_PAGES = ["/", "/auth/signin", "/auth/signup", "/auth/confirm-email", "/menus"];
 
 describe("middleware harness smoke", () => {
@@ -185,9 +186,23 @@ describe("deactivated staff with a live session (S-02 contract)", () => {
     });
   });
 
-  it("leaves an active (non-deactivated) waiter alone on public routes", async () => {
+  it("sends an active (non-deactivated) waiter from public entry pages to the panel, not to signout", async () => {
+    // S-05 follow-up: "/" and the auth forms bounce a signed-in user with a
+    // role to /dashboard. The load-bearing distinction vs the deactivation
+    // branch above: an ACTIVE session is redirected WITHOUT touching cookies.
     const cookie = await freshWaiterCookie();
-    const { nextCalled, locals } = await runMiddleware("/", { cookie });
+    for (const path of ["/", "/auth/signin", "/auth/signup"]) {
+      const { response, nextCalled, cookies } = await runMiddleware(path, { cookie });
+      expect(nextCalled).toBe(false);
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe("/dashboard");
+      expect([...cookies.headers()]).toEqual([]);
+    }
+  });
+
+  it("resolves locals for an active waiter on a rendering route", async () => {
+    const cookie = await freshWaiterCookie();
+    const { nextCalled, locals } = await runMiddleware("/dashboard", { cookie });
     expect(nextCalled).toBe(true);
     expect(locals.role).toBe("waiter");
     // Exact display_name pins the fallback chain (full_name first). A mutated
@@ -226,6 +241,13 @@ describe("route-gating matrix (Risk #3)", () => {
     const { nextCalled, locals } = await runMiddleware("/dashboard", { cookie });
     expect(nextCalled).toBe(true);
     expect(locals.role).toBe("waiter");
+  });
+
+  it.each(["waiter", "kitchen"] as const)("lets %s through to /menu (S-05: role-gated page)", async (role) => {
+    const cookie = await freshStaffCookie(role);
+    const { nextCalled, locals } = await runMiddleware("/menu", { cookie });
+    expect(nextCalled).toBe(true);
+    expect(locals.role).toBe(role);
   });
 
   it.each(PROTECTED_PAGES)("lets the owner through to %s", async (path) => {

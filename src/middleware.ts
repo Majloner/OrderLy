@@ -122,6 +122,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return context.redirect(`/auth/signin?${params.toString()}`);
   }
 
+  // A signed-in user has no business on the marketing page or the auth forms —
+  // land them on the panel instead, so the dashboard shows up immediately after
+  // login no matter which entry point they used (S-05 follow-up). Anonymous
+  // visitors and the deactivated-session branch above are untouched;
+  // /auth/confirm-email is deliberately exempt (the flow may run signed-in).
+  if (context.locals.user && context.locals.role) {
+    const pathname = context.url.pathname;
+    if (pathname === "/" || matchesRoute(pathname, "/auth/signin") || matchesRoute(pathname, "/auth/signup")) {
+      return context.redirect("/dashboard");
+    }
+  }
+
   if (PROTECTED_ROUTES.some((route) => matchesRoute(context.url.pathname, route))) {
     if (!context.locals.user) {
       return context.redirect("/auth/signin");
