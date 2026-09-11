@@ -1,10 +1,10 @@
 ---
 change_id: test-plan-refresh-2026-09-11
 title: Refresh test-planu po wylądowaniu S-05 (menu-availability-toggle)
-status: implemented
+status: archived
 created: 2026-09-11
 updated: 2026-09-12
-archived_at: null
+archived_at: 2026-09-11T23:26:10Z
 ---
 
 ## Notes
